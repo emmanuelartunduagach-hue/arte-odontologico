@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="assets/img/favicon.png">
+  <title>Arte Odontológico — Agenda tu cita en línea | Neiva, Huila</title>
+  <meta name="description" content="Consultorio de odontología estética e integral en Neiva, dirigido por la Dra. Ximena Acosta Oliveros. Agenda tu cita en línea y recibe recordatorios automáticos.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/landing.css">
+</head>
+<body>
+
+<a class="saltar-a-contenido" href="#contenido">Saltar al contenido</a>
+
+<!-- ══════════ Encabezado ══════════ -->
+<header class="encabezado">
+  <div class="contenedor encabezado__fila">
+    <a href="index.html" class="marca">
+      <img class="marca__icono" src="assets/img/logo.png" alt="" width="44" height="44">
+      <span>
+        <span class="marca__nombre">Arte Odontológico</span>
+        <span class="marca__lugar">Odontología estética e integral · Neiva y Rivera</span>
+      </span>
+    </a>
+
+    <div class="encabezado__acciones">
+      <button type="button" class="btn btn--fantasma" data-abrir="modal-ingreso">Ingresar</button>
+      <button type="button" class="btn btn--primario" data-abrir="modal-registro">Crear cuenta</button>
+    </div>
+  </div>
+</header>
+
+<main id="contenido">
+
+  <!-- ══════════ Portada ══════════ -->
+  <section class="portada">
+    <div class="contenedor portada__rejilla">
+      <div class="entrada">
+        <h1 class="portada__titulo">Tu cita odontológica, agendada en un minuto</h1>
+
+        <p class="portada__entrada">
+          Elige el tratamiento, la fecha y la hora desde tu celular. Nosotros te
+          confirmamos y te recordamos antes de que llegue el día.
+        </p>
+
+        <div class="portada__acciones">
+          <button type="button" class="btn btn--primario btn--grande" data-abrir="modal-registro">
+            Agendar mi cita
+          </button>
+          <a class="btn btn--secundario btn--grande" href="#servicios">Ver servicios</a>
+        </div>
+
+        <ul class="portada__datos">
+          <li>
+            <p class="dato__clave">Dirige</p>
+            <p class="dato__valor">Dra. Ximena Acosta Oliveros</p>
+          </li>
+          <li>
+            <p class="dato__clave">Lunes a viernes</p>
+            <p class="dato__valor">8:00 a.m. – 6:00 p.m.</p>
+          </li>
+          <li>
+            <p class="dato__clave">Sábados</p>
+            <p class="dato__valor">8:00 a.m. – 12:00 m.</p>
+          </li>
+        </ul>
+      </div>
+
+      <figure class="portada__figura">
+        <img class="portada__imagen" src="assets/img/portada.jpg"
+             alt="Sonrisa de una paciente tras un tratamiento de odontología estética" width="660" height="825">
+
+      </figure>
+    </div>
+  </section>
+
+  <!-- ══════════ Cómo funciona ══════════ -->
+  <section class="seccion seccion--tinta">
+    <div class="contenedor">
+      <div class="seccion__intro">
+        <h2>Cómo funciona</h2>
+        <p>Tres pasos desde que eliges tu tratamiento hasta que llegas al consultorio.</p>
+      </div>
+
+      <ol class="pasos">
+        <li class="paso">
+          <h3>Agendas</h3>
+          <p>Creas tu cuenta con tu documento y tu celular, eliges el tratamiento y reservas
+             una de las franjas que el consultorio tiene disponibles.</p>
+        </li>
+        <li class="paso">
+          <h3>Confirmamos</h3>
+          <p>El consultorio revisa tu solicitud y la confirma. Puedes ver el estado de tu
+             cita en cualquier momento desde tu perfil.</p>
+        </li>
+        <li class="paso">
+          <h3>Te recordamos</h3>
+          <p>Recibes un recordatorio automático antes de tu cita, para que no se te pase
+             y no tengas que reprogramar.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ══════════ Servicios ══════════ -->
+  <section class="seccion seccion--papel" id="servicios">
+    <div class="contenedor">
+      <div class="seccion__intro">
+        <h2>Servicios</h2>
+        <p>Selecciona un tratamiento para empezar a agendar.</p>
+      </div>
+      <div class="servicios" id="lista-servicios"><!-- se llena desde js/servicios.js --></div>
+    </div>
+  </section>
+
+  <!-- ══════════ Galería ══════════ -->
+  <section class="seccion seccion--tinta">
+    <div class="contenedor">
+      <div class="seccion__intro">
+        <h2>El consultorio</h2>
+      </div>
+      <div class="galeria">
+        <img class="galeria__item" src="assets/img/galeria-1.jpg" alt="La Dra. Ximena Acosta conversando con una paciente en el consultorio" width="640" height="640">
+        <img class="galeria__item" loading="lazy" src="assets/img/galeria-2.jpg" alt="Consultorio de Arte Odontológico durante una atención" width="420" height="420">
+        <img class="galeria__item" loading="lazy" src="assets/img/galeria-3.jpg" alt="Valoración odontológica" width="420" height="420">
+        <img class="galeria__item" loading="lazy" src="assets/img/galeria-4.jpg" alt="Procedimiento de odontología estética" width="800" height="400">
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ Contacto ══════════ -->
+  <section class="seccion seccion--papel" id="contacto">
+    <div class="contenedor">
+      <div class="contacto">
+        <div>
+          <h2>Contacto</h2>
+          <ul class="contacto__lista">
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span>
+                <strong style="font-weight:var(--peso-semi)">Sede Neiva</strong><br>
+                <span style="color:var(--ink-600)">Carrera 7 No. 6-45, Centro</span>
+              </span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span>
+                <strong style="font-weight:var(--peso-semi)">Sede Rivera</strong><br>
+                <span style="color:var(--ink-600)">Carrera 7 No. 3-61</span>
+              </span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.5 2.8.6a2 2 0 0 1 1.7 2Z"/></svg>
+              <span>318 715 3718 · 310 812 0241</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+              <span>Lunes a viernes, 8:00 a.m. – 6:00 p.m.<br>Sábados, 8:00 a.m. – 12:00 del mediodía</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="aviso-wa">
+          <h3>¿Prefieres escribirnos?</h3>
+          <p>Resolvemos dudas por WhatsApp en horario de atención.</p>
+          <a class="btn btn--whatsapp btn--bloque" id="enlace-whatsapp" href="#" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.5-.6a11 11 0 0 1-4.2-3.9c-.3-.5-.7-1.2-.7-2s.4-1.2.6-1.4c.2-.2.4-.3.6-.3h.4c.2 0 .4 0 .5.4l.7 1.7c.1.2 0 .4-.1.5l-.3.4c-.1.1-.2.3-.1.5.2.4.7 1.1 1.3 1.6.7.6 1.3.8 1.5.9.2.1.4.1.5-.1l.6-.7c.2-.2.3-.2.5-.1l1.6.8c.2.1.4.2.4.3.1.2.1.5-.1 1Z"/></svg>
+            Escribir por WhatsApp
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ══════════ Pie ══════════ -->
+<footer class="pie">
+  <div class="contenedor">
+    <div class="pie__rejilla">
+      <div>
+        <h4>Arte Odontológico</h4>
+        <p style="color:#d5c6de">Odontología estética e integral en Neiva y Rivera, Huila.<br>Dra. Ximena Acosta Oliveros.</p>
+      </div>
+      <div>
+        <h4>Navegación</h4>
+        <ul>
+          <li><a href="#servicios">Servicios</a></li>
+          <li><a href="#contacto">Contacto</a></li>
+          <li><a href="#" data-abrir="modal-ingreso">Ingresar</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="politica-datos.html">Tratamiento de datos</a></li>
+          <li><a href="politica-datos.html#derechos">Derechos del titular</a></li>
+        </ul>
+      </div>
+    </div>
+    <p class="pie__legal">
+      Proyecto de aplicación — Ingeniería de Software, Fundación Escuela Tecnológica
+      de Neiva Jesús Oviedo Pérez. Los datos personales se tratan conforme a la
+      Ley 1581 de 2012.
+    </p>
+  </div>
+</footer>
+
+<!-- ══════════ Modal: ingreso ══════════ -->
+<div class="modal" id="modal-ingreso" role="dialog" aria-modal="true" aria-labelledby="titulo-ingreso" hidden>
+  <div class="modal__panel">
+    <div class="modal__cabecera">
+      <div>
+        <h2 id="titulo-ingreso" style="font-size:var(--txt-lg)">Ingresar</h2>
+        <p>Accede para ver y gestionar tus citas.</p>
+      </div>
+      <button type="button" class="modal__cerrar" data-cerrar aria-label="Cerrar">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <form id="form-ingreso" novalidate>
+      <label class="campo">
+        <span class="campo__etiqueta">Correo electrónico</span>
+        <input class="campo__control" type="email" name="correo" autocomplete="email" required placeholder="tucorreo@ejemplo.com">
+      </label>
+
+      <label class="campo">
+        <span class="campo__etiqueta">Contraseña</span>
+        <input class="campo__control" type="password" name="contrasena" autocomplete="current-password" required minlength="8">
+      </label>
+
+      <p class="campo__error" data-error hidden></p>
+
+      <button type="submit" class="btn btn--primario btn--bloque btn--grande">Ingresar</button>
+
+      <!-- NOTA: el boceto de Figma dejaba elegir el rol en un menú desplegable,
+           lo que permitía entrar como administrador simplemente eligiéndolo.
+           El rol ahora lo determina el backend a partir del usuario. -->
+
+      <p class="modal__pie">
+        ¿No tienes cuenta?
+        <a href="#" data-abrir="modal-registro">Crear cuenta</a>
+      </p>
+    </form>
+  </div>
+</div>
+
+<!-- ══════════ Modal: registro ══════════ -->
+<div class="modal" id="modal-registro" role="dialog" aria-modal="true" aria-labelledby="titulo-registro" hidden>
+  <div class="modal__panel">
+    <div class="modal__cabecera">
+      <div>
+        <h2 id="titulo-registro" style="font-size:var(--txt-lg)">Crear cuenta</h2>
+        <p>Necesitamos estos datos para identificarte y avisarte de tus citas.</p>
+      </div>
+      <button type="button" class="modal__cerrar" data-cerrar aria-label="Cerrar">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <form id="form-registro" novalidate>
+      <label class="campo">
+        <span class="campo__etiqueta">Nombre completo</span>
+        <input class="campo__control" type="text" name="nombre" autocomplete="name" required>
+      </label>
+
+      <div class="rejilla-2">
+        <label class="campo">
+          <span class="campo__etiqueta">Documento</span>
+          <input class="campo__control" type="text" name="documento" inputmode="numeric" required>
+        </label>
+        <label class="campo">
+          <span class="campo__etiqueta">Celular</span>
+          <input class="campo__control" type="tel" name="telefono" autocomplete="tel" required placeholder="300 000 0000">
+        </label>
+      </div>
+
+      <label class="campo">
+        <span class="campo__etiqueta">Correo electrónico</span>
+        <input class="campo__control" type="email" name="correo" autocomplete="email" required>
+      </label>
+
+      <div class="rejilla-2">
+        <label class="campo">
+          <span class="campo__etiqueta">Contraseña</span>
+          <input class="campo__control" type="password" name="contrasena" autocomplete="new-password" required minlength="8">
+        </label>
+        <label class="campo">
+          <span class="campo__etiqueta">Repetir contraseña</span>
+          <input class="campo__control" type="password" name="contrasena2" autocomplete="new-password" required minlength="8">
+        </label>
+      </div>
+      <p class="campo__ayuda">Mínimo 8 caracteres.</p>
+
+      <label class="casilla">
+        <input type="checkbox" name="autorizacion" required>
+        <span>Autorizo a Arte Odontológico a tratar mis datos personales para agendar
+              citas y enviarme recordatorios, según la
+              <a href="politica-datos.html">política de tratamiento de datos</a>.</span>
+      </label>
+
+      <p class="campo__error" data-error hidden></p>
+
+      <button type="submit" class="btn btn--primario btn--bloque btn--grande">Crear cuenta</button>
+
+      <p class="modal__pie">
+        ¿Ya tienes cuenta?
+        <a href="#" data-abrir="modal-ingreso">Ingresar</a>
+      </p>
+    </form>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/servicios.js"></script>
+<script src="js/modales.js"></script>
+<script src="js/landing.js"></script>
+</body>
+</html>

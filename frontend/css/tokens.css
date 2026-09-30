@@ -1,0 +1,113 @@
+/* ============================================================
+   Arte Odontológico — Sistema de diseño
+   Tokens base: color, tipografía, espaciado, elevación.
+   Todo el resto del CSS consume estas variables. No usar
+   valores hexadecimales sueltos fuera de este archivo.
+   ============================================================ */
+
+:root {
+  /* ---------- Color ----------
+     Escala construida sobre el morado real de la marca,
+     muestreado directamente del logo del consultorio:
+     #4A1F60. Es un morado profundo y poco saturado, muy
+     distinto del #9333EA por defecto de Tailwind que traía el
+     boceto. Los tonos claros mantienen el mismo matiz para que
+     toda la página lea como una sola familia.                */
+
+  --ink-900: #1e1226;   /* Titulares y texto principal        */
+  --ink-600: #55495e;   /* Texto secundario                   */
+  --ink-400: #8a7f92;   /* Texto deshabilitado, ayudas        */
+
+  --violeta-900: #2b1136;  /* Pie de página                   */
+  --violeta-700: #3a1849;  /* Fondos oscuros                  */
+  --violeta-600: #4a1f60;  /* COLOR DE MARCA (tomado del logo)*/
+  --violeta-500: #5f2c7a;  /* Hover                           */
+  --violeta-300: #a98bc0;  /* Detalles suaves                 */
+  --violeta-100: #ede3f3;  /* Fondos de iconos, chips         */
+  --violeta-50:  #f8f4fa;  /* Fondo de sección                */
+
+  /* La lila de los uniformes del consultorio, presente en casi
+     todas sus fotografías. Se usa como acento secundario para
+     que la interfaz converse con las imágenes.               */
+  --lila-400: #b39ddb;
+
+  /* Estados de una cita. Deliberadamente apagados: en una
+     tabla clínica el color informa, no decora.               */
+  --menta-600: #2f8f76;  /* Confirmada  */
+  --menta-100: #dff0ea;
+  --ambar-700: #9a6412;  /* Pendiente   */
+  --ambar-100: #fbeed6;
+  --rosa-700:  #a32d44;  /* Cancelada   */
+  --rosa-100:  #fadfe4;
+
+  --whatsapp: #1faa5a;
+
+  --papel: #ffffff;
+  --lienzo: #fcfafd;    /* Fondo de página */
+  --borde: #e8deee;
+  --borde-fuerte: #d6c6df;
+
+  /* ---------- Tipografía ----------
+     Dos familias con roles claros:
+     Fraunces (serif con eje óptico) para titulares — aporta
+     el matiz de oficio que sugiere el nombre "Arte".
+     Inter para interfaz y cuerpo — máxima legibilidad en
+     tablas, formularios y datos.                             */
+
+  --fuente-titular: 'Fraunces', 'Georgia', serif;
+  --fuente-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Escala modular 1.25 sobre 16px */
+  --txt-xs:   0.75rem;   /* 12 */
+  --txt-sm:   0.875rem;  /* 14 */
+  --txt-base: 1rem;      /* 16 */
+  --txt-md:   1.125rem;  /* 18 */
+  --txt-lg:   1.5rem;    /* 24 */
+  --txt-xl:   2rem;      /* 32 */
+  --txt-2xl:  2.75rem;   /* 44 */
+  --txt-3xl:  3.5rem;    /* 56 */
+
+  --peso-normal: 400;
+  --peso-medio: 500;
+  --peso-semi: 600;
+  --peso-fuerte: 700;
+
+  --alto-apretado: 1.15;
+  --alto-normal: 1.5;
+  --alto-suelto: 1.65;
+
+  /* ---------- Espaciado (base 4px) ---------- */
+  --e-1: 0.25rem;
+  --e-2: 0.5rem;
+  --e-3: 0.75rem;
+  --e-4: 1rem;
+  --e-5: 1.5rem;
+  --e-6: 2rem;
+  --e-7: 3rem;
+  --e-8: 4rem;
+  --e-9: 6rem;
+
+  /* ---------- Radios ----------
+     Jerarquía real: no todo lleva el mismo radio. Controles
+     pequeños poco radio, contenedores grandes más radio.     */
+  --radio-sm: 6px;
+  --radio-md: 10px;
+  --radio-lg: 18px;
+  --radio-pill: 999px;
+
+  /* ---------- Elevación ----------
+     Solo dos niveles. El boceto pone sombra en cada tarjeta,
+     lo que aplana la jerarquía: si todo flota, nada resalta. */
+  --sombra-sutil: 0 1px 2px rgba(31, 18, 51, 0.05);
+  --sombra-flotante: 0 12px 32px -8px rgba(31, 18, 51, 0.18);
+
+  /* ---------- Layout ---------- */
+  --ancho-max: 1140px;
+  --ancho-texto: 62ch;
+
+  --transicion: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --transicion: 0ms; }
+}

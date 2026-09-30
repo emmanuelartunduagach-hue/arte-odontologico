@@ -1,0 +1,20 @@
+{
+  "name": "arte-odontologico-backend",
+  "version": "0.1.0",
+  "description": "API REST del sistema de citas de Arte Odontológico",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "crear-admin": "node src/scripts/crearAdmin.js"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.11.0"
+  }
+}

@@ -1,0 +1,389 @@
+/* ============================================================
+   Landing — estilos exclusivos de la página pública.
+   ============================================================ */
+
+/* ---------- Portada ----------
+   El boceto usaba una imagen a sangre completa con el texto
+   centrado encima y un degradado morado al 80% de opacidad.
+   Es el tratamiento más común y hunde la legibilidad del
+   titular. Aquí el texto vive sobre fondo limpio a la
+   izquierda y la fotografía ocupa su propio espacio a la
+   derecha, recortada en arco. El arco no es decoración:
+   remite a la forma de una pieza dental y se repite después
+   como textura de fondo en el resto de la página.            */
+
+.portada {
+  position: relative;
+  background: var(--papel);
+  border-bottom: 1px solid var(--borde);
+  overflow: hidden;
+}
+
+/* Halo muy tenue detrás de la fotografía. Da profundidad al
+   bloque derecho sin recurrir a un degradado de relleno.     */
+.portada::after {
+  content: '';
+  position: absolute;
+  top: -18%;
+  right: -12%;
+  width: 46%;
+  aspect-ratio: 1;
+  background: radial-gradient(circle, var(--violeta-100) 0%, transparent 68%);
+  opacity: .75;
+  pointer-events: none;
+}
+
+.portada__rejilla {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr .92fr;
+  gap: var(--e-8);
+  align-items: center;
+  padding-block: var(--e-9);
+}
+
+/* Titular como elemento activo del diseño, no como simple
+   contenedor de texto. Fraunces es variable: en tamaños
+   grandes se sube el eje óptico y se cierra el interlineado
+   para que el bloque lea como una unidad compacta.
+   Deliberadamente NO se acentúa una palabra suelta en color o
+   cursiva: es el recurso más repetido y no aporta jerarquía. */
+.portada__titulo {
+  font-size: clamp(2.25rem, 5.2vw, 3.75rem);
+  line-height: 1.02;
+  letter-spacing: -.03em;
+  font-variation-settings: 'opsz' 120, 'SOFT' 30, 'WONK' 1;
+  margin-bottom: var(--e-5);
+  text-wrap: balance;
+}
+
+.portada__entrada {
+  font-size: var(--txt-md);
+  color: var(--ink-600);
+  line-height: var(--alto-suelto);
+  max-width: 44ch;
+  margin-bottom: var(--e-6);
+}
+
+.portada__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-3);
+  margin-bottom: var(--e-6);
+}
+
+/* Datos operativos del consultorio. Reemplazan a la típica
+   fila de métricas infladas ("+500 pacientes felices"), que
+   en un proyecto académico nadie puede sustentar.            */
+.portada__datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--e-6);
+  padding-top: var(--e-5);
+  border-top: 1px solid var(--borde);
+}
+
+.dato__clave { font-size: var(--txt-xs); color: var(--ink-400); margin-bottom: 2px; }
+.dato__valor { font-size: var(--txt-sm); font-weight: var(--peso-semi); color: var(--ink-900); }
+
+/* ---------- Figura de portada ---------- */
+
+.portada__figura { position: relative; }
+
+.portada__imagen {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 170px 170px var(--radio-lg) var(--radio-lg);
+  background: var(--violeta-100);
+}
+
+/* ---------- Textura de sección ----------
+   Arcos a muy baja opacidad. Retoman el recorte de la foto de
+   portada, de modo que la textura continúa una idea del diseño
+   en lugar de decorar por decorar.                           */
+
+.seccion--tinta { position: relative; background-color: var(--violeta-50); }
+
+.seccion--tinta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='76' height='76' viewBox='0 0 76 76'%3E%3Cpath d='M14 62V34a24 24 0 0 1 48 0v28' fill='none' stroke='%234a1f60' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-size: 76px 76px;
+  opacity: .05;
+  pointer-events: none;
+}
+
+.seccion--tinta > * { position: relative; z-index: 1; }
+
+/* ---------- Cómo funciona ----------
+   Esta sección sí es una secuencia real (agendar → confirmar
+   → recordar), así que la numeración informa en lugar de
+   decorar.                                                   */
+
+.pasos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--e-6);
+  counter-reset: paso;
+}
+
+.paso {
+  position: relative;
+  padding-top: var(--e-5);
+  border-top: 2px solid var(--borde-fuerte);
+  counter-increment: paso;
+}
+
+.paso::before {
+  content: counter(paso);
+  position: absolute;
+  top: -.65em;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 1.35em;
+  height: 1.35em;
+  background: var(--violeta-600);
+  color: var(--papel);
+  border-radius: var(--radio-pill);
+  font-family: var(--fuente-ui);
+  font-size: var(--txt-sm);
+  font-weight: var(--peso-fuerte);
+  line-height: 1;
+}
+
+.paso h3 {
+  font-size: var(--txt-md);
+  font-family: var(--fuente-ui);
+  font-weight: var(--peso-semi);
+  margin-bottom: var(--e-2);
+  padding-left: 2.4em;
+}
+.paso p { color: var(--ink-600); font-size: var(--txt-sm); }
+
+/* ---------- Servicios ----------
+   Sin sombra por tarjeta. El borde delimita; el color de marca
+   aparece en el icono y se intensifica al interactuar.       */
+
+.servicios { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--e-4); }
+
+.servicio {
+  display: flex;
+  gap: var(--e-4);
+  padding: var(--e-5);
+  background: var(--papel);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  transition: border-color var(--transicion), transform var(--transicion);
+}
+
+.servicio:hover,
+.servicio:focus-visible { border-color: var(--violeta-600); transform: translateY(-2px); }
+
+.servicio__icono {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: var(--violeta-100);
+  border-radius: var(--radio-md);
+  color: var(--violeta-600);
+  transition: background var(--transicion), color var(--transicion);
+}
+.servicio__icono svg { width: 22px; height: 22px; }
+
+/* El icono se rellena al interactuar. Un solo cambio de estado,
+   sobre el elemento que identifica la tarjeta.               */
+.servicio:hover .servicio__icono,
+.servicio:focus-visible .servicio__icono { background: var(--violeta-600); color: var(--papel); }
+
+.servicio__nombre { display: block; font-size: var(--txt-base); font-weight: var(--peso-semi); margin-bottom: var(--e-1); }
+.servicio__desc { display: block; font-size: var(--txt-sm); color: var(--ink-600); line-height: var(--alto-normal); }
+
+/* ---------- Galería ---------- */
+
+/* Mosaico asimétrico. Una retícula de piezas idénticas obliga
+   a que todas las fotos compitan por igual; aquí una domina y
+   el resto la acompaña.
+
+       ┌───────────┬─────┬─────┐
+       │           │  2  │  3  │
+       │     1     ├─────┴─────┤
+       │           │     4     │
+       └───────────┴───────────┘                              */
+
+.galeria { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--e-3); }
+
+.galeria__item {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--radio-lg);
+  background: var(--violeta-100);
+}
+
+.galeria__item:nth-child(1) { grid-column: span 2; grid-row: span 2; }
+.galeria__item:nth-child(4) { grid-column: span 2; aspect-ratio: 2 / 1; }
+
+/* ---------- Contacto ---------- */
+
+.contacto {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: var(--e-7);
+  align-items: start;
+  padding: var(--e-7);
+  background: var(--papel);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+}
+
+.contacto__lista { margin-top: var(--e-5); }
+.contacto__lista li {
+  display: flex;
+  gap: var(--e-3);
+  padding-block: var(--e-3);
+  border-bottom: 1px solid var(--borde);
+  font-size: var(--txt-sm);
+}
+.contacto__lista li:last-child { border-bottom: 0; }
+.contacto__lista svg { width: 18px; height: 18px; color: var(--violeta-600); flex-shrink: 0; margin-top: 3px; }
+
+.aviso-wa { padding: var(--e-5); background: var(--violeta-50); border-radius: var(--radio-md); }
+.aviso-wa h3 { font-family: var(--fuente-ui); font-size: var(--txt-base); font-weight: var(--peso-semi); margin-bottom: var(--e-2); }
+.aviso-wa p { font-size: var(--txt-sm); color: var(--ink-600); margin-bottom: var(--e-4); }
+
+/* ---------- Modal ---------- */
+
+.modal[hidden] { display: none; }
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: var(--e-4);
+  background: rgba(31, 18, 51, .45);
+}
+
+.modal__panel {
+  width: 100%;
+  max-width: 460px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--papel);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-flotante);
+  padding: var(--e-6);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .modal:not([hidden]) .modal__panel {
+    animation: aparecer-panel 220ms cubic-bezier(.2, .7, .3, 1);
+  }
+}
+
+@keyframes aparecer-panel {
+  from { opacity: 0; transform: translateY(10px) scale(.985); }
+  to { opacity: 1; transform: none; }
+}
+
+.modal__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--e-4);
+  margin-bottom: var(--e-5);
+}
+.modal__cabecera p { font-size: var(--txt-sm); color: var(--ink-600); margin-top: var(--e-2); }
+
+.modal__cerrar {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: var(--ink-400);
+  padding: var(--e-1);
+  border-radius: var(--radio-sm);
+}
+.modal__cerrar:hover { background: var(--violeta-100); color: var(--ink-900); }
+
+.modal__pie {
+  margin-top: var(--e-5);
+  padding-top: var(--e-4);
+  border-top: 1px solid var(--borde);
+  font-size: var(--txt-sm);
+  color: var(--ink-600);
+  text-align: center;
+}
+
+.rejilla-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e-3); }
+
+/* Casilla de autorización de datos — exigida por la Ley 1581
+   de 2012 antes de tratar datos personales de pacientes.     */
+.casilla {
+  display: flex;
+  gap: var(--e-3);
+  align-items: flex-start;
+  font-size: var(--txt-xs);
+  color: var(--ink-600);
+  line-height: var(--alto-normal);
+  margin-block: var(--e-4);
+}
+.casilla input { margin-top: 3px; flex-shrink: 0; width: 16px; height: 16px; accent-color: var(--violeta-600); }
+
+/* ---------- Entrada de página ----------
+   Una sola secuencia orquestada, al cargar y solo en el hero.
+   Deliberadamente NO se anima cada sección al hacer scroll:
+   ese efecto repetido es lo que hace que una página se sienta
+   plantilla en lugar de producto.                            */
+
+@media (prefers-reduced-motion: no-preference) {
+  .entrada > * { animation: subir 620ms cubic-bezier(.2, .7, .3, 1) backwards; }
+  .entrada > *:nth-child(1) { animation-delay: 40ms; }
+  .entrada > *:nth-child(2) { animation-delay: 110ms; }
+  .entrada > *:nth-child(3) { animation-delay: 180ms; }
+  .entrada > *:nth-child(4) { animation-delay: 250ms; }
+
+  .portada__figura { animation: escalar 760ms cubic-bezier(.2, .7, .3, 1) 120ms backwards; }
+}
+
+@keyframes subir {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes escalar {
+  from { opacity: 0; transform: scale(.97); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 960px) {
+  .portada::after { display: none; }
+  .portada__rejilla { grid-template-columns: 1fr; gap: var(--e-7); padding-block: var(--e-7); }
+  .portada__figura { order: -1; }
+  .portada__imagen { aspect-ratio: 16 / 10; border-radius: var(--radio-lg); }
+  .servicios { grid-template-columns: repeat(2, 1fr); }
+  .contacto { grid-template-columns: 1fr; gap: var(--e-5); padding: var(--e-5); }
+  .pasos { grid-template-columns: 1fr; gap: var(--e-6); }
+}
+
+@media (max-width: 620px) {
+  .servicios { grid-template-columns: 1fr; }
+  .galeria { grid-template-columns: repeat(2, 1fr); }
+  .galeria__item:nth-child(1) { grid-column: span 2; grid-row: span 1; }
+  .galeria__item:nth-child(4) { grid-column: span 2; }
+  .rejilla-2 { grid-template-columns: 1fr; }
+  .portada__datos { gap: var(--e-5); }
+  .encabezado__acciones .btn { padding-inline: var(--e-4); }
+}
