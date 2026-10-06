@@ -5,6 +5,7 @@
    falsas y citas que nadie va a cumplir. */
 const bcrypt = require('bcrypt');
 const usuarioModelo = require('../models/usuario.model');
+const citaModelo = require('../models/cita.model');
 const { validarUsuario } = require('../utils/validaciones');
 const { generarContrasenaTemporal } = require('../utils/contrasenas');
 const { ErrorHttp } = require('../utils/errores');
@@ -55,6 +56,9 @@ async function crear(req, res, next) {
       throw error;
     }
 
+    // Las citas que esta persona pidió antes sin cuenta quedan a su nombre.
+    const citasVinculadas = await citaModelo.vincularPaciente(valores, id);
+
     res.set('Cache-Control', 'no-store'); // la clave temporal no debe quedar en caché
     res.status(201).json({
       mensaje: 'Paciente creado correctamente.',
@@ -66,6 +70,7 @@ async function crear(req, res, next) {
         telefono: valores.telefono,
       },
       contrasenaTemporal,
+      citasVinculadas,
     });
   } catch (error) {
     next(error);

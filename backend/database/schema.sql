@@ -4,6 +4,9 @@
 --  Modelo relacional normalizado hasta 3FN.
 -- ============================================================
 
+-- Tildes y eñes correctas aunque el cliente use otra codificación.
+SET NAMES utf8mb4;
+
 CREATE DATABASE IF NOT EXISTS arte_odontologico
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
@@ -54,7 +57,7 @@ CREATE TABLE usuarios (
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------
---  servicios
+--  servicios (especialidades)
 --  Catálogo de tratamientos. En el boceto estaba quemado en el
 --  código; al moverlo a base de datos el consultorio puede
 --  agregar o retirar tratamientos sin tocar el frontend.
@@ -72,9 +75,8 @@ CREATE TABLE servicios (
 
 -- ------------------------------------------------------------
 --  sedes
---  El consultorio atiende en dos ubicaciones (Neiva y Rivera).
---  Cada franja horaria pertenece a una sede, de modo que la
---  agenda de una no bloquea la de la otra.
+--  Hoy el consultorio atiende en una sola sede (Rivera). Se
+--  conserva la tabla para no rehacer el modelo si abren otra.
 -- ------------------------------------------------------------
 CREATE TABLE sedes (
   id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -88,75 +90,136 @@ CREATE TABLE sedes (
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------
+--  especialistas
+--  Odontólogos que atienden. No inician sesión: solo los
+--  registra y administra la secretaria (rol administrador).
+-- ------------------------------------------------------------
+CREATE TABLE especialistas (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  nombre     VARCHAR(120) NOT NULL,
+  activo     BOOLEAN NOT NULL DEFAULT TRUE,
+  creado_en  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- Un especialista puede atender varias especialidades y una
+-- especialidad tiene varios especialistas (muchos a muchos).
+-- Las especialidades son las filas de `servicios`.
+CREATE TABLE especialista_especialidad (
+  especialista_id INT UNSIGNED NOT NULL,
+  servicio_id     INT UNSIGNED NOT NULL,
+
+  PRIMARY KEY (especialista_id, servicio_id),
+  CONSTRAINT fk_ee_especialista FOREIGN KEY (especialista_id)
+    REFERENCES especialistas(id) ON DELETE CASCADE,
+  CONSTRAINT fk_ee_servicio FOREIGN KEY (servicio_id)
+    REFERENCES servicios(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+-- ------------------------------------------------------------
 --  franjas_horarias
---  Disponibilidad publicada por el administrador. Cada fila es
---  una fecha + hora concreta que un paciente puede reservar.
---  La restricción UNIQUE impide publicar la misma franja dos
---  veces; la lógica de reserva impide que dos pacientes tomen
---  la misma franja.
+--  Horas publicadas a mano por la secretaria: cada fila es una
+--  fecha + hora en la que un especialista puede atender.
+--  `activa` = FALSE cuando la secretaria la quita (se conserva
+--  si alguna cita antigua la referencia).
+--  Si una franja está libre o no lo deciden las citas: está
+--  ocupada cuando tiene una cita que no está cancelada.
 -- ------------------------------------------------------------
 CREATE TABLE franjas_horarias (
-  id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  sede_id      INT UNSIGNED NOT NULL,
-  fecha        DATE NOT NULL,
-  hora_inicio  TIME NOT NULL,
-  disponible   BOOLEAN NOT NULL DEFAULT TRUE,
-  creado_por   INT UNSIGNED NOT NULL,
-  creado_en    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  sede_id          INT UNSIGNED NOT NULL,
+  especialista_id  INT UNSIGNED NOT NULL,
+  fecha            DATE NOT NULL,
+  hora_inicio      TIME NOT NULL,
+  activa           BOOLEAN NOT NULL DEFAULT TRUE,
+  creado_por       INT UNSIGNED NOT NULL,
+  creado_en        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-  -- La misma hora puede existir en ambas sedes, pero no dos
-  -- veces en la misma sede.
-  CONSTRAINT uq_franja UNIQUE (sede_id, fecha, hora_inicio),
+  -- Dos especialistas pueden atender a la misma hora, pero un
+  -- especialista no puede tener la misma hora dos veces.
+  CONSTRAINT uq_franja_especialista UNIQUE (especialista_id, fecha, hora_inicio),
   CONSTRAINT fk_franja_sede FOREIGN KEY (sede_id)
     REFERENCES sedes(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_franja_especialista FOREIGN KEY (especialista_id)
+    REFERENCES especialistas(id) ON DELETE RESTRICT,
   CONSTRAINT fk_franja_admin FOREIGN KEY (creado_por)
     REFERENCES usuarios(id) ON DELETE RESTRICT,
-  INDEX idx_franja_fecha (sede_id, fecha, disponible)
+  INDEX idx_franja_fecha (especialista_id, fecha, activa)
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------
 --  citas
---  Una cita ocupa exactamente una franja. La clave única sobre
---  franja_id garantiza a nivel de motor que no haya doble
---  reserva, aunque dos peticiones lleguen al mismo tiempo.
+--  Cualquier persona agenda sin cuenta: se guardan aquí su
+--  nombre, documento y teléfono. `paciente_id` se llena solo
+--  si esa persona ya tiene usuario (lo crea la secretaria).
+--
+--  Sin doble reserva: `franja_ocupada` vale franja_id mientras
+--  la cita no esté cancelada y NULL cuando se cancela. Su
+--  índice único impide, a nivel de motor, que dos citas vivas
+--  ocupen la misma hora aunque lleguen al mismo tiempo; al
+--  cancelar o reprogramar, la hora queda libre sola.
 -- ------------------------------------------------------------
 CREATE TABLE citas (
-  id           INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  paciente_id  INT UNSIGNED NOT NULL,
-  servicio_id  INT UNSIGNED NOT NULL,
-  franja_id    INT UNSIGNED NOT NULL,
-  estado       ENUM('pendiente','confirmada','cancelada','atendida')
-                 NOT NULL DEFAULT 'pendiente',
-  notas        VARCHAR(300) NULL,
+  id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  paciente_id         INT UNSIGNED NULL,
+  servicio_id         INT UNSIGNED NOT NULL,   -- especialidad
+  franja_id           INT UNSIGNED NOT NULL,
+  estado              ENUM('pendiente','confirmada','cancelada','atendida','no_asistio')
+                        NOT NULL DEFAULT 'confirmada',
+  notas               VARCHAR(300) NULL,
+
+  -- Datos de quien agenda (con o sin usuario)
+  nombre_paciente     VARCHAR(120) NOT NULL,
+  documento_paciente  VARCHAR(20)  NOT NULL,
+  telefono_paciente   VARCHAR(20)  NOT NULL,   -- con indicativo, ej. 573001234567
+  correo_paciente     VARCHAR(160) NULL,       -- opcional
+
+  -- Ley 1581 de 2012: autorización dada al agendar
+  autorizacion_datos      BOOLEAN NOT NULL DEFAULT FALSE,
+  fecha_autorizacion      DATETIME NULL,
+  version_politica_datos  VARCHAR(10) NULL,
+
+  -- Enlace "Gestionar mi cita": se guarda solo el hash SHA-256
+  -- del código; el código en claro solo viaja en el enlace.
+  codigo_gestion_hash CHAR(64) NULL,
+  reprogramaciones    TINYINT UNSIGNED NOT NULL DEFAULT 0,  -- las del paciente (máx. 1)
+  cancelada_por       ENUM('paciente','administrador') NULL,
+
+  franja_ocupada INT UNSIGNED
+    AS (IF(estado = 'cancelada', NULL, franja_id)) STORED,
 
   creado_en      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   actualizado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-  CONSTRAINT uq_cita_franja UNIQUE (franja_id),
+  CONSTRAINT uq_cita_franja_ocupada UNIQUE (franja_ocupada),
+  CONSTRAINT uq_cita_codigo UNIQUE (codigo_gestion_hash),
   CONSTRAINT fk_cita_paciente FOREIGN KEY (paciente_id)
-    REFERENCES usuarios(id)  ON DELETE CASCADE,
+    REFERENCES usuarios(id)  ON DELETE SET NULL,
   CONSTRAINT fk_cita_servicio FOREIGN KEY (servicio_id)
     REFERENCES servicios(id) ON DELETE RESTRICT,
   CONSTRAINT fk_cita_franja   FOREIGN KEY (franja_id)
     REFERENCES franjas_horarias(id) ON DELETE RESTRICT,
 
+  INDEX idx_citas_franja (franja_id),
   INDEX idx_citas_paciente (paciente_id, estado),
-  INDEX idx_citas_estado (estado)
+  INDEX idx_citas_estado (estado),
+  INDEX idx_citas_documento (documento_paciente),
+  INDEX idx_citas_telefono (telefono_paciente)
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------
 --  notificaciones
---  Bitácora de cada aviso enviado. Permite demostrar en la
---  sustentación que la notificación salió, reintentar los
---  fallos y evitar envíos duplicados.
+--  Bitácora de cada mensaje. Guarda el texto para que, si el
+--  envío automático no está disponible, la secretaria lo envíe
+--  desde su WhatsApp Business con un clic (estado pendiente).
 -- ------------------------------------------------------------
 CREATE TABLE notificaciones (
   id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   cita_id     INT UNSIGNED NOT NULL,
   canal       ENUM('correo','whatsapp') NOT NULL,
-  tipo        ENUM('confirmacion','recordatorio','cancelacion') NOT NULL,
+  tipo        ENUM('confirmacion','reprogramacion','recordatorio','cancelacion') NOT NULL,
   estado      ENUM('pendiente','enviada','fallida') NOT NULL DEFAULT 'pendiente',
-  destino     VARCHAR(160) NOT NULL,   -- correo o número usado
+  destino     VARCHAR(160) NOT NULL,   -- número usado
+  mensaje     TEXT NULL,               -- texto enviado o por enviar
   detalle     VARCHAR(500) NULL,       -- id del proveedor o error
   programada_para DATETIME NULL,       -- para recordatorios
   enviada_en  DATETIME NULL,
@@ -164,8 +227,42 @@ CREATE TABLE notificaciones (
 
   CONSTRAINT fk_notif_cita FOREIGN KEY (cita_id)
     REFERENCES citas(id) ON DELETE CASCADE,
-  CONSTRAINT uq_notif UNIQUE (cita_id, canal, tipo),
+  INDEX idx_notif_cita (cita_id, tipo),
   INDEX idx_notif_pendientes (estado, programada_para)
+) ENGINE=InnoDB;
+
+-- ------------------------------------------------------------
+--  historia_clinica
+--  Entradas por paciente (solo pacientes con usuario). No se
+--  borran ni se sobrescriben (Resolución 1995 de 1999): una
+--  corrección es una entrada nueva que apunta a la corregida.
+-- ------------------------------------------------------------
+CREATE TABLE historia_clinica (
+  id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  paciente_id      INT UNSIGNED NOT NULL,
+  fecha_atencion   DATE NOT NULL,
+  servicio_id      INT UNSIGNED NULL,
+  especialista_id  INT UNSIGNED NULL,
+  cita_id          INT UNSIGNED NULL,
+  procedimiento    VARCHAR(200) NOT NULL,
+  notas            TEXT NULL,
+  corrige_a        INT UNSIGNED NULL,
+  creado_por       INT UNSIGNED NOT NULL,
+  creado_en        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT fk_hc_paciente FOREIGN KEY (paciente_id)
+    REFERENCES usuarios(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_hc_servicio FOREIGN KEY (servicio_id)
+    REFERENCES servicios(id) ON DELETE SET NULL,
+  CONSTRAINT fk_hc_especialista FOREIGN KEY (especialista_id)
+    REFERENCES especialistas(id) ON DELETE SET NULL,
+  CONSTRAINT fk_hc_cita FOREIGN KEY (cita_id)
+    REFERENCES citas(id) ON DELETE SET NULL,
+  CONSTRAINT fk_hc_corrige FOREIGN KEY (corrige_a)
+    REFERENCES historia_clinica(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_hc_autor FOREIGN KEY (creado_por)
+    REFERENCES usuarios(id) ON DELETE RESTRICT,
+  INDEX idx_hc_paciente (paciente_id, fecha_atencion)
 ) ENGINE=InnoDB;
 
 -- ============================================================
@@ -173,8 +270,7 @@ CREATE TABLE notificaciones (
 -- ============================================================
 
 INSERT INTO sedes (nombre, direccion, ciudad, telefono) VALUES
-  ('Neiva',  'Carrera 7 No. 6-45, Centro', 'Neiva',  '3187153718'),
-  ('Rivera', 'Carrera 7 No. 3-61',         'Rivera', '3108120241');
+  ('Rivera', 'Carrera 7 No. 3-61', 'Rivera', '3108120241');
 
 INSERT INTO servicios (codigo, nombre, descripcion, duracion_minutos) VALUES
   ('general',         'Odontología general',   'Limpieza, resinas y control preventivo.',       40),
@@ -190,24 +286,28 @@ INSERT INTO servicios (codigo, nombre, descripcion, duracion_minutos) VALUES
 -- NOTA: el usuario administrador NO se inserta aquí, porque la
 -- contraseña debe quedar cifrada con bcrypt. Se crea ejecutando
 -- `npm run crear-admin` desde la carpeta backend.
+-- Los especialistas tampoco: los registra la secretaria.
 
 -- ============================================================
---  Vista de apoyo: agenda completa para el panel administrativo
+--  Vista de apoyo: agenda completa para el panel de la secretaria
 -- ============================================================
 CREATE OR REPLACE VIEW v_agenda AS
 SELECT
-  c.id                AS cita_id,
-  u.nombre_completo   AS paciente,
-  u.telefono,
-  u.correo,
-  s.nombre            AS servicio,
-  se.nombre           AS sede,
+  c.id                  AS cita_id,
+  c.nombre_paciente     AS paciente,
+  c.documento_paciente  AS documento,
+  c.telefono_paciente   AS telefono,
+  c.paciente_id,
+  s.nombre              AS especialidad,
+  e.nombre              AS especialista,
+  se.nombre             AS sede,
   f.fecha,
   f.hora_inicio,
   c.estado,
+  c.reprogramaciones,
   c.creado_en
 FROM citas c
-JOIN usuarios         u ON u.id = c.paciente_id
-JOIN servicios        s ON s.id = c.servicio_id
-JOIN franjas_horarias f ON f.id = c.franja_id
+JOIN servicios        s  ON s.id  = c.servicio_id
+JOIN franjas_horarias f  ON f.id  = c.franja_id
+JOIN especialistas    e  ON e.id  = f.especialista_id
 JOIN sedes            se ON se.id = f.sede_id;

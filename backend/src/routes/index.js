@@ -1,17 +1,26 @@
 /* Índice de rutas de la API. */
 const { Router } = require('express');
+const { requiereSesion, requiereRol } = require('../middleware/autenticacion');
+const citas = require('../controllers/citas.controller');
+
 const router = Router();
 
 router.get('/salud', (req, res) => {
   res.json({ estado: 'ok', hora: new Date().toISOString() });
 });
 
-router.use('/auth',      require('./auth.routes'));
-router.use('/servicios', require('./servicios.routes'));
-router.use('/pacientes', require('./pacientes.routes'));
+// Público
+router.use('/auth',           require('./auth.routes'));
+router.use('/especialidades', require('./especialidades.routes'));
+router.use('/servicios',      require('./especialidades.routes')); // nombre anterior, se conserva
+router.use('/especialistas',  require('./especialistas.routes'));
+router.use('/citas',          require('./citas.routes'));
 
-// Pendientes de implementar:
-// router.use('/citas',    require('./citas.routes'));
-// router.use('/franjas',  require('./franjas.routes'));
+// Paciente con usuario
+router.get('/mis-citas', requiereSesion, requiereRol('paciente'), citas.misCitas);
+
+// Secretaria
+router.use('/pacientes', require('./pacientes.routes'));
+router.use('/admin',     require('./admin.routes'));
 
 module.exports = router;
