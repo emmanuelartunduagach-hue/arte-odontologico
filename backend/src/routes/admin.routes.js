@@ -7,6 +7,7 @@ const especialidades = require('../controllers/especialidades.controller');
 const especialistas = require('../controllers/especialistas.controller');
 const citas = require('../controllers/citas.controller');
 const notificaciones = require('../controllers/notificaciones.controller');
+const historia = require('../controllers/historia.controller');
 
 const router = Router();
 
@@ -29,5 +30,7 @@ router.post('/citas/:id/reprogramar', citas.reprogramarAdmin);
 
 router.get('/notificaciones', notificaciones.listar);
 router.patch('/notificaciones/:id', notificaciones.marcarEnviada);
+
+router.post('/historia/:id/correccion', historia.corregir);
 
 module.exports = router;
