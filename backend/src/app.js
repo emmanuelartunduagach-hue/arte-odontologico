@@ -20,9 +20,12 @@ app.use((req, res) => {
 // al cliente mientras deja la traza completa en consola.
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(err.status || 500).json({
-    error: err.publico || 'Error interno del servidor',
-  });
+  const estado = err.status || 500;
+  const cuerpo = {
+    error: err.publico || (estado < 500 ? 'Solicitud inválida' : 'Error interno del servidor'),
+  };
+  if (err.campos) cuerpo.campos = err.campos;
+  res.status(estado).json(cuerpo);
 });
 
 module.exports = app;
