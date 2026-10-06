@@ -83,3 +83,46 @@ dirección presentarse.
 Queda pendiente decidir con el consultorio si un mismo servicio se presta en
 ambas sedes o si cada una tiene su propia oferta. De ser lo segundo, hará falta
 una tabla intermedia `sedes_servicios`.
+
+## 8. Carrusel automático y tipografía de titulares
+
+La decisión 5 sustituyó el carrusel automático del boceto por una galería
+estática. A pedido del consultorio, la galería vuelve a moverse sola, pero de
+otra forma: una tira que se desliza de manera continua y lenta (unos 35 px por
+segundo), sin saltos ni botones. Se implementa con una animación CSS, sin
+librerías. Salvaguardas: se detiene al pasar el cursor, las copias que genera
+el bucle se ocultan a los lectores de pantalla y, si el sistema tiene
+activado "reducir movimiento", no se anima y queda como una tira que se
+desplaza a mano. Las fotos mantienen su proporción real para no recortar los
+afiches con texto.
+
+Queda una limitación conocida: sin botón de pausa, quien no use el cursor
+(teclado, pantalla táctil) no puede detener el movimiento. Si el consultorio
+lo necesita, se puede añadir un botón de pausa.
+
+Los titulares usan Playfair Display (serif de alto contraste, estilo Didone),
+tomada como referencia de una tipografía de moda y estética que propuso el
+equipo. Es una alternativa libre en Google Fonts. La interfaz y los datos
+siguen en Inter. Los títulos de sección suben de tamaño para que la persona
+sepa de inmediato en qué parte de la página está.
+
+Las fotografías se procesaron antes de publicarse: se recortaron los iconos de
+Instagram que traían las capturas y se ocultaron los datos personales del
+paciente visibles en la radiografía (Ley 1581 de 2012).
+
+La sección "Cómo funciona" se eliminó de la página pública (6 de octubre):
+describía un registro propio del paciente que ya no existe tras el Alcance v2
+(el paciente agenda sin cuenta). Si más adelante se quiere explicar el flujo
+nuevo, se agrega de nuevo con el texto actualizado.
+
+Agendar desde la página pública (6 de octubre): se quitó "Crear cuenta"; solo
+la secretaria crea usuarios, así que el encabezado conserva únicamente
+"Ingresar" (sirve para la secretaria y para pacientes con usuario). "Agendar
+mi cita" baja a la sección Especialidades y cada especialidad abre un modal
+con los pasos: especialista (se omite si hay uno solo), calendario con solo
+los días con agenda, hora y datos (nombre, identificación, celular, correo
+opcional, autorización de datos y campo trampa contra bots). Termina con el
+enlace para gestionar la cita. Se hizo en un modal para no salir de la página;
+si el equipo prefiere una página aparte, el cambio es solo de ubicación. Solo
+queda la sede Rivera. Para ver el flujo sin backend existe js/api-demo.js, que
+solo se activa en localhost con ?demo=1 y no guarda datos.

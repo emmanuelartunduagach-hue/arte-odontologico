@@ -100,7 +100,7 @@ documentado en `frontend/css/tokens.css`:
   saturado del prototipo. Colores de estado (confirmada, pendiente, cancelada)
   deliberadamente apagados, para que en la tabla de citas el color informe sin
   saturar la lectura.
-- Dos familias tipográficas con roles diferenciados: Fraunces para titulares e
+- Dos familias tipográficas con roles diferenciados: Playfair Display para titulares e
   Inter para interfaz y datos.
 - Escala de espaciado y jerarquía de elevación de dos niveles.
 
