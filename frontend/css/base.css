@@ -46,15 +46,14 @@ a:hover { text-decoration: underline; }
 
 h1, h2, h3 {
   font-family: var(--fuente-titular);
-  font-weight: var(--peso-semi);
+  font-weight: var(--peso-titular);
   line-height: var(--alto-apretado);
-  letter-spacing: -0.015em;
+  letter-spacing: -0.005em;
   color: var(--ink-900);
-  font-variation-settings: 'SOFT' 20, 'WONK' 0;
 }
 
 h1 { font-size: var(--txt-2xl); }
-h2 { font-size: var(--txt-xl); }
+h2 { font-size: clamp(var(--txt-xl), 4.6vw, var(--txt-titulo)); }
 h3 { font-size: var(--txt-lg); }
 
 h4 {
