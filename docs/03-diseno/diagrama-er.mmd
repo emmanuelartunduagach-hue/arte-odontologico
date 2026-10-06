@@ -1,0 +1,92 @@
+erDiagram
+    usuarios ||--o{ citas : "tiene (si tiene cuenta)"
+    usuarios ||--o{ historia_clinica : "paciente de"
+    servicios ||--o{ citas : "especialidad de"
+    servicios ||--o{ especialista_especialidad : ""
+    especialistas ||--o{ especialista_especialidad : "atiende"
+    especialistas ||--o{ franjas_horarias : "disponible en"
+    sedes ||--o{ franjas_horarias : "ubicada en"
+    franjas_horarias ||--o{ citas : "ocupada por (máx. 1 viva)"
+    citas ||--o{ notificaciones : "genera"
+    citas |o--o{ historia_clinica : "origina"
+    historia_clinica |o--o{ historia_clinica : "corrige a"
+
+    usuarios {
+        int id PK
+        varchar nombre_completo
+        varchar documento UK
+        varchar correo UK
+        varchar telefono
+        varchar contrasena_hash
+        enum rol "paciente | administrador"
+        bool activo
+        bool debe_cambiar_contrasena
+        bool autorizacion_datos
+        datetime fecha_autorizacion
+        int creado_por FK
+    }
+    servicios {
+        int id PK
+        varchar codigo UK
+        varchar nombre
+        varchar descripcion
+        bool activo
+    }
+    especialistas {
+        int id PK
+        varchar nombre
+        bool activo
+    }
+    especialista_especialidad {
+        int especialista_id PK,FK
+        int servicio_id PK,FK
+    }
+    sedes {
+        int id PK
+        varchar nombre UK
+        varchar direccion
+        bool activa
+    }
+    franjas_horarias {
+        int id PK
+        int especialista_id FK
+        int sede_id FK
+        date fecha
+        time hora_inicio
+        bool activa
+    }
+    citas {
+        int id PK
+        int paciente_id FK "opcional"
+        int servicio_id FK
+        int franja_id FK
+        enum estado "confirmada | cancelada | atendida | no_asistio"
+        varchar nombre_paciente
+        varchar documento_paciente
+        varchar telefono_paciente
+        varchar correo_paciente "opcional"
+        bool autorizacion_datos
+        char codigo_gestion_hash UK
+        tinyint reprogramaciones
+        int franja_ocupada UK "generada"
+    }
+    notificaciones {
+        int id PK
+        int cita_id FK
+        enum tipo
+        enum estado "pendiente | enviada | fallida"
+        varchar destino
+        text mensaje
+    }
+    historia_clinica {
+        int id PK
+        int paciente_id FK
+        date fecha_atencion
+        int servicio_id FK
+        int especialista_id FK
+        int cita_id FK
+        varchar procedimiento
+        text notas
+        int corrige_a FK
+        int creado_por FK
+    }

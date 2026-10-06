@@ -1,0 +1,129 @@
+ARTE ODONTOLOGICO - PRUEBAS: ALTA DE PACIENTES POR EL ADMINISTRADOR
+====================================================================
+Version del 6 de octubre de 2026 (ya fusionado en main).
+
+Que cambio
+----------
+- Se ELIMINO POST /api/auth/registro (el registro publico ya no existe).
+- NUEVO  POST /api/pacientes          (solo administrador) crea un paciente y
+                                       devuelve una clave temporal UNA sola vez.
+- NUEVO  GET  /api/pacientes?q=texto  (solo administrador) lista y busca.
+- NUEVO  POST /api/auth/cambiar-contrasena (cualquier usuario con sesion).
+- CAMBIA POST /api/auth/ingreso: ahora devuelve usuario.debeCambiarContrasena.
+- Base de datos: 3 columnas nuevas en `usuarios` (ver paso 1).
+
+Tambien cubierto por la prueba de integracion automatizada contra MySQL 8 (ver pruebas.md).
+
+
+PASO 1 - Actualizar la base de datos (UNA sola vez)
+---------------------------------------------------
+En MySQL Workbench: File > Open SQL Script... y abre
+    backend\database\migraciones\001_alta_pacientes_por_administrador.sql
+Ejecutalo (rayo). Debe terminar sin error.
+ - Si dice "Duplicate column name", ya estaba aplicada: sigue al paso 2.
+ - Si creas la base desde cero con schema.sql, NO necesitas la migracion.
+
+Opcional: si quedaron pacientes de prueba del registro anterior y quieres
+repetir los mismos datos, borralos (solo en desarrollo):
+    DELETE FROM usuarios WHERE rol = 'paciente';
+
+
+PASO 2 - Arrancar
+-----------------
+Carpeta backend:   npm.cmd run dev
+Debe decir "Conexion a MySQL establecida" y "API escuchando...".
+Debe existir un administrador (si no: npm.cmd run crear-admin).
+
+
+PASO 3 - Pegar esta funcion en PowerShell (una vez por terminal)
+----------------------------------------------------------------
+    function Llamar($metodo, $ruta, $cuerpo, $token) {
+      $cab = @{}
+      if ($token) { $cab['Authorization'] = "Bearer $token" }
+      try {
+        $p = @{ Method = $metodo; Uri = "http://localhost:3000/api$ruta"; Headers = $cab }
+        if ($cuerpo) {
+          $p.ContentType = 'application/json; charset=utf-8'
+          $p.Body = [System.Text.Encoding]::UTF8.GetBytes(($cuerpo | ConvertTo-Json))
+        }
+        Invoke-RestMethod @p | ConvertTo-Json -Depth 5
+      } catch {
+        Write-Host "HTTP" ([int]$_.Exception.Response.StatusCode)
+        $_.ErrorDetails.Message
+      }
+    }
+
+
+PASO 4 - Pruebas
+----------------
+1) Ingresar como administrador y guardar el token (cambia correo y clave por los tuyos):
+
+    $r = Invoke-RestMethod -Method Post -Uri http://localhost:3000/api/auth/ingreso -ContentType 'application/json' -Body (@{ correo='TU_CORREO_ADMIN'; contrasena='TU_CLAVE' } | ConvertTo-Json)
+    $tokenAdmin = $r.token
+    $r.usuario        # rol administrador, debeCambiarContrasena False
+
+2) El registro publico ya no existe -> HTTP 404:
+
+    Llamar 'POST' '/auth/registro' @{ nombreCompleto='X'; documento='123456'; correo='x@x.co'; telefono='3001234567'; contrasena='Clave1234' }
+
+3) Sin sesion no se puede crear pacientes -> HTTP 401:
+
+    Llamar 'POST' '/pacientes' @{ nombreCompleto='Ana Perez' }
+
+4) Crear un paciente como administrador -> HTTP 201, con "contrasenaTemporal"
+   (10 caracteres). ANOTALA: no se vuelve a mostrar.
+
+    Llamar 'POST' '/pacientes' @{ nombreCompleto='Ana Perez'; documento='1075123456'; correo='ana@correo.com'; telefono='318 715 3718'; autorizacionDatos=$true } $null $tokenAdmin
+
+   Nota: el telefono se guarda con indicativo de Colombia (573187153718).
+
+5) Repetir el mismo comando -> HTTP 409 con campos.correo.
+   Cambiar solo el correo y dejar el documento -> HTTP 409 con campos.documento.
+
+6) Sin autorizacion (autorizacionDatos=$false) -> HTTP 400 con campos.autorizacionDatos.
+   Datos malos (documento='abc', telefono='12') -> HTTP 400 con un mensaje por campo.
+
+7) Intento de colarse: agregar  rol='administrador'; contrasena='MiClave123'  al comando
+   del paso 4 con otro correo y otro documento. Debe crearse igual como paciente y la
+   clave que vale es la temporal, NO la enviada. En MySQL:
+       SELECT id, correo, rol, debe_cambiar_contrasena, creado_por, autorizacion_registrada_por
+         FROM usuarios;
+   Esperado en el paciente nuevo: rol paciente, debe_cambiar_contrasena 1,
+   creado_por y autorizacion_registrada_por = id del administrador.
+
+8) El paciente ingresa con la clave temporal (reemplaza la clave anotada):
+
+    $p = Invoke-RestMethod -Method Post -Uri http://localhost:3000/api/auth/ingreso -ContentType 'application/json' -Body (@{ correo='ana@correo.com'; contrasena='CLAVE_TEMPORAL' } | ConvertTo-Json)
+    $tokenPaciente = $p.token
+    $p.usuario        # rol paciente, debeCambiarContrasena True
+
+9) El paciente NO puede usar rutas del administrador -> HTTP 403 las dos:
+
+    Llamar 'GET' '/pacientes' $null $tokenPaciente
+    Llamar 'POST' '/pacientes' @{ nombreCompleto='Otro Paciente' } $null $tokenPaciente
+
+10) Listar y buscar como administrador (devuelve un arreglo, sin contrasenas):
+
+    Llamar 'GET' '/pacientes' $null $tokenAdmin
+    Llamar 'GET' '/pacientes?q=1075123' $null $tokenAdmin
+
+11) Cambio de contrasena del paciente:
+    a) Clave actual incorrecta -> HTTP 400 con campos.contrasenaActual (400 y no 401, a proposito):
+
+        Llamar 'POST' '/auth/cambiar-contrasena' @{ contrasenaActual='Incorrecta1'; contrasenaNueva='Nueva1234' } $tokenPaciente
+
+    b) Clave nueva debil (abc) -> HTTP 400 con campos.contrasenaNueva.
+    c) Correcto -> HTTP 200:
+
+        Llamar 'POST' '/auth/cambiar-contrasena' @{ contrasenaActual='CLAVE_TEMPORAL'; contrasenaNueva='Nueva1234' } $tokenPaciente
+
+    d) Ingresar con la clave temporal -> HTTP 401 "Correo o contrasena incorrectos."
+       Ingresar con Nueva1234 -> 200 y debeCambiarContrasena False.
+
+
+LIMITACION CONOCIDA
+-------------------
+"Debe cambiar la contrasena" lo hace cumplir el frontend (lleva al usuario a la
+pantalla de cambio). El servidor no bloquea el resto de rutas mientras tanto. No
+es un hueco de seguridad (la clave temporal solo la conocen el administrador y el
+paciente), pero si quieren que el servidor tambien lo exija, se agrega luego.
