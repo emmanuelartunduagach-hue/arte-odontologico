@@ -8,6 +8,7 @@ router.get('/salud', (req, res) => {
 
 router.use('/auth',      require('./auth.routes'));
 router.use('/servicios', require('./servicios.routes'));
+router.use('/pacientes', require('./pacientes.routes'));
 
 // Pendientes de implementar:
 // router.use('/citas',    require('./citas.routes'));
