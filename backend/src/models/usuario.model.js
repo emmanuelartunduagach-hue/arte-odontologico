@@ -99,7 +99,22 @@ async function perfil(id) {
   return filas[0] || null;
 }
 
+/* Ficha de un paciente para el panel de la secretaria. */
+async function fichaPaciente(id) {
+  const [filas] = await pool.execute(
+    `SELECT id, nombre_completo AS nombreCompleto, documento, correo, telefono, activo,
+            debe_cambiar_contrasena AS debeCambiarContrasena,
+            DATE_FORMAT(fecha_autorizacion, '%Y-%m-%d %H:%i:%s') AS fechaAutorizacion,
+            DATE_FORMAT(creado_en, '%Y-%m-%d %H:%i:%s') AS creadoEn
+       FROM usuarios WHERE id = ? AND rol = 'paciente'`,
+    [id]
+  );
+  if (!filas[0]) return null;
+  return { ...filas[0], activo: Boolean(filas[0].activo), debeCambiarContrasena: Boolean(filas[0].debeCambiarContrasena) };
+}
+
 module.exports = {
+  fichaPaciente,
   buscarPacientePorDocumento,
   perfil,
   crearPaciente,
