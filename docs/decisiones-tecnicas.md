@@ -126,3 +126,95 @@ enlace para gestionar la cita. Se hizo en un modal para no salir de la página;
 si el equipo prefiere una página aparte, el cambio es solo de ubicación. Solo
 queda la sede Rivera. Para ver el flujo sin backend existe js/api-demo.js, que
 solo se activa en localhost con ?demo=1 y no guarda datos.
+---
+
+## Actualización del 6 de octubre de 2026 (alcance v2)
+
+Tras la reunión con el docente asesor del 5 de octubre cambió el alcance (ver
+`docs/02-requerimientos/alcance-v2.md`). Las decisiones 3, 6 y 7 quedan
+reemplazadas por las siguientes; se conservan arriba como registro histórico.
+
+## 9. Agendar sin cuenta; las cuentas las crea la secretaria
+
+Antes el paciente se registraba solo. Ahora cualquier persona agenda con nombre,
+documento y teléfono (correo opcional), y la secretaria crea el usuario cuando
+el paciente ya asistió. Así no se llena la base de cuentas de personas que nunca
+van al consultorio.
+
+Los datos de quien agenda se guardan en la propia cita (`nombre_paciente`,
+`documento_paciente`, `telefono_paciente`, `correo_paciente`) y no en
+`usuarios`. Al crear la cuenta se vinculan las citas anteriores con el mismo
+documento **y** teléfono. Una cita solo queda a nombre de un usuario si agenda
+con su sesión iniciada: escribir el documento de otra persona no basta.
+
+## 10. Una sola sede (reemplaza la decisión 7)
+
+El consultorio atiende solo en Rivera. Se conserva la tabla `sedes` con una
+fila activa; Neiva queda desactivada en las bases migradas. Si se abre otra
+sede no hay que rehacer el modelo.
+
+## 11. Disponibilidad por especialista, publicada a mano
+
+Se agregaron `especialistas` y `especialista_especialidad` (un especialista
+puede atender varias especialidades). Las franjas pasan a ser de un
+especialista, únicas por `(especialista_id, fecha, hora_inicio)`. La secretaria
+las publica a mano porque dependen de la disponibilidad real de cada
+especialista; el sistema no genera horarios. No se maneja duración de citas.
+
+Quitar una hora la desactiva (`activa = FALSE`) en vez de borrarla, porque
+citas antiguas pueden referenciarla. No se puede quitar una hora con cita viva.
+
+## 12. Doble reserva con columna generada (reemplaza la decisión 6)
+
+Con citas canceladas que no se borran, `UNIQUE (franja_id)` impediría volver a
+ofrecer una hora cancelada. Se reemplazó por la columna generada
+`franja_ocupada = IF(estado = 'cancelada', NULL, franja_id)` con índice único:
+dos citas vivas no pueden ocupar la misma hora (el motor rechaza la segunda,
+aun con peticiones simultáneas) y una cancelada libera la hora sola. La prueba
+de integración envía dos reservas simultáneas por la misma hora y verifica que
+solo una gane.
+
+## 13. Solo WhatsApp, con tres modos de envío (reemplaza la decisión 3)
+
+El correo se eliminó. El envío automático por la API de Meta depende de
+trámites de la clínica, así que el proveedor tiene tres modos, elegidos en
+`WHATSAPP_MODO`:
+
+- `manual`: la secretaria envía cada mensaje con un clic desde su WhatsApp
+  Business. Es el respaldo que garantiza la entrega.
+- `consola`: para desarrollo y demostraciones.
+- `api`: envío automático con plantillas aprobadas.
+
+Si el envío falla, la cita no se deshace; el mensaje queda como `fallida` para
+enviarlo a mano. Los mensajes no llevan información clínica.
+
+## 14. Enlace "Gestionar mi cita" con código secreto
+
+Sin cuenta, el paciente necesita una forma segura de reprogramar o cancelar. Al
+agendar se genera un código aleatorio de 32 bytes que viaja en el enlace del
+WhatsApp. En `citas` solo se guarda su hash SHA-256. Cuando la secretaria
+reprograma, se genera un código nuevo y el anterior deja de servir. Al marcar
+un mensaje como enviado, el código se borra del texto guardado.
+
+Reglas: el paciente reprograma una sola vez y solo hasta 24 horas antes. El
+límite de una vez se verifica dentro de la misma sentencia `UPDATE`, para que
+dos clics seguidos no cuenten doble.
+
+## 15. Historia clínica inalterable
+
+La historia clínica no se edita ni se borra (Resolución 1995 de 1999). Solo
+existen inserciones. Una corrección es una entrada nueva con `corrige_a`
+apuntando a la original, que se conserva intacta con su autor y fecha.
+
+## 16. Hora de Colombia calculada en el servidor de aplicación
+
+Las franjas guardan fecha y hora locales del consultorio. La hora actual de
+Bogotá se calcula en Node con `Intl` y se pasa a las consultas, de modo que las
+reglas ("hora futura", "24 horas antes") no dependen de la zona horaria del
+servidor donde se publique.
+
+## 17. Migraciones verificadas
+
+Cada cambio de esquema se escribe dos veces: en `schema.sql` (instalación nueva)
+y en una migración numerada (bases existentes). Antes de entregar se comprueba
+que ambos caminos producen exactamente el mismo esquema.

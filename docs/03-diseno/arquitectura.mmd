@@ -1,0 +1,6 @@
+flowchart LR
+    C["Cliente web<br/>HTML + CSS + JavaScript<br/>(frontend/)"] -- "HTTPS + JSON<br/>token JWT" --> A["API REST<br/>Node.js + Express<br/>(backend/)"]
+    A -- "SQL con parámetros" --> D[("MySQL 8<br/>9 tablas + 1 vista")]
+    A -- "mensajes" --> W["WhatsApp<br/>manual · consola · API de Meta"]
+    S["Secretaria"] --> C
+    P["Paciente / visitante"] --> C
