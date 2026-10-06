@@ -27,18 +27,29 @@ CREATE TABLE usuarios (
   contrasena_hash     VARCHAR(255)  NOT NULL,  -- bcrypt, nunca texto plano
   rol                 ENUM('paciente','administrador') NOT NULL DEFAULT 'paciente',
   activo              BOOLEAN       NOT NULL DEFAULT TRUE,
+  -- TRUE mientras el usuario use la contraseña temporal que le dio el
+  -- administrador; el frontend lo obliga a cambiarla al ingresar.
+  debe_cambiar_contrasena BOOLEAN   NOT NULL DEFAULT FALSE,
 
   -- Ley 1581 de 2012: se debe poder demostrar cuándo y bajo qué
   -- versión de la política el titular autorizó el tratamiento.
   autorizacion_datos      BOOLEAN   NOT NULL DEFAULT FALSE,
   fecha_autorizacion      DATETIME  NULL,
   version_politica_datos  VARCHAR(10) NULL,
+  autorizacion_registrada_por INT UNSIGNED NULL,  -- administrador que la recogió
+
+  -- Los pacientes no se registran solos: los crea un administrador.
+  creado_por          INT UNSIGNED  NULL,
 
   creado_en           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   actualizado_en      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
   CONSTRAINT uq_usuarios_correo    UNIQUE (correo),
   CONSTRAINT uq_usuarios_documento UNIQUE (documento),
+  CONSTRAINT fk_usuario_creador    FOREIGN KEY (creado_por)
+    REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT fk_usuario_autorizador FOREIGN KEY (autorizacion_registrada_por)
+    REFERENCES usuarios(id) ON DELETE SET NULL,
   INDEX idx_usuarios_rol (rol)
 ) ENGINE=InnoDB;
 
