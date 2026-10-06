@@ -6,8 +6,12 @@ const rutas = require('./routes');
 
 const app = express();
 
+// Detrás de un proxy (al publicar) para que req.ip sea la IP real
+// del visitante; lo usa el límite de peticiones.
+if (process.env.PROXY_CONFIABLE) app.set('trust proxy', Number(process.env.PROXY_CONFIABLE) || 1);
+
 app.use(cors({ origin: process.env.ORIGEN_PERMITIDO || '*' }));
-app.use(express.json());
+app.use(express.json({ limit: '100kb' }));
 
 app.use('/api', rutas);
 

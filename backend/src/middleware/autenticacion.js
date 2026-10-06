@@ -31,4 +31,18 @@ function requiereRol(...rolesPermitidos) {
   };
 }
 
-module.exports = { requiereSesion, requiereRol };
+/* Lee el token si viene y es válido, sin exigirlo. Lo usa la ruta
+   pública de agendar: con sesión de paciente, la cita queda a su nombre. */
+function sesionOpcional(req, res, next) {
+  const cabecera = req.headers.authorization || '';
+  if (cabecera.startsWith('Bearer ')) {
+    try {
+      req.usuario = jwt.verify(cabecera.slice(7), process.env.JWT_SECRET);
+    } catch {
+      // Token vencido o inválido: se atiende como visitante.
+    }
+  }
+  next();
+}
+
+module.exports = { requiereSesion, requiereRol, sesionOpcional };
