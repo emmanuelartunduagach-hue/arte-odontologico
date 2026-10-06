@@ -1,8 +1,8 @@
 /* Validación de los datos de una persona usuaria.
-   Se usa tanto en el registro de pacientes como en el script que
-   crea el primer administrador, para que ambos apliquen las mismas
-   reglas. Devuelve los valores ya normalizados y un objeto con un
-   mensaje por cada campo inválido (vacío si todo está bien). */
+   Se usa al crear pacientes (lo hace el administrador), en el script que
+   crea el primer administrador y al cambiar la contraseña, para que todos
+   apliquen las mismas reglas. Devuelve los valores ya normalizados y un
+   objeto con un mensaje por cada campo inválido (vacío si todo está bien). */
 
 const REGEX_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -10,12 +10,25 @@ function limpiar(valor) {
   return typeof valor === 'string' ? valor.trim() : '';
 }
 
-function validarUsuario(datos = {}) {
+/* Devuelve el mensaje de error de una contraseña, o '' si es válida. */
+function validarContrasena(contrasena) {
+  if (typeof contrasena !== 'string' || contrasena.length < 8 || contrasena.length > 72) {
+    return 'La contraseña debe tener entre 8 y 72 caracteres.';
+  }
+  if (!/[A-Za-z]/.test(contrasena) || !/\d/.test(contrasena)) {
+    return 'La contraseña debe incluir al menos una letra y un número.';
+  }
+  return '';
+}
+
+/* `exigirContrasena: false` se usa cuando el administrador crea un paciente:
+   la contraseña la genera el sistema, no viene en el cuerpo. */
+function validarUsuario(datos = {}, { exigirContrasena = true } = {}) {
   const errores = {};
 
   const nombreCompleto = limpiar(datos.nombreCompleto).replace(/\s+/g, ' ');
   if (nombreCompleto.length < 3 || nombreCompleto.length > 120) {
-    errores.nombreCompleto = 'Escribe tu nombre completo (entre 3 y 120 caracteres).';
+    errores.nombreCompleto = 'Escribe el nombre completo (entre 3 y 120 caracteres).';
   }
 
   const documento = limpiar(datos.documento).replace(/[.\s]/g, '');
@@ -34,11 +47,11 @@ function validarUsuario(datos = {}) {
     errores.telefono = 'Escribe un teléfono válido (entre 7 y 15 dígitos).';
   }
 
-  const contrasena = typeof datos.contrasena === 'string' ? datos.contrasena : '';
-  if (contrasena.length < 8 || contrasena.length > 72) {
-    errores.contrasena = 'La contraseña debe tener entre 8 y 72 caracteres.';
-  } else if (!/[A-Za-z]/.test(contrasena) || !/\d/.test(contrasena)) {
-    errores.contrasena = 'La contraseña debe incluir al menos una letra y un número.';
+  let contrasena = '';
+  if (exigirContrasena) {
+    contrasena = typeof datos.contrasena === 'string' ? datos.contrasena : '';
+    const mensaje = validarContrasena(contrasena);
+    if (mensaje) errores.contrasena = mensaje;
   }
 
   return {
@@ -47,4 +60,4 @@ function validarUsuario(datos = {}) {
   };
 }
 
-module.exports = { validarUsuario };
+module.exports = { validarUsuario, validarContrasena };
