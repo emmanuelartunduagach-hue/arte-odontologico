@@ -105,4 +105,17 @@ async function cambiarContrasena(req, res, next) {
   }
 }
 
-module.exports = { ingresar, cambiarContrasena };
+/* GET /api/auth/perfil   (requiere sesión)
+   Datos propios: para "Mi perfil" y para precargar el formulario de
+   agendar cuando el paciente tiene usuario. */
+async function perfil(req, res, next) {
+  try {
+    const datos = await usuarioModelo.perfil(req.usuario.id);
+    if (!datos) throw new ErrorHttp(401, 'Sesión inválida o expirada');
+    res.json(datos);
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { ingresar, cambiarContrasena, perfil };

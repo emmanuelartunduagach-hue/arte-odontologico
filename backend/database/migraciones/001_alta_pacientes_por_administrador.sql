@@ -6,6 +6,9 @@
 --  Ejecutar UNA sola vez (MySQL no repite ADD COLUMN sin error).
 -- ============================================================
 
+-- Tildes y eñes correctas aunque el cliente use otra codificación.
+SET NAMES utf8mb4;
+
 USE arte_odontologico;
 
 ALTER TABLE usuarios

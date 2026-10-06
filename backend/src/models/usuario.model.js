@@ -80,7 +80,28 @@ async function listarPacientes(busqueda = '') {
   return filas;
 }
 
+/* Paciente activo con ese documento (para asociarle las citas que agende). */
+async function buscarPacientePorDocumento(documento) {
+  const [filas] = await pool.execute(
+    `SELECT id FROM usuarios WHERE documento = ? AND rol = 'paciente' AND activo = TRUE LIMIT 1`,
+    [documento]
+  );
+  return filas[0] || null;
+}
+
+/* Datos propios para "Mi perfil" y para precargar el formulario de agendar. */
+async function perfil(id) {
+  const [filas] = await pool.execute(
+    `SELECT id, nombre_completo AS nombreCompleto, documento, correo, telefono, rol
+       FROM usuarios WHERE id = ? AND activo = TRUE`,
+    [id]
+  );
+  return filas[0] || null;
+}
+
 module.exports = {
+  buscarPacientePorDocumento,
+  perfil,
   crearPaciente,
   crearAdministrador,
   buscarPorCorreo,
