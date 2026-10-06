@@ -31,6 +31,16 @@
      que la interfaz converse con las imágenes.               */
   --lila-400: #b39ddb;
 
+  /* Lavanda clara, derivada del tono de la foto de portada
+     (#AA82F8) aclarado ~30 % hacia el blanco. Fondo de las
+     secciones destacadas y de las tarjetas de especialidades,
+     para que toda la página lea como una sola familia.
+     Contraste del texto sobre este fondo: --ink-900 ≈ 9:1 y
+     --violeta-600 ≈ 6:1 (AA). --ink-600 (≈ 4:1) y el blanco
+     (≈ 2:1) NO alcanzan AA para texto normal: no usarlos.   */
+  --lavanda-500: #c4a8fa;
+
+
   /* Estados de una cita. Deliberadamente apagados: en una
      tabla clínica el color informa, no decora.               */
   --menta-600: #2f8f76;  /* Confirmada  */
@@ -49,12 +59,14 @@
 
   /* ---------- Tipografía ----------
      Dos familias con roles claros:
-     Fraunces (serif con eje óptico) para titulares — aporta
-     el matiz de oficio que sugiere el nombre "Arte".
+     Playfair Display (serif de alto contraste, estilo Didone)
+     para titulares — trazos gruesos y finísimos que dan un
+     aire editorial y elegante, en la línea de las tipografías
+     de moda y estética. Se usa solo en titulares.
      Inter para interfaz y cuerpo — máxima legibilidad en
      tablas, formularios y datos.                             */
 
-  --fuente-titular: 'Fraunces', 'Georgia', serif;
+  --fuente-titular: 'Playfair Display', 'Georgia', serif;
   --fuente-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   /* Escala modular 1.25 sobre 16px */
@@ -63,13 +75,15 @@
   --txt-base: 1rem;      /* 16 */
   --txt-md:   1.125rem;  /* 18 */
   --txt-lg:   1.5rem;    /* 24 */
-  --txt-xl:   2rem;      /* 32 */
+  --txt-xl:   2.5rem;    /* 40 */
   --txt-2xl:  2.75rem;   /* 44 */
   --txt-3xl:  3.5rem;    /* 56 */
+  --txt-titulo: 3.25rem; /* 52: tope de los títulos de sección */
 
   --peso-normal: 400;
   --peso-medio: 500;
   --peso-semi: 600;
+  --peso-titular: 500;   /* Titulares grandes: trazo ligero */
   --peso-fuerte: 700;
 
   --alto-apretado: 1.15;

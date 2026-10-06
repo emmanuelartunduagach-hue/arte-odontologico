@@ -1,19 +1,21 @@
 # Imágenes
 
-Los archivos `.svg` de esta carpeta son **marcadores de posición** generados
-para poder maquetar. Antes de la entrega final deben reemplazarse por
-fotografías reales del consultorio Arte Odontológico.
+Fotografías propias del consultorio, entregadas por la clínica y procesadas
+(recortadas y comprimidas a menos de 150 KB cada una).
 
-| Archivo         | Uso              | Tamaño recomendado |
-|-----------------|------------------|--------------------|
-| `portada.jpg`   | Sección portada  | 800 × 1000 px      |
-| `galeria-1.jpg` | Galería (ancha)  | 800 × 400 px       |
-| `galeria-2.jpg` | Galería          | 400 × 400 px       |
-| `galeria-3.jpg` | Galería          | 400 × 400 px       |
+| Archivo                  | Uso                                              |
+|--------------------------|--------------------------------------------------|
+| `portada.jpg`            | Portada (recorte vertical 4:5, en arco)          |
+| `carrusel-01.jpg` … `-10`| Carrusel "El consultorio", en el orden de la página |
+| `logo.png`, `favicon.png`| Marca                                            |
 
-Al reemplazarlas, actualizar la extensión en `index.html` (`.svg` → `.jpg`)
-y comprimir cada imagen a menos de 200 KB.
+Los `galeria-*.jpg` ya no se usan y pueden eliminarse.
 
-**Importante:** el boceto de Figma enlazaba a imágenes alojadas en Unsplash.
-Se retiraron porque dependen de un servidor externo y de una licencia que el
-consultorio no tiene. Las fotos deben ser propias o con licencia verificable.
+**Antes de publicar una foto nueva:**
+- Revisar que no muestre datos personales (nombres, documentos, radiografías
+  con rótulo) ni iconos de otras aplicaciones.
+- Las fotos de pacientes requieren su autorización para publicarlas.
+- Comprimir a menos de 200 KB y declarar `width` y `height` en el `<img>`.
+
+El boceto de Figma enlazaba a imágenes de Unsplash; se retiraron por depender
+de un servidor externo y de una licencia que el consultorio no tiene.
