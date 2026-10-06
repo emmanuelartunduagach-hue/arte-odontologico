@@ -1,49 +1,65 @@
-/* Servicio de notificaciones.
+/* Servicio de notificaciones por WhatsApp.
 
-   Diseñado como capa de abstracción sobre uno o varios
-   proveedores (patrón Strategy). El resto de la aplicación
-   llama siempre a `enviar()` y nunca sabe si detrás hay correo,
-   WhatsApp o ambos.
+   Los controladores solo llaman a `notificarCita()`. Aquí se arma el
+   texto, se guarda en la tabla `notificaciones` y se entrega al
+   proveedor según WHATSAPP_MODO (manual, consola o api). Cambiar de
+   modo es cambiar el .env, sin tocar los controladores.
 
-   Motivo: la propuesta aprobada exige notificaciones por correo,
-   pero se está tramitando el cambio a WhatsApp. Con esta capa,
-   cambiar de canal es modificar NOTIFICACIONES_CANAL en el .env,
-   sin tocar los controladores. */
+   Nunca lanza: un fallo al notificar no debe deshacer ni bloquear
+   el agendamiento. El fallo queda registrado como 'fallida' y el
+   mensaje sigue disponible para enviarlo a mano desde el panel. */
 
-const ProveedorCorreo = require('./proveedores/ProveedorCorreo');
+const citaModelo = require('../../models/cita.model');
+const notificacionModelo = require('../../models/notificacion.model');
+const { generarCodigoGestion } = require('../../utils/codigos');
+const mensajes = require('./mensajes');
 const ProveedorWhatsApp = require('./proveedores/ProveedorWhatsApp');
 
-const PROVEEDORES = {
-  correo: ProveedorCorreo,
-  whatsapp: ProveedorWhatsApp,
-};
-
-function canalesActivos() {
-  const configurado = (process.env.NOTIFICACIONES_CANAL || 'correo').toLowerCase();
-  if (configurado === 'ambos') return ['correo', 'whatsapp'];
-  return PROVEEDORES[configurado] ? [configurado] : ['correo'];
-}
-
 /**
- * Envía una notificación por todos los canales activos.
- * Nunca lanza: un fallo de envío no debe tumbar el agendamiento
- * de la cita. Devuelve el resultado por canal para registrarlo
- * en la tabla `notificaciones`.
+ * @param {object} p
+ * @param {number} p.citaId
+ * @param {'confirmacion'|'reprogramacion'|'cancelacion'|'recordatorio'} p.tipo
+ * @param {string} [p.codigo]  código "Gestionar mi cita" en claro, si se tiene.
+ *   Si el mensaje necesita enlace y no se pasa, se genera uno nuevo y el
+ *   anterior deja de servir (en la base solo se guarda el hash).
+ * @returns {Promise<{id?:number, estado:string, enlaceWhatsApp?:string}>}
  */
-async function enviar({ tipo, cita, paciente }) {
-  const resultados = [];
+async function notificarCita({ citaId, tipo, codigo }) {
+  let notificacionId;
+  try {
+    const cita = await citaModelo.buscarDetalle(citaId);
+    if (!cita) throw new Error(`Cita ${citaId} no encontrada`);
 
-  for (const canal of canalesActivos()) {
-    try {
-      const detalle = await PROVEEDORES[canal].enviar({ tipo, cita, paciente });
-      resultados.push({ canal, estado: 'enviada', detalle });
-    } catch (error) {
-      console.error(`Fallo al notificar por ${canal}:`, error.message);
-      resultados.push({ canal, estado: 'fallida', detalle: error.message });
+    let codigoUsado = codigo;
+    if (mensajes.LLEVA_ENLACE.has(tipo) && !codigoUsado) {
+      const nuevo = generarCodigoGestion();
+      await citaModelo.actualizarCodigoHash(citaId, nuevo.hash);
+      codigoUsado = nuevo.codigo;
     }
-  }
 
-  return resultados;
+    const { texto, datos } = mensajes.construir(tipo, cita, codigoUsado);
+    notificacionId = await notificacionModelo.crear({
+      citaId,
+      tipo,
+      destino: cita.telefono,
+      mensaje: texto,
+    });
+
+    const resultado = await ProveedorWhatsApp.enviar({ destino: cita.telefono, texto, tipo, datos });
+    await notificacionModelo.marcar(notificacionId, resultado.estado, resultado.detalle);
+
+    return {
+      id: notificacionId,
+      estado: resultado.estado,
+      enlaceWhatsApp: mensajes.enlaceWhatsApp(cita.telefono, texto),
+    };
+  } catch (error) {
+    console.error(`No se pudo notificar la cita ${citaId} (${tipo}):`, error.message);
+    if (notificacionId) {
+      await notificacionModelo.marcar(notificacionId, 'fallida', error.message).catch(() => {});
+    }
+    return { id: notificacionId, estado: 'fallida' };
+  }
 }
 
-module.exports = { enviar, canalesActivos };
+module.exports = { notificarCita };
