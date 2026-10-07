@@ -112,6 +112,9 @@ cp .env.example .env        # en Windows: copy .env.example .env
 | `HORAS_MINIMAS_GESTION` | No | Horas antes de la cita hasta las que el paciente puede reprogramar o cancelar | `24` |
 | `LIMITE_CITAS_ACTIVAS_SIN_USUARIO` | No | Citas activas a la vez por documento sin cuenta (0 = sin límite) | `1` |
 | `LIMITE_ESCRITURAS_POR_IP`, `LIMITE_LECTURAS_POR_IP` | No | Peticiones públicas por IP cada 15 minutos | `15`, `60` |
+| `RECORDATORIOS_AUTOMATICOS` | No | `false` desactiva el recordatorio automático | `true` |
+| `RECORDATORIO_DESDE`, `RECORDATORIO_HASTA` | No | Horas (de Colombia) entre las que se generan los recordatorios | `8`, `19` |
+| `RECORDATORIO_HORAS_MINIMAS` | No | No recordar citas agendadas hace menos de estas horas | `12` |
 | `WHATSAPP_MODO` | No | `manual`, `consola` o `api` (ver sección 7) | `manual` |
 | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID` | Solo modo `api` | Credenciales de Meta | — |
 | `WHATSAPP_PLANTILLA_*` | Solo modo `api` | Nombres de las plantillas aprobadas | `cita_agendada` |
@@ -129,6 +132,14 @@ npm run crear-admin
 ```
 
 El script pide nombre, documento, correo, teléfono y contraseña (mínimo 8 caracteres, con letra y número). La contraseña se guarda cifrada con bcrypt. **Es la única forma de crear un administrador**: no existe ninguna pantalla ni ruta de la API para hacerlo.
+
+Si la secretaria olvida su contraseña:
+
+```bash
+npm run restablecer-admin
+```
+
+Pide el correo del administrador y la contraseña nueva dos veces.
 
 ### 6.4 Arrancar
 
@@ -161,6 +172,10 @@ Para el modo `api`:
 4. Escribir sus nombres en `WHATSAPP_PLANTILLA_CONFIRMACION`, `_REPROGRAMACION`, `_CANCELACION` y `_RECORDATORIO`.
 
 Si el envío falla, la cita igual queda registrada y el mensaje aparece como "fallida" en el panel para enviarlo a mano.
+
+La plantilla del recordatorio usa solo los 5 primeros parámetros (no lleva enlace): `WHATSAPP_PARAMETROS_RECORDATORIO=5`.
+
+**Recordatorio del día anterior.** Mientras el backend esté encendido, revisa cada 30 minutos (entre `RECORDATORIO_DESDE` y `RECORDATORIO_HASTA`) las citas de mañana y genera su recordatorio. Si el servidor se apaga de noche, se puede programar `npm run recordatorios` una vez al día con el Programador de tareas de Windows o con `cron` en Linux.
 
 ## 8. Frontend
 

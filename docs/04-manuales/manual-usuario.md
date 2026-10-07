@@ -55,15 +55,15 @@ Reglas que hay que explicar:
 - **4.3 Especialistas:** registrar y asignar especialidades.
 - **4.4 Publicar horas de atención:** cuadrícula de horas, copiar a varios días, quitar horas, y qué pasa si una hora tiene cita.
 - **4.5 Agenda del día:** filtros, búsqueda, marcar atendida o no asistió, reprogramar, cancelar.
-- **4.6 Mensajes de WhatsApp pendientes:** botón "Enviar por WhatsApp" y "Marcar como enviado".
-- **4.7 Crear el usuario de un paciente:** autorización de datos, clave temporal (se muestra una sola vez) y citas vinculadas.
+- **4.6 Mensajes de WhatsApp pendientes:** botón "Enviar por WhatsApp" y "Marcar como enviado"; recordatorios del día anterior (salen solos y se pueden generar con un botón).
+- **4.7 Crear el usuario de un paciente:** autorización de datos, clave temporal (se muestra una sola vez) y citas vinculadas. Restablecer la clave de un paciente que la olvidó.
 - **4.8 Ficha del paciente e historia clínica:** agregar una entrada y corregir sin borrar.
 
 ## 5. Preguntas frecuentes
 - ¿Qué hago si no me llegó el WhatsApp?
 - ¿Puedo pedir cita para otra persona? (Sí, con los datos de esa persona.)
 - ¿Cómo cambio mi número de teléfono?
-- Olvidé mi contraseña. *(Por definir: el sistema aún no tiene esta función.)*
+- Olvidé mi contraseña. (Pídela en el consultorio o por WhatsApp: la secretaria te genera una clave temporal y la cambias al ingresar.)
 
 ## 6. Soporte
 Datos de contacto del consultorio y de los responsables técnicos.
