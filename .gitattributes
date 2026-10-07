@@ -1,0 +1,15 @@
+# Saltos de línea: en el repositorio siempre LF; Git los convierte al
+# formato de cada sistema al descargar. Evita diferencias falsas entre
+# Windows y Linux.
+* text=auto eol=lf
+
+# Binarios: nunca convertir
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.pdf binary
+*.docx binary
+*.xlsx binary
