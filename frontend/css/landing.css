@@ -495,9 +495,6 @@
 .exito { display: flex; align-items: center; gap: var(--e-3); margin-bottom: var(--e-4); color: var(--menta-600); }
 .exito svg { width: 32px; height: 32px; flex-shrink: 0; }
 .exito .agendar__titulo { margin: 0; color: var(--ink-900); }
-.enlace-gestion { margin-bottom: var(--e-5); }
-.enlace-gestion__fila { display: flex; flex-wrap: wrap; gap: var(--e-2); }
-.enlace-gestion__fila .campo__control { flex: 1 1 220px; min-width: 0; }
 
 /* ---------- Entrada de página ----------
    Una sola secuencia orquestada, al cargar y solo en el hero.

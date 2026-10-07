@@ -5,7 +5,7 @@
 **Autores:** Emmanuel Artunduaga Charry · Jawer Leonardo Manrique Yosa\
 **Versión del documento:** 0.9 (borrador) · 6 de octubre de 2026
 
-> Pendiente: sección del frontend (pantallas y módulos JavaScript) cuando Jawer termine la integración; recordatorio automático; despliegue; paso a la plantilla oficial de la FET.
+> Pendiente: sección del frontend (pantallas y módulos JavaScript) cuando termine la integración; despliegue; paso a la plantilla oficial de la FET.
 
 ## 1. Propósito y alcance
 
@@ -56,7 +56,8 @@ No hay más dependencias de producción: las funciones de fecha, aleatoriedad y 
 | `backend/src/middleware/` | Sesión, rol y límite de peticiones |
 | `backend/src/services/notificaciones/` | Textos y envío de WhatsApp |
 | `backend/src/utils/` | Validaciones, fechas, códigos, errores, contraseñas |
-| `backend/src/scripts/crearAdmin.js` | Creación del administrador por consola |
+| `backend/src/scripts/` | Consola: `crearAdmin.js` (crear la secretaria), `restablecerAdmin.js` (restablecer su clave) y `enviarRecordatorios.js` |
+| `backend/src/services/recordatorios.js` | Recordatorio del día anterior y su ejecución automática |
 | `backend/.env.example` | Plantilla de configuración |
 | `frontend/` | `index.html`, `politica-datos.html`, `css/` (tokens → base → pantalla), `js/` (config y un módulo por pantalla), `paciente/`, `admin/` |
 | `docs/` | Documentación del proyecto |
@@ -93,13 +94,13 @@ Todas las rutas cuelgan de `/api` y responden JSON. El contrato completo con eje
 | Gestionar cita | `GET /citas/gestion/:codigo` · `POST …/reprogramar` · `POST …/cancelar` | Público con código |
 | Sesión | `POST /auth/ingreso` · `POST /auth/cambiar-contrasena` · `GET /auth/perfil` | Público / sesión |
 | Paciente | `GET /mis-citas` | Rol paciente |
-| Pacientes | `POST /pacientes` · `GET /pacientes?q=` · `GET /pacientes/:id` | Rol administrador |
+| Pacientes | `POST /pacientes` · `GET /pacientes?q=` · `GET /pacientes/:id` · `POST /pacientes/:id/restablecer-contrasena` | Rol administrador |
 | Historia clínica | `GET/POST /pacientes/:id/historia` · `POST /admin/historia/:id/correccion` | Rol administrador |
 | Especialidades | `GET/POST /admin/especialidades` · `PATCH /admin/especialidades/:id` | Rol administrador |
 | Especialistas | `GET/POST /admin/especialistas` · `PATCH /admin/especialistas/:id` | Rol administrador |
 | Disponibilidad | `GET/POST /admin/especialistas/:id/franjas` · `DELETE /admin/franjas/:id` | Rol administrador |
 | Agenda | `GET /admin/citas` · `PATCH /admin/citas/:id/estado` · `POST /admin/citas/:id/reprogramar` | Rol administrador |
-| Mensajes | `GET /admin/notificaciones` · `PATCH /admin/notificaciones/:id` | Rol administrador |
+| Mensajes | `GET /admin/notificaciones` · `PATCH /admin/notificaciones/:id` · `POST /admin/recordatorios` | Rol administrador |
 
 **Códigos de respuesta:**
 - 200 / 201: correcto.
@@ -129,6 +130,8 @@ Todas las rutas cuelgan de `/api` y responden JSON. El contrato completo con eje
 | Las citas canceladas no se borran | Estado `cancelada` y `cancelada_por` |
 | Historia clínica inalterable | Solo hay `INSERT`; la corrección es una entrada nueva con `corrige_a` |
 | Pacientes con cuenta solo los crea la secretaria | No hay registro público; `POST /pacientes` exige rol administrador |
+| Recordatorio el día anterior, una sola vez | `services/recordatorios.js`: cada 30 min dentro de `RECORDATORIO_DESDE`–`RECORDATORIO_HASTA`; citas confirmadas de mañana agendadas hace más de 12 h y sin recordatorio posterior a su última confirmación o reprogramación |
+| "Olvidé mi contraseña" | La secretaria genera una clave temporal nueva (`debe_cambiar_contrasena = TRUE`); la de la secretaria se restablece por consola |
 
 **Zona horaria.** Las franjas guardan fecha y hora locales del consultorio. `utils/tiempo.js` calcula la hora actual de Bogotá (UTC-5) con `Intl` y la pasa a las consultas como texto, de modo que el resultado no depende de la zona horaria del servidor donde se publique.
 
@@ -155,11 +158,13 @@ Todas las rutas cuelgan de `/api` y responden JSON. El contrato completo con eje
 - **consola:** se imprime en la terminal del backend.
 - **api:** se envía con una plantilla aprobada por la API de WhatsApp Cloud.
 
-El servicio nunca lanza errores hacia el controlador: si el envío falla, la cita sigue confirmada y el mensaje queda como `fallida` para enviarlo a mano. Tipos: `confirmacion`, `reprogramacion`, `cancelacion` y `recordatorio`. El recordatorio todavía no está implementado.
+El servicio nunca lanza errores hacia el controlador: si el envío falla, la cita sigue confirmada y el mensaje queda como `fallida` para enviarlo a mano. Tipos: `confirmacion`, `reprogramacion`, `cancelacion` y `recordatorio`. Solo los dos primeros llevan el enlace de gestión: el recordatorio sale cuando ya pasó el plazo de 24 horas y la cancelación ya no lo necesita.
+
+El recordatorio lo genera `services/recordatorios.js`, programado desde `server.js` cada 30 minutos (se desactiva con `RECORDATORIOS_AUTOMATICOS=false`). También se puede lanzar con `POST /api/admin/recordatorios` o `npm run recordatorios`.
 
 ## 10. Pruebas
 
-- **Integración contra MySQL 8 real:** 105 comprobaciones automatizadas sobre una base limpia. Cubren el catálogo, el calendario, agendar, la carrera por la misma hora, la gestión con código, la regla de 24 horas, el panel de la secretaria, los mensajes, los permisos, el alta de pacientes y la historia clínica. Todas correctas al 6 de octubre de 2026.
+- **Integración contra MySQL 8 real:** 117 comprobaciones automatizadas sobre una base limpia. Cubren el catálogo, el calendario, agendar, la carrera por la misma hora, la gestión con código, la regla de 24 horas, el panel de la secretaria, los mensajes, los permisos, el alta de pacientes, la historia clínica, el recordatorio y el restablecimiento de claves. Todas correctas al 7 de octubre de 2026.
 - **Pruebas manuales:** guías paso a paso en PowerShell (`docs/06-pruebas/`).
 - **Revisión de código independiente:** encontró tres fallas, corregidas antes de fusionar: suplantación del documento de un paciente registrado, código del enlace guardado en texto y error 500 con fechas inválidas.
 

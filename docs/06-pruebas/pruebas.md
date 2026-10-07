@@ -1,17 +1,18 @@
 # Pruebas — Arte Odontológico
 
-Versión del 6 de octubre de 2026.
+Versión del 7 de octubre de 2026.
 
 ## 1. Estrategia
 
 | Tipo | Qué cubre | Cómo se ejecuta | Estado |
 |---|---|---|---|
-| Integración automatizada | API completa contra MySQL 8 real, sobre una base creada desde `schema.sql` | Script `integracion.js` (Node) que levanta la API, llama cada endpoint y revisa la base | 105 de 105 correctas |
+| Integración automatizada | API completa contra MySQL 8 real, sobre una base creada desde `schema.sql` | Script `integracion.js` (Node) que levanta la API, llama cada endpoint y revisa la base | 117 de 117 correctas |
 | Equivalencia de migraciones | Que crear la base desde cero y actualizar una base antigua con las migraciones 001 y 002 den el mismo esquema | Comparación de `SHOW CREATE TABLE` en ambos caminos | Idénticos |
 | Unitarias puntuales | Límite de peticiones por IP, textos de WhatsApp, modos del proveedor | Scripts de Node | Correctas |
 | Manuales guiadas | Lo mismo, en el equipo de desarrollo y con la base local | Guías en PowerShell de esta carpeta | Pendientes de ejecutar |
 | Revisión de código independiente | Seguridad, condiciones de carrera, zona horaria, validaciones | Revisión por un agente distinto del que escribió el código | 3 hallazgos, corregidos |
-| Interfaz (frontend) | Flujos en navegador y en celular | Por definir con Jawer | Pendiente |
+| Interfaz (frontend) de punta a punta | Agendar y gestionar la cita (reprogramar, cancelar, enlace inválido) en el navegador, contra la API real | Navegador automatizado (Playwright) | Correctas el 6 y 7 de octubre |
+| Interfaz en celular y panel de la secretaria | Flujos en 360, 768 y 1280 px | Por definir | Pendiente |
 
 **Entorno de las pruebas automatizadas:** Linux, Node.js 22, MySQL 8.0.46. La base se borra y se recrea en cada corrida.
 
@@ -25,7 +26,7 @@ Versión del 6 de octubre de 2026.
 
 ## 3. Resultados de la prueba de integración
 
-Corrida del 6 de octubre de 2026: **105 de 105 comprobaciones correctas.**
+Corrida del 7 de octubre de 2026: **117 de 117 comprobaciones correctas.**
 
 **Preparación**
 
@@ -189,28 +190,51 @@ Corrida del 6 de octubre de 2026: **105 de 105 comprobaciones correctas.**
 | 96 | id que no es paciente -> 404 | Correcta |
 | 97 | no existe ruta para borrar historia -> 404 | Correcta |
 
+**Recordatorio del día anterior**
+
+| # | Comprobación | Resultado |
+|---|---|---|
+| 98 | citas de mañana creadas | Correcta |
+| 99 | recordatorio solo para la cita de mañana agendada hace >12 h y no cancelada | Correcta |
+| 100 | mensaje de recordatorio sin enlace y pendiente (modo manual) | Correcta |
+| 101 | el enlace de la confirmación sigue sirviendo | Correcta |
+| 102 | ejecutarlo de nuevo no repite recordatorios | Correcta |
+| 103 | si se reprograma, vuelve a recordarse | Correcta |
+| 104 | paciente no puede lanzar recordatorios -> 403 | Correcta |
+
+**Olvidé mi contraseña**
+
+| # | Comprobación | Resultado |
+|---|---|---|
+| 105 | secretaria genera clave temporal nueva | Correcta |
+| 106 | la clave anterior ya no sirve | Correcta |
+| 107 | ingresa con la temporal y debe cambiarla | Correcta |
+| 108 | restablecer a quien no es paciente -> 404 | Correcta |
+| 109 | un paciente no puede restablecer claves -> 403 | Correcta |
+
 **Permisos**
 
 | # | Comprobación | Resultado |
 |---|---|---|
-| 98 | paciente no entra al panel -> 403 | Correcta |
-| 99 | sin sesión -> 401 | Correcta |
-| 100 | secretaria no usa mis-citas -> 403 | Correcta |
+| 110 | paciente no entra al panel -> 403 | Correcta |
+| 111 | sin sesión -> 401 | Correcta |
+| 112 | secretaria no usa mis-citas -> 403 | Correcta |
 
 **Desactivar especialista**
 
 | # | Comprobación | Resultado |
 |---|---|---|
-| 101 | desactiva especialista | Correcta |
-| 102 | especialista inactivo: calendario 404 | Correcta |
-| 103 | y ya no aparece en su especialidad | Correcta |
-| 104 | cambia especialidades de un especialista | Correcta |
+| 113 | desactiva especialista | Correcta |
+| 114 | especialista inactivo: calendario 404 | Correcta |
+| 115 | y ya no aparece en su especialidad | Correcta |
+| 116 | cambia especialidades de un especialista | Correcta |
 
 **Textos**
 
 | # | Comprobación | Resultado |
 |---|---|---|
-| 105 | la vista v_agenda funciona | Correcta |
+| 117 | la vista v_agenda funciona | Correcta |
+
 
 ## 4. Guías de prueba manual
 

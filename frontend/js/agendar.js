@@ -356,14 +356,9 @@ async function enviar(e) {
 /* ---------- Confirmación ---------- */
 
 function pintarListo() {
-  const { cita, enlaceGestion, whatsapp } = estado.cita;
-  const entrada = el('input', { class: 'campo__control', type: 'text', readonly: true, value: enlaceGestion || '', 'aria-label': 'Enlace para gestionar tu cita' });
-  const copiar = el('button', { type: 'button', class: 'btn btn--secundario', texto: 'Copiar enlace' });
-  copiar.addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText(enlaceGestion); copiar.textContent = '¡Copiado!'; }
-    catch { entrada.select(); copiar.textContent = 'Cópialo con Ctrl+C'; }
-  });
-  entrada.addEventListener('focus', () => entrada.select());
+  // El enlace para reprogramar o cancelar solo llega por WhatsApp, al
+  // número que se escribió: así solo lo tiene el dueño de ese teléfono.
+  const { cita, whatsapp } = estado.cita;
 
   return [
     el('div', { class: 'exito' },
@@ -375,11 +370,9 @@ function pintarListo() {
       cita.especialista && dato('Especialista', cita.especialista),
       dato('Fecha y hora', `${fechaLarga(cita.fecha)}, ${horaLarga(cita.hora)}`),
       cita.direccion && dato('Dónde', cita.direccion)),
-    el('p', { class: 'agendar__nota', texto: whatsapp === 'enviado' ? 'Te enviamos la confirmación por WhatsApp.' : 'Te enviaremos la confirmación por WhatsApp.' }),
-    enlaceGestion && el('div', { class: 'enlace-gestion' },
-      el('p', { class: 'campo__etiqueta', texto: 'Tu enlace para gestionar la cita' }),
-      el('div', { class: 'enlace-gestion__fila' }, entrada, copiar),
-      el('p', { class: 'campo__ayuda', texto: 'Guárdalo: con él puedes reprogramar o cancelar tu cita.' })),
+    el('p', { class: 'agendar__nota', texto: whatsapp === 'enviado'
+      ? 'Te enviamos la confirmación por WhatsApp, con un enlace para reprogramar o cancelar tu cita.'
+      : 'Te enviaremos la confirmación por WhatsApp, con un enlace para reprogramar o cancelar tu cita.' }),
     el('button', { type: 'button', class: 'btn btn--primario btn--bloque', onclick: () => cerrarModal(document.getElementById('modal-agendar')), texto: 'Listo' }),
   ];
 }

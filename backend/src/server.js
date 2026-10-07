@@ -4,6 +4,7 @@
 require('dotenv').config();
 const app = require('./app');
 const { probarConexion } = require('./config/db');
+const { iniciarProgramacion } = require('./services/recordatorios');
 
 const PUERTO = process.env.PORT || 3000;
 
@@ -14,6 +15,7 @@ const PUERTO = process.env.PORT || 3000;
     app.listen(PUERTO, () => {
       console.log(`API escuchando en http://localhost:${PUERTO}/api`);
     });
+    iniciarProgramacion(); // recordatorios del día anterior
   } catch (error) {
     console.error('No fue posible conectar con MySQL:', error.message);
     process.exit(1);

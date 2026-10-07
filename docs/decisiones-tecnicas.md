@@ -219,7 +219,9 @@ Cada cambio de esquema se escribe dos veces: en `schema.sql` (instalación nueva
 y en una migración numerada (bases existentes). Antes de entregar se comprueba
 que ambos caminos producen exactamente el mismo esquema.
 
-Gestionar la cita desde el enlace (7 de octubre): la página gestionar-cita.html
+## 18. Página para gestionar la cita (7 de octubre)
+
+La página gestionar-cita.html
 lee `codigo` de la URL y muestra la cita con los botones que permiten
 `puedeReprogramar` y `puedeCancelar`; si alguno es falso explica el `motivo`.
 Reprogramar reutiliza el calendario y las horas del mismo especialista y pide
@@ -230,3 +232,31 @@ duplicar código, las utilidades y el calendario pasaron a js/comun.js,
 compartido con el flujo de agendar. El modo demo acepta los códigos
 DEMO-0000, DEMO-REPROGRAMADA, DEMO-CERCA y DEMO-CANCELADA. En la confirmación
 de agendar solo se muestra `cita.direccion`, que ya trae la ciudad.
+
+## 19. Recordatorio sin enlace y restablecimiento de claves (7 de octubre)
+
+El recordatorio se envía el día anterior a la cita. Para entonces ya pasó el
+plazo de 24 horas para reprogramar o cancelar desde la web, así que el mensaje
+no lleva enlace: invita a responder el WhatsApp si la persona no puede asistir.
+Así tampoco hace falta generar un código nuevo, y el enlace de la confirmación
+sigue sirviendo.
+
+El servidor revisa cada 30 minutos, solo entre las horas configuradas
+(`RECORDATORIO_DESDE` y `RECORDATORIO_HASTA`), las citas confirmadas de mañana
+que se agendaron hace más de 12 horas. Una cita recibe un solo recordatorio
+(otro si se reprograma). También se puede lanzar a mano desde el panel o con
+`npm run recordatorios`.
+
+"Olvidé mi contraseña" no usa correo ni enlaces de recuperación: el sistema no
+envía correos y los pacientes con cuenta ya conocen el consultorio. La
+secretaria genera una clave temporal nueva desde la ficha del paciente, y el
+paciente debe cambiarla al ingresar. La clave de la secretaria se restablece
+desde el servidor con `npm run restablecer-admin`; no existe una ruta web para
+eso.
+
+## 20. Saltos de línea normalizados
+
+Se agregó `.gitattributes` para que todo archivo de texto se guarde con saltos
+de línea LF en el repositorio, sin importar el sistema operativo de quien hace
+el commit. Antes, algunos commits hechos desde Windows guardaban CRLF y GitHub
+mostraba archivos completos como modificados cuando solo cambiaban unas líneas.

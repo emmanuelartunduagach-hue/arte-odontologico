@@ -42,8 +42,8 @@ Flujo de pantallas: especialidad → especialista → calendario → hora → da
 - `autorizacionDatos`: casilla **sin marcar por defecto** con enlace a `politica-datos.html`. Sin ella → 400 con `campos.autorizacionDatos`.
 - `sitioWeb`: **campo trampa contra bots**. Inclúyelo en el formulario oculto con CSS (no con `type="hidden"`), con `tabindex="-1"` y `autocomplete="off"`, y envíalo vacío.
 - Si el paciente **tiene sesión**, envía también su token: la cita queda a su nombre y no aplica el límite. Para precargar el formulario usa `GET /auth/perfil`.
-- **201:** `{ mensaje, cita: { id, estado, paciente, especialidad, especialista, fecha, hora, sede, direccion, reprogramaciones }, enlaceGestion, whatsapp: "enviado" | "pendiente" }`
-  - Muestra el resumen y el **`enlaceGestion`** con un botón "Copiar enlace" y el texto "Guárdalo: con él puedes reprogramar o cancelar".
+- **201:** `{ mensaje, cita: { id, estado, paciente, especialidad, especialista, fecha, hora, sede, direccion, reprogramaciones }, whatsapp: "enviado" | "pendiente" }`
+  - Muestra el resumen. El enlace para reprogramar o cancelar **no** viene en la respuesta: solo llega por WhatsApp al teléfono escrito, para que únicamente lo tenga el dueño de ese número.
   - Si `whatsapp` es `"pendiente"`: "Te enviaremos la confirmación por WhatsApp".
 - **409** posibles:
   - La hora se tomó o ya no está → volver a pedir las horas del día.
@@ -102,11 +102,13 @@ Un solo formulario de **Ingresar** para los dos; el rol decide a qué panel va.
 - `GET /admin/notificaciones?estado=pendiente` (o `fallida`, `enviada`) → `[{ id, citaId, paciente, tipo, destino, mensaje, enlaceWhatsApp, creadoEn }]`
 - Botón **"Enviar por WhatsApp"**: abre `enlaceWhatsApp` en pestaña nueva. Abre la app o WhatsApp Web de la clínica con el texto listo.
 - Luego, botón **"Marcar como enviado"**: `PATCH /admin/notificaciones/:id` `{ estado: "enviada" }`.
+- **Recordatorios del día anterior:** el servidor los genera solo cada 30 minutos dentro del horario configurado y aparecen como mensajes pendientes de tipo `recordatorio` (sin enlace). Para generarlos ya: `POST /admin/recordatorios` → `{ fecha, revisadas, resultados: [{ citaId, estado }] }`. Sugerencia: botón "Generar recordatorios de mañana" en la sección de mensajes.
 - Conviene un contador de pendientes visible en el menú del panel.
 
 **Pacientes**
 - `POST /pacientes` `{ nombreCompleto, documento, correo, telefono, autorizacionDatos: true }` → 201. La respuesta trae la `contrasenaTemporal`, que se muestra **una sola vez** con botón de copiar, y `citasVinculadas`, que son las citas que pidió antes sin cuenta.
 - `GET /pacientes?q=` → búsqueda por nombre, documento o correo.
+- `POST /pacientes/:id/restablecer-contrasena` → `{ mensaje, contrasenaTemporal }`: "olvidé mi contraseña". La clave temporal se muestra **una sola vez** (botón de copiar) y el paciente deberá cambiarla al ingresar. Va como botón en la ficha del paciente, con confirmación.
 
 **Ficha del paciente e historia clínica**
 - `GET /pacientes/:id` → `{ paciente: { id, nombreCompleto, documento, correo, telefono, activo, ... }, citas: [...], historia: [...] }` — la pantalla de ficha en una sola petición.
@@ -117,6 +119,5 @@ Un solo formulario de **Ingresar** para los dos; el rol decide a qué panel va.
 
 ## Aún no existe
 
-- Recordatorio del día anterior.
 - Importación desde Excel.
 - Reprogramar o cancelar desde "Mis citas" con sesión. Por ahora el paciente usa el enlace del WhatsApp.
