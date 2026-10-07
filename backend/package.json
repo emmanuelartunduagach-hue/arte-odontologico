@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "crear-admin": "node src/scripts/crearAdmin.js"
+    "crear-admin": "node src/scripts/crearAdmin.js",
+    "restablecer-admin": "node src/scripts/restablecerAdmin.js",
+    "recordatorios": "node src/scripts/enviarRecordatorios.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

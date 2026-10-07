@@ -62,6 +62,23 @@ async function actualizarContrasena(id, contrasenaHash) {
   );
 }
 
+/* Clave temporal nueva (la secretaria la restablece): obliga a cambiarla. */
+async function restablecerContrasena(id, contrasenaHash) {
+  await pool.execute(
+    `UPDATE usuarios SET contrasena_hash = ?, debe_cambiar_contrasena = TRUE WHERE id = ?`,
+    [contrasenaHash, id]
+  );
+}
+
+/* Administrador por correo (para el script de restablecer su clave). */
+async function buscarAdministradorPorCorreo(correo) {
+  const [filas] = await pool.execute(
+    `SELECT id, nombre_completo FROM usuarios WHERE correo = ? AND rol = 'administrador' LIMIT 1`,
+    [correo]
+  );
+  return filas[0] || null;
+}
+
 /* Lista pacientes (máximo 100). `busqueda` filtra por nombre, documento
    o correo; los comodines de LIKE escritos por el usuario se escapan. */
 async function listarPacientes(busqueda = '') {
@@ -122,5 +139,7 @@ module.exports = {
   buscarPorCorreo,
   buscarPorId,
   actualizarContrasena,
+  restablecerContrasena,
+  buscarAdministradorPorCorreo,
   listarPacientes,
 };

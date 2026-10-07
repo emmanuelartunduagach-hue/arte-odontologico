@@ -8,6 +8,7 @@ const notificacionModelo = require('../models/notificacion.model');
 const { enlaceWhatsApp } = require('../services/notificaciones/mensajes');
 const { ErrorHttp } = require('../utils/errores');
 const { aId } = require('../utils/validaciones');
+const { enviarRecordatorios } = require('../services/recordatorios');
 
 /* GET /api/admin/notificaciones?estado=pendiente|fallida|enviada */
 async function listar(req, res, next) {
@@ -35,4 +36,15 @@ async function marcarEnviada(req, res, next) {
   }
 }
 
-module.exports = { listar, marcarEnviada };
+/* POST /api/admin/recordatorios
+   Genera ya los recordatorios de las citas de mañana, sin esperar la
+   ejecución automática ni el horario. */
+async function ejecutarRecordatorios(req, res, next) {
+  try {
+    res.json(await enviarRecordatorios({ ignorarHorario: true }));
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { listar, marcarEnviada, ejecutarRecordatorios };

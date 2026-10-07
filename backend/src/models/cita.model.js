@@ -144,7 +144,36 @@ async function listarDePaciente(pacienteId) {
   return filas;
 }
 
+/* Citas confirmadas de una fecha que todavía necesitan recordatorio:
+   - aún no pasan (por si el proceso corre el mismo día),
+   - se agendaron hace más de `horasMinimas` horas (quien agenda hoy
+     para mañana ya recibió la confirmación; no hace falta otro mensaje),
+   - y no tienen un recordatorio posterior a su última confirmación o
+     reprogramación (si la cita se movió, el recordatorio viejo no cuenta). */
+async function pendientesDeRecordatorio(fecha, ahora, horasMinimas) {
+  const [filas] = await pool.execute(
+    `SELECT c.id
+       FROM citas c
+       JOIN franjas_horarias f ON f.id = c.franja_id
+      WHERE c.estado = 'confirmada'
+        AND f.fecha = ?
+        AND TIMESTAMP(f.fecha, f.hora_inicio) > ?
+        AND c.creado_en < (NOW() - INTERVAL ? HOUR)
+        AND NOT EXISTS (
+          SELECT 1 FROM notificaciones r
+           WHERE r.cita_id = c.id AND r.tipo = 'recordatorio'
+             AND r.id > COALESCE((SELECT MAX(n.id) FROM notificaciones n
+                                   WHERE n.cita_id = c.id
+                                     AND n.tipo IN ('confirmacion','reprogramacion')), 0))
+      ORDER BY f.hora_inicio
+      LIMIT 500`,
+    [fecha, ahora, horasMinimas]
+  );
+  return filas.map((f) => f.id);
+}
+
 module.exports = {
+  pendientesDeRecordatorio,
   buscarDetalle,
   buscarPorCodigoHash,
   crear,

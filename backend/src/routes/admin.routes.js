@@ -30,6 +30,7 @@ router.post('/citas/:id/reprogramar', citas.reprogramarAdmin);
 
 router.get('/notificaciones', notificaciones.listar);
 router.patch('/notificaciones/:id', notificaciones.marcarEnviada);
+router.post('/recordatorios', notificaciones.ejecutarRecordatorios);
 
 router.post('/historia/:id/correccion', historia.corregir);
 

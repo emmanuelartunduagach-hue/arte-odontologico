@@ -6,7 +6,7 @@
 const bcrypt = require('bcrypt');
 const usuarioModelo = require('../models/usuario.model');
 const citaModelo = require('../models/cita.model');
-const { validarUsuario } = require('../utils/validaciones');
+const { validarUsuario, aId } = require('../utils/validaciones');
 const { generarContrasenaTemporal } = require('../utils/contrasenas');
 const { ErrorHttp } = require('../utils/errores');
 
@@ -89,4 +89,24 @@ async function listar(req, res, next) {
   }
 }
 
-module.exports = { crear, listar };
+/* POST /api/pacientes/:id/restablecer-contrasena
+   Para "olvidé mi contraseña": el paciente lo pide en el consultorio o
+   por teléfono y la secretaria le genera una clave temporal nueva, que
+   se muestra UNA sola vez. Al ingresar con ella deberá cambiarla. */
+async function restablecerContrasena(req, res, next) {
+  try {
+    const id = aId(req.params.id);
+    const paciente = id ? await usuarioModelo.fichaPaciente(id) : null;
+    if (!paciente) throw new ErrorHttp(404, 'Paciente no encontrado.');
+
+    const contrasenaTemporal = generarContrasenaTemporal();
+    await usuarioModelo.restablecerContrasena(id, await bcrypt.hash(contrasenaTemporal, RONDAS_BCRYPT));
+
+    res.set('Cache-Control', 'no-store');
+    res.json({ mensaje: 'Se generó una clave temporal nueva.', contrasenaTemporal });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { crear, listar, restablecerContrasena };

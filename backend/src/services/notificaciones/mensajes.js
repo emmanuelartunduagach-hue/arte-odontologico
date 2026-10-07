@@ -36,12 +36,14 @@ const TEXTOS = {
     `Hola ${d.nombre}, tu cita en Arte Odontológico fue reprogramada para el ${d.fecha} a las ${d.hora} con ${d.especialista}, en ${d.direccion}. Si necesitas cancelarla: ${d.enlace}`,
   cancelacion: (d) =>
     `Hola ${d.nombre}, tu cita en Arte Odontológico del ${d.fecha} a las ${d.hora} fue cancelada. Si quieres, agenda una nueva en ${d.enlace}`,
+  // Sin enlace: se envía el día anterior, cuando ya pasó el plazo de
+  // 24 horas para reprogramar o cancelar desde la web.
   recordatorio: (d) =>
-    `Hola ${d.nombre}, te recordamos tu cita en Arte Odontológico el ${d.fecha} a las ${d.hora} con ${d.especialista}, en ${d.direccion}. Si no puedes asistir: ${d.enlace}`,
+    `Hola ${d.nombre}, te recordamos tu cita en Arte Odontológico mañana, ${d.fecha}, a las ${d.hora} con ${d.especialista}, en ${d.direccion}. Si no puedes asistir, avísanos respondiendo este mensaje.`,
 };
 
 /* Tipos cuyo mensaje lleva el enlace "Gestionar mi cita". */
-const LLEVA_ENLACE = new Set(['confirmacion', 'reprogramacion', 'recordatorio']);
+const LLEVA_ENLACE = new Set(['confirmacion', 'reprogramacion']);
 
 function construir(tipo, cita, codigo) {
   const datos = datosDelMensaje(cita, LLEVA_ENLACE.has(tipo) ? codigo : null);
