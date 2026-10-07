@@ -42,8 +42,8 @@ Flujo de pantallas: especialidad → especialista → calendario → hora → da
 - `autorizacionDatos`: casilla **sin marcar por defecto** con enlace a `politica-datos.html`. Sin ella → 400 con `campos.autorizacionDatos`.
 - `sitioWeb`: **campo trampa contra bots**. Inclúyelo en el formulario oculto con CSS (no con `type="hidden"`), con `tabindex="-1"` y `autocomplete="off"`, y envíalo vacío.
 - Si el paciente **tiene sesión**, envía también su token: la cita queda a su nombre y no aplica el límite. Para precargar el formulario usa `GET /auth/perfil`.
-- **201:** `{ mensaje, cita: { id, estado, paciente, especialidad, especialista, fecha, hora, sede, direccion, reprogramaciones }, enlaceGestion, whatsapp: "enviado" | "pendiente" }`
-  - Muestra el resumen y el **`enlaceGestion`** con un botón "Copiar enlace" y el texto "Guárdalo: con él puedes reprogramar o cancelar".
+- **201:** `{ mensaje, cita: { id, estado, paciente, especialidad, especialista, fecha, hora, sede, direccion, reprogramaciones }, whatsapp: "enviado" | "pendiente" }`
+  - Muestra el resumen. El enlace para reprogramar o cancelar **no** viene en la respuesta: solo llega por WhatsApp al teléfono escrito, para que únicamente lo tenga el dueño de ese número.
   - Si `whatsapp` es `"pendiente"`: "Te enviaremos la confirmación por WhatsApp".
 - **409** posibles:
   - La hora se tomó o ya no está → volver a pedir las horas del día.

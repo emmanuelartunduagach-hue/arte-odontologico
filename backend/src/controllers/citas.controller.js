@@ -27,7 +27,6 @@ const { notificarCita } = require('../services/notificaciones/NotificacionServic
 const { ErrorHttp } = require('../utils/errores');
 const { validarDatosPersona, aId, esFecha } = require('../utils/validaciones');
 const { generarCodigoGestion, hashCodigo, pareceCodigo } = require('../utils/codigos');
-const { enlaceGestion } = require('../services/notificaciones/mensajes');
 const { ahoraBogota, hoyBogota, sumarDias } = require('../utils/tiempo');
 
 const HORAS_MINIMAS = () => Number(process.env.HORAS_MINIMAS_GESTION ?? 24);
@@ -158,7 +157,6 @@ async function crear(req, res, next) {
     res.status(201).json({
       mensaje: 'Tu cita quedó agendada.',
       cita: vistaPublica(cita),
-      enlaceGestion: enlaceGestion(codigo),
       whatsapp: notificacion.estado === 'enviada' ? 'enviado' : 'pendiente',
     });
   } catch (error) {

@@ -120,7 +120,6 @@
           especialidad: esp?.nombre, especialista: 'Especialista de demostración',
           fecha, hora, sede: 'Rivera', direccion: 'Carrera 7 No. 3-61', reprogramaciones: 0,
         },
-        enlaceGestion: `${location.origin}/frontend/gestionar-cita.html?codigo=DEMO-0000&demo=1`,
         whatsapp: 'pendiente',
       };
     }
