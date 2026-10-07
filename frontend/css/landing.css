@@ -543,3 +543,25 @@
   .portada__datos { gap: var(--e-5); }
   .encabezado__acciones .btn { padding-inline: var(--e-4); }
 }
+
+
+/* ---------- Gestionar mi cita (gestionar-cita.html) ---------- */
+
+.gestion { padding-block: var(--e-8); min-height: 70vh; background: var(--violeta-50); }
+.gestion__tarjeta {
+  max-width: 640px;
+  margin-inline: auto;
+  padding: var(--e-6);
+  background: var(--papel);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-flotante);
+}
+.gestion__titulo { font-size: clamp(var(--txt-lg), 5vw, var(--txt-xl)); line-height: 1.15; margin-bottom: var(--e-5); }
+.acciones { display: flex; flex-wrap: wrap; gap: var(--e-3); margin-top: var(--e-5); }
+.modal .acciones { margin-top: var(--e-5); }
+
+@media (max-width: 640px) {
+  .gestion { padding-block: var(--e-6); }
+  .gestion__tarjeta { padding: var(--e-5); }
+  .acciones .btn { width: 100%; }
+}

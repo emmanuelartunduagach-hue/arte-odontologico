@@ -60,6 +60,32 @@
     return base.filter((_, i) => (i + d) % 4 !== 0);
   }
 
+  const CITAS = {};
+  function sumarDias(fecha, n) {
+    const [a, m, d] = fecha.split('-').map(Number);
+    return new Date(Date.UTC(a, m - 1, d + n)).toISOString().slice(0, 10);
+  }
+  function citaDemo(codigo) {
+    if (CITAS[codigo]) return CITAS[codigo];
+    const base = { id: 1, estado: 'confirmada', paciente: 'Ana Pérez', especialidad: 'Ortodoncia',
+      especialistaId: 31, especialista: 'Dra. Prueba Uno', fecha: sumarDias(hoyColombia(), 5), hora: '09:30',
+      sede: 'Rivera', direccion: 'Carrera 7 No. 3-61, Rivera', reprogramaciones: 0 };
+    const variantes = {
+      'DEMO-0000': {},
+      'DEMO-REPROGRAMADA': { reprogramaciones: 1 },
+      'DEMO-CERCA': { fecha: sumarDias(hoyColombia(), 1) },
+      'DEMO-CANCELADA': { estado: 'cancelada' },
+    };
+    if (!variantes[codigo]) return null;
+    return (CITAS[codigo] = { ...base, ...variantes[codigo] });
+  }
+  function reglasDemo(cita) {
+    if (cita.estado === 'cancelada') return { puedeReprogramar: false, puedeCancelar: false, motivo: 'Esta cita fue cancelada.' };
+    if (cita.fecha <= sumarDias(hoyColombia(), 1)) return { puedeReprogramar: false, puedeCancelar: false, motivo: 'Faltan menos de 24 horas para tu cita. Para cambiarla, comunícate con el consultorio.' };
+    if (cita.reprogramaciones >= 1) return { puedeReprogramar: false, puedeCancelar: true, motivo: 'Ya reprogramaste esta cita una vez. Si necesitas otro cambio, cancélala y agenda una nueva.' };
+    return { puedeReprogramar: true, puedeCancelar: true, motivo: null };
+  }
+
   window.API_DEMO = async function (ruta, metodo, cuerpo) {
     await espera(350);
     const url = new URL(ruta, 'http://demo');
@@ -94,9 +120,34 @@
           especialidad: esp?.nombre, especialista: 'Especialista de demostración',
           fecha, hora, sede: 'Rivera', direccion: 'Carrera 7 No. 3-61', reprogramaciones: 0,
         },
-        enlaceGestion: `${location.origin}/frontend/gestionar-cita.html?codigo=DEMO-0000`,
+        enlaceGestion: `${location.origin}/frontend/gestionar-cita.html?codigo=DEMO-0000&demo=1`,
         whatsapp: 'pendiente',
       };
+    }
+
+    // ---- Gestionar cita (gestionar-cita.html?codigo=…) ----
+    // Códigos de prueba: DEMO-0000 (se puede todo), DEMO-REPROGRAMADA
+    // (ya reprogramó una vez), DEMO-CERCA (faltan menos de 24 h),
+    // DEMO-CANCELADA. Cualquier otro devuelve 404.
+    if (partes[0] === 'citas' && partes[1] === 'gestion' && partes[2]) {
+      const cita = citaDemo(partes[2]);
+      if (!cita) throw new ErrorApi('El enlace no es válido o ya no está vigente.', 404);
+
+      if (metodo === 'GET' && !partes[3]) return { cita: { ...cita }, ...reglasDemo(cita) };
+
+      if (metodo === 'POST' && partes[3] === 'reprogramar') {
+        if (!reglasDemo(cita).puedeReprogramar) throw new ErrorApi('Esta cita ya no se puede reprogramar.', 409);
+        const [, fecha, hora] = String(cuerpo.franjaId).split('|');
+        if (hora === '10:00' ) throw new ErrorApi('Esa hora acaba de ser tomada. Elige otra.', 409);
+        Object.assign(cita, { fecha, hora, reprogramaciones: cita.reprogramaciones + 1 });
+        return { mensaje: 'Cita reprogramada.', cita: { ...cita }, ...reglasDemo(cita), whatsapp: 'pendiente' };
+      }
+
+      if (metodo === 'POST' && partes[3] === 'cancelar') {
+        if (!reglasDemo(cita).puedeCancelar) throw new ErrorApi('Esta cita ya no se puede cancelar.', 409);
+        cita.estado = 'cancelada';
+        return { mensaje: 'Cita cancelada.' };
+      }
     }
 
     throw new ErrorApi('Recurso no encontrado (demostración).', 404);
