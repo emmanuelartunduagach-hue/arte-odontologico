@@ -4,62 +4,11 @@
      tarjeta de especialidad → especialista → día (calendario) →
      hora → datos del paciente → confirmación.
 
-   Todo el texto que llega de la API se inserta con textContent
-   (a través de `el()`), nunca con innerHTML. */
-
-const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-const DIAS = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
-const DIAS_CORTOS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+   Las utilidades (el, calendario, fechas…) están en js/comun.js. */
 
 let especialidades = null;  // lista que devuelve GET /especialidades
 let turno = 0;              // descarta respuestas de un flujo ya abandonado
 const estado = {};
-
-/* ---------- Utilidades ---------- */
-
-/** Crea un nodo. Los hijos de tipo texto se agregan como texto, no como HTML. */
-function el(etiqueta, props = {}, ...hijos) {
-  const nodo = document.createElement(etiqueta);
-  for (const [clave, valor] of Object.entries(props)) {
-    if (valor == null || valor === false) continue;
-    if (clave === 'class') nodo.className = valor;
-    else if (clave === 'texto') nodo.textContent = valor;
-    else if (clave.startsWith('on')) nodo.addEventListener(clave.slice(2), valor);
-    else nodo.setAttribute(clave, valor === true ? '' : valor);
-  }
-  hijos.flat().forEach((h) => { if (h != null && h !== false) nodo.append(h); });
-  return nodo;
-}
-
-/** Icono SVG a partir de un trazo estático (nunca de datos de la API). */
-function icono(trazo) {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('fill', 'none');
-  svg.setAttribute('stroke', 'currentColor');
-  svg.setAttribute('stroke-width', '2');
-  svg.setAttribute('stroke-linecap', 'round');
-  svg.setAttribute('stroke-linejoin', 'round');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.innerHTML = trazo;
-  return svg;
-}
-
-/** Fecha de hoy en Colombia (UTC-5, sin horario de verano), AAAA-MM-DD. */
-function hoyColombia() {
-  return new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10);
-}
-
-function fechaLarga(fecha) {
-  const [a, m, d] = fecha.split('-').map(Number);
-  const dia = new Date(Date.UTC(a, m - 1, d)).getUTCDay();
-  return `${DIAS[(dia + 6) % 7]} ${d} de ${MESES[m - 1]}`;
-}
-
-function horaLarga(hora) {
-  const [h, min] = hora.split(':').map(Number);
-  return `${h % 12 || 12}:${String(min).padStart(2, '0')} ${h >= 12 ? 'p. m.' : 'a. m.'}`;
-}
 
 /* ---------- Tarjetas de especialidades ---------- */
 
@@ -232,13 +181,6 @@ function titulo(texto) {
   return el('h3', { class: 'agendar__titulo', tabindex: '-1', 'data-foco': true, texto });
 }
 
-function dato(etiqueta, valor, cambiar) {
-  return el('div', { class: 'resumen__item' },
-    el('dt', { texto: etiqueta }),
-    el('dd', {}, valor,
-      cambiar && el('button', { type: 'button', class: 'resumen__cambiar', 'aria-label': `Cambiar ${etiqueta.toLowerCase()}`, onclick: cambiar, texto: 'Cambiar' })));
-}
-
 function resumen(conHora) {
   return el('dl', { class: 'resumen' },
     dato('Especialidad', estado.especialidad.nombre),
@@ -268,57 +210,13 @@ function pintarEspecialista() {
 }
 
 function pintarDia() {
-  const [anio, mes] = estado.mes.split('-').map(Number);
-  const hueco = (new Date(Date.UTC(anio, mes - 1, 1)).getUTCDay() + 6) % 7;
-  const total = new Date(Date.UTC(anio, mes, 0)).getUTCDate();
-  const esMesActual = estado.mes <= hoyColombia().slice(0, 7);
-
-  const celdas = [];
-  for (let i = 0; i < hueco; i++) celdas.push(el('span', { 'aria-hidden': 'true' }));
-  for (let d = 1; d <= total; d++) {
-    const fecha = `${estado.mes}-${String(d).padStart(2, '0')}`;
-    const libre = estado.dias?.has(fecha);
-    celdas.push(el('button', {
-      type: 'button',
-      class: 'dia' + (libre ? ' dia--libre' : ''),
-      disabled: !libre,
-      'aria-pressed': libre ? String(estado.fecha === fecha) : null,
-      'aria-label': `${fechaLarga(fecha)}, ${libre ? 'con horas disponibles' : 'sin horas disponibles'}`,
-      'data-id-foco': `dia-${fecha}`,
-      onclick: () => elegirDia(fecha),
-    }, String(d)));
-  }
-
-  const nav = (delta, etiqueta, trazo, bloqueado) => el('button', {
-    type: 'button', class: 'calendario__nav', 'aria-label': etiqueta, disabled: bloqueado,
-    'data-id-foco': `mes-${delta}`, onclick: () => cambiarMes(delta),
-  }, icono(trazo));
-
-  const calendario = el('div', { class: 'calendario' },
-    el('div', { class: 'calendario__cabecera' },
-      nav(-1, 'Mes anterior', '<path d="m15 18-6-6 6-6"/>', esMesActual),
-      el('p', { class: 'calendario__mes', 'aria-live': 'polite', texto: `${MESES[mes - 1]} ${anio}` }),
-      nav(1, 'Mes siguiente', '<path d="m9 18 6-6-6-6"/>', false)),
-    estado.dias === null
-      ? el('p', { class: 'estado-carga', role: 'status', texto: 'Cargando disponibilidad…' })
-      : [
-        el('div', { class: 'calendario__rejilla' }, DIAS_CORTOS.map((c) => el('span', { class: 'calendario__sem', 'aria-hidden': 'true', texto: c })), celdas),
-        el('p', { class: 'calendario__ayuda', texto: estado.dias.size
-          ? 'Los días resaltados tienen horas disponibles.'
-          : 'No hay días con horas disponibles este mes. Prueba con el mes siguiente.' }),
-      ]);
-
-  let horas = null;
-  if (estado.fecha) {
-    horas = el('div', { class: 'agendar__horas' },
-      el('h3', { class: 'agendar__subtitulo', texto: `Horas disponibles · ${fechaLarga(estado.fecha)}` }),
-      estado.horas === null
-        ? el('p', { class: 'estado-carga', role: 'status', texto: 'Cargando horas…' })
-        : estado.horas.length
-          ? el('div', { class: 'horas', role: 'group', 'aria-label': 'Horas disponibles' }, estado.horas.map((h) =>
-            el('button', { type: 'button', class: 'hora', 'data-id-foco': `hora-${h.hora}`, onclick: () => elegirHora(h), texto: horaLarga(h.hora) })))
-          : el('p', { class: 'alerta', 'data-sin-horas': true, texto: 'Ya no quedan horas ese día. Elige otro día.' }));
-  }
+  const calendario = calendarioMes({
+    mes: estado.mes, dias: estado.dias, fecha: estado.fecha,
+    alElegirDia: elegirDia, alCambiarMes: cambiarMes,
+  });
+  const horas = estado.fecha
+    ? listaHoras({ fecha: estado.fecha, horas: estado.horas, alElegirHora: elegirHora })
+    : null;
 
   return [titulo('Elige el día y la hora'), resumen(false), calendario, horas];
 }
@@ -476,7 +374,7 @@ function pintarListo() {
       cita.especialidad && dato('Especialidad', cita.especialidad),
       cita.especialista && dato('Especialista', cita.especialista),
       dato('Fecha y hora', `${fechaLarga(cita.fecha)}, ${horaLarga(cita.hora)}`),
-      cita.direccion && dato('Dónde', [cita.direccion, cita.sede].filter(Boolean).join(', '))),
+      cita.direccion && dato('Dónde', cita.direccion)),
     el('p', { class: 'agendar__nota', texto: whatsapp === 'enviado' ? 'Te enviamos la confirmación por WhatsApp.' : 'Te enviaremos la confirmación por WhatsApp.' }),
     enlaceGestion && el('div', { class: 'enlace-gestion' },
       el('p', { class: 'campo__etiqueta', texto: 'Tu enlace para gestionar la cita' }),

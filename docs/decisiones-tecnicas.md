@@ -218,3 +218,15 @@ servidor donde se publique.
 Cada cambio de esquema se escribe dos veces: en `schema.sql` (instalación nueva)
 y en una migración numerada (bases existentes). Antes de entregar se comprueba
 que ambos caminos producen exactamente el mismo esquema.
+
+Gestionar la cita desde el enlace (7 de octubre): la página gestionar-cita.html
+lee `codigo` de la URL y muestra la cita con los botones que permiten
+`puedeReprogramar` y `puedeCancelar`; si alguno es falso explica el `motivo`.
+Reprogramar reutiliza el calendario y las horas del mismo especialista y pide
+una confirmación antes de guardar, porque solo se puede una vez. Cancelar usa
+un diálogo propio (no `confirm()`); si ya reprogramó, el botón dice "Cancelar y
+pedir una cita nueva". Un enlace inválido muestra el 404 del contrato. Para no
+duplicar código, las utilidades y el calendario pasaron a js/comun.js,
+compartido con el flujo de agendar. El modo demo acepta los códigos
+DEMO-0000, DEMO-REPROGRAMADA, DEMO-CERCA y DEMO-CANCELADA. En la confirmación
+de agendar solo se muestra `cita.direccion`, que ya trae la ciudad.
