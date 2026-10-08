@@ -59,7 +59,7 @@ No hay más dependencias de producción: las funciones de fecha, aleatoriedad y 
 | `backend/src/scripts/` | Consola: `crearAdmin.js` (crear la secretaria), `restablecerAdmin.js` (restablecer su clave) y `enviarRecordatorios.js` |
 | `backend/src/services/recordatorios.js` | Recordatorio del día anterior y su ejecución automática |
 | `backend/.env.example` | Plantilla de configuración |
-| `frontend/` | `index.html`, `politica-datos.html`, `css/` (tokens → base → pantalla), `js/` (config y un módulo por pantalla), `paciente/`, `admin/` |
+| `frontend/` | Páginas públicas (`index.html`, `gestionar-cita.html`, `politica-datos.html`) y con sesión (`cambiar-contrasena.html`, `mis-citas.html`, `panel-secretaria.html`); `css/` (tokens → base → pantalla); `js/` (config, `api.js`, `sesion.js` y un módulo por pantalla) |
 | `docs/` | Documentación del proyecto |
 
 **Flujo de una petición:** `routes` aplica los middlewares (sesión, rol, límite) → el `controller` valida el cuerpo con `utils/validaciones`, aplica las reglas y llama a los `models` → si algo falla lanza un `ErrorHttp(status, mensaje, campos)` → el manejador central de `app.js` responde `{ error, campos? }` sin exponer detalles internos (la traza completa queda solo en la consola del servidor).
@@ -128,6 +128,8 @@ Todas las rutas cuelgan de `/api` y responden JSON. El contrato completo con eje
 | No quitar una hora con cita | `quitarFranja` responde 409 si hay cita viva; si no, la desactiva (no la borra) |
 | Marcar asistencia solo cuando llegó la hora | `cambiarEstado` compara con la hora actual |
 | Las citas canceladas no se borran | Estado `cancelada` y `cancelada_por` |
+| Límite de intentos de ingreso | `limitePeticiones` en `POST /auth/ingreso`: 10 por IP cada 15 minutos, configurable con `LIMITE_INGRESOS_POR_IP` |
+| Clave temporal obligatoria de cambiar | El ingreso devuelve `debeCambiarContrasena`; `exigirSesion()` en `frontend/js/sesion.js` lleva a `cambiar-contrasena.html` antes de cualquier panel |
 | Historia clínica inalterable | Solo hay `INSERT`; la corrección es una entrada nueva con `corrige_a` |
 | Pacientes con cuenta solo los crea la secretaria | No hay registro público; `POST /pacientes` exige rol administrador |
 | Recordatorio el día anterior, una sola vez | `services/recordatorios.js`: cada 30 min dentro de `RECORDATORIO_DESDE`–`RECORDATORIO_HASTA`; citas confirmadas de mañana agendadas hace más de 12 h y sin recordatorio posterior a su última confirmación o reprogramación |

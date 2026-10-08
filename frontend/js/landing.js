@@ -67,17 +67,58 @@ function configurarWhatsApp() {
 }
 
 /* Formulario de ingreso. Un solo acceso para la secretaria (administrador)
-   y para los pacientes que ya tienen usuario; el rol lo decide el servidor.
-   La validación real y obligatoria vive en el backend. */
+   y para los pacientes que ya tienen usuario; el rol lo decide el servidor
+   (contrato API v2, sección 3). La validación real vive en el backend. */
 function prepararFormularios() {
   const ingreso = document.getElementById('form-ingreso');
+  if (!ingreso) return;
+  const error = ingreso.querySelector('[data-error]');
+  const boton = ingreso.querySelector('button[type="submit"]');
 
-  ingreso?.addEventListener('submit', (e) => {
+  // Con sesión abierta, "Ingresar" lleva directo al panel.
+  const sesion = obtenerSesion();
+  if (sesion) {
+    document.querySelectorAll('[data-abrir="modal-ingreso"]').forEach((enlace) => {
+      enlace.removeAttribute('data-abrir');
+      enlace.textContent = 'Mi panel';
+      if (enlace.tagName === 'A') enlace.href = destinoDe(sesion.usuario);
+      else enlace.addEventListener('click', () => location.assign(destinoDe(sesion.usuario)));
+    });
+  }
+
+  // index.html?ingresar=1 abre el formulario (lo usan los paneles al
+  // pedir sesión); &vencida=1 explica por qué.
+  const parametros = new URLSearchParams(location.search);
+  if (parametros.has('ingresar') && !sesion) {
+    abrirModal('modal-ingreso');
+    if (parametros.has('vencida')) mostrarError(error, 'Tu sesión venció. Ingresa de nuevo.');
+  }
+
+  ingreso.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const error = ingreso.querySelector('[data-error]');
     ocultarError(error);
-    // PENDIENTE: POST ${CONFIG.API}/auth/ingreso y redirección según el rol.
-    console.log('Ingreso validado. Falta conectar con el backend.');
+
+    const correo = ingreso.correo.value.trim();
+    const contrasena = ingreso.contrasena.value;
+    if (!correo || !contrasena) {
+      mostrarError(error, 'Escribe tu correo y tu contraseña.');
+      (correo ? ingreso.contrasena : ingreso.correo).focus();
+      return;
+    }
+
+    boton.disabled = true;
+    boton.textContent = 'Ingresando…';
+    try {
+      const respuesta = await api('/auth/ingreso', { metodo: 'POST', cuerpo: { correo, contrasena } });
+      guardarSesion(respuesta);
+      location.assign(destinoDe(respuesta.usuario));
+    } catch (err) {
+      mostrarError(error, err.message);
+      ingreso.contrasena.value = '';
+      ingreso.contrasena.focus();
+      boton.disabled = false;
+      boton.textContent = 'Ingresar';
+    }
   });
 }
 

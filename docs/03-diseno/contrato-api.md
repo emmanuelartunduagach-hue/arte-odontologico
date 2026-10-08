@@ -67,11 +67,11 @@ La página lee `codigo` de la URL.
 
 ## 3. Sesión (secretaria y pacientes con usuario)
 
-Un solo formulario de **Ingresar** para los dos; el rol decide a qué panel va.
+Un solo formulario de **Ingresar** para los dos; el rol decide a qué panel va: `administrador` → `panel-secretaria.html`, `paciente` → `mis-citas.html`. La sesión se guarda en `sessionStorage` (`frontend/js/sesion.js`) y `api()` envía el token sola.
 
 | Petición | Notas |
 |---|---|
-| `POST /auth/ingreso` `{ correo, contrasena }` | `{ token, usuario: { id, nombre, rol, debeCambiarContrasena } }`. Si `debeCambiarContrasena`, lleva a cambiar la clave antes de todo |
+| `POST /auth/ingreso` `{ correo, contrasena }` | `{ token, usuario: { id, nombre, rol, debeCambiarContrasena } }`. Si `debeCambiarContrasena`, lleva a cambiar la clave antes de todo. Correo o clave incorrectos → **401**; más de 10 intentos en 15 minutos desde la misma IP → **429** |
 | `POST /auth/cambiar-contrasena` `{ contrasenaActual, contrasenaNueva }` | Clave actual incorrecta → **400** (no 401) |
 | `GET /auth/perfil` | `{ id, nombreCompleto, documento, correo, telefono, rol }` |
 | `GET /mis-citas` (paciente) | Lista de citas con el formato de `cita` de arriba, la más reciente primero |

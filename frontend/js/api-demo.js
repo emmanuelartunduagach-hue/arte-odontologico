@@ -6,12 +6,24 @@
    otro caso este archivo no hace nada. No guarda ningún dato.
 
    Ejemplo: http://localhost:5500/frontend/index.html?demo=1
+   Queda activo en esa pestaña hasta cerrarla o abrir una página con ?demo=0.
    Para probar el error de "ya tiene una cita activa" usa el documento
    999999999. */
 
 (function () {
   const esLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
-  if (!esLocal || !new URLSearchParams(location.search).has('demo')) return;
+  if (!esLocal) return;
+
+  // El modo se recuerda en la pestaña para que siga activo al pasar del
+  // ingreso a los paneles. `?demo=0` lo apaga.
+  const parametro = new URLSearchParams(location.search).get('demo');
+  try {
+    if (parametro === '0') sessionStorage.removeItem('arte-demo');
+    else if (parametro !== null) sessionStorage.setItem('arte-demo', '1');
+    if (sessionStorage.getItem('arte-demo') !== '1') return;
+  } catch {
+    if (parametro === null || parametro === '0') return;
+  }
 
   const espera = (ms) => new Promise((r) => setTimeout(r, ms));
   const dos = (n) => String(n).padStart(2, '0');
@@ -86,10 +98,101 @@
     return { puedeReprogramar: true, puedeCancelar: true, motivo: null };
   }
 
-  window.API_DEMO = async function (ruta, metodo, cuerpo) {
+  // ---- Sesión ----
+  // Usuarios de prueba (contraseña Demo1234):
+  //   secretaria@demo.co → panel de la secretaria
+  //   paciente@demo.co   → mis citas
+  //   nuevo@demo.co      → clave temporal: obliga a cambiarla
+  const USUARIOS = {
+    'secretaria@demo.co': { id: 1, nombre: 'Secretaria de Prueba', rol: 'administrador', debeCambiarContrasena: false },
+    'paciente@demo.co': { id: 2, nombre: 'Ana Pérez', rol: 'paciente', debeCambiarContrasena: false },
+    'nuevo@demo.co': { id: 3, nombre: 'Paciente Nuevo', rol: 'paciente', debeCambiarContrasena: true },
+  };
+  const CLAVE_DEMO = 'Demo1234';
+
+  // Token con la forma de un JWT (sin firma real) para que js/sesion.js
+  // pueda leer el vencimiento y el rol.
+  function tokenDemo(usuario) {
+    const b64 = (obj) => btoa(JSON.stringify(obj)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
+    const exp = Math.floor(Date.now() / 1000) + 8 * 3600;
+    return `${b64({ alg: 'none' })}.${b64({ id: usuario.id, rol: usuario.rol, nombre: usuario.nombre, exp })}.demo`;
+  }
+  function usuarioDelToken(token) {
+    try {
+      const { id } = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      return Object.values(USUARIOS).find((u) => u.id === id) || null;
+    } catch {
+      return null;
+    }
+  }
+
+  function citasDePaciente() {
+    const hoy = hoyColombia();
+    const cita = (dias, hora, estado, especialidad) => ({
+      id: 100 + dias, estado, paciente: 'Ana Pérez', especialidad, especialistaId: 31,
+      especialista: 'Dra. Prueba Uno', fecha: sumarDias(hoy, dias), hora, sede: 'Rivera',
+      direccion: 'Carrera 7 No. 3-61, Rivera', reprogramaciones: 0,
+    });
+    return [
+      cita(12, '15:30', 'confirmada', 'Ortodoncia'),
+      cita(3, '09:30', 'confirmada', 'Odontología general'),
+      cita(-20, '08:00', 'atendida', 'Odontología general'),
+      cita(-45, '10:00', 'cancelada', 'Diseño de sonrisa'),
+    ];
+  }
+
+  function agendaDeHoy() {
+    const hoy = hoyColombia();
+    return [
+      ['08:00', 'Ana Pérez', 'atendida'], ['09:30', 'Carlos Gómez', 'confirmada'],
+      ['11:00', 'Luisa Rojas', 'cancelada'], ['15:30', 'Pedro Díaz', 'confirmada'],
+    ].map(([hora, paciente, estado], i) => ({
+      id: 200 + i, estado, paciente, especialidad: 'Ortodoncia', especialistaId: 31, especialista: 'Dra. Prueba Uno',
+      fecha: hoy, hora, sede: 'Rivera', direccion: 'Carrera 7 No. 3-61, Rivera', reprogramaciones: 0,
+      documento: `10751234${i}`, telefono: `57300123456${i}`, correo: null, pacienteId: null,
+    }));
+  }
+
+  window.API_DEMO = async function (ruta, metodo, cuerpo, token) {
     await espera(350);
     const url = new URL(ruta, 'http://demo');
     const partes = url.pathname.split('/').filter(Boolean);
+
+    if (metodo === 'POST' && url.pathname === '/auth/ingreso') {
+      const usuario = USUARIOS[String(cuerpo.correo).toLowerCase()];
+      if (!usuario || cuerpo.contrasena !== CLAVE_DEMO) throw new ErrorApi('Correo o contraseña incorrectos.', 401);
+      return { token: tokenDemo(usuario), usuario: { ...usuario } };
+    }
+
+    const usuario = token ? usuarioDelToken(token) : null;
+    const exigir = (rol) => {
+      if (!usuario) throw new ErrorApi('Debes iniciar sesión', 401);
+      if (rol && usuario.rol !== rol) throw new ErrorApi('No tienes permiso para esta acción', 403);
+    };
+
+    if (metodo === 'POST' && url.pathname === '/auth/cambiar-contrasena') {
+      exigir();
+      if (cuerpo.contrasenaActual !== CLAVE_DEMO) {
+        const mensaje = 'La contraseña actual no es correcta.';
+        throw new ErrorApi(mensaje, 400, { contrasenaActual: mensaje });
+      }
+      return { mensaje: 'Contraseña actualizada correctamente.' };
+    }
+
+    if (metodo === 'GET' && url.pathname === '/mis-citas') {
+      exigir('paciente');
+      return citasDePaciente();
+    }
+
+    if (metodo === 'GET' && url.pathname === '/admin/citas') {
+      exigir('administrador');
+      return agendaDeHoy();
+    }
+
+    if (metodo === 'GET' && url.pathname === '/admin/notificaciones') {
+      exigir('administrador');
+      return [{ id: 1, citaId: 201, paciente: 'Carlos Gómez', tipo: 'recordatorio', destino: '573001234561', mensaje: 'Hola Carlos…', enlaceWhatsApp: '#', creadoEn: new Date().toISOString() }];
+    }
 
     if (metodo === 'GET' && url.pathname === '/especialidades') return ESPECIALIDADES;
 

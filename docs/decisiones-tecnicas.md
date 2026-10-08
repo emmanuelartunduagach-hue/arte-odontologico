@@ -260,3 +260,21 @@ Se agregó `.gitattributes` para que todo archivo de texto se guarde con saltos
 de línea LF en el repositorio, sin importar el sistema operativo de quien hace
 el commit. Antes, algunos commits hechos desde Windows guardaban CRLF y GitHub
 mostraba archivos completos como modificados cuando solo cambiaban unas líneas.
+
+## 21. Sesión en el navegador y límite de intentos de ingreso (8 de octubre)
+
+El token se guarda en `sessionStorage` y no en `localStorage`: se borra al
+cerrar la pestaña. En el computador compartido del consultorio, una sesión de
+la secretaria olvidada abierta daría acceso a historias clínicas a quien use
+el equipo después. El costo es que cada pestaña nueva pide ingresar otra vez.
+
+Las páginas con sesión llaman a `exigirSesion(rol)` al cargar: sin sesión
+llevan a Ingresar, con otro rol llevan al panel que corresponde y, si la clave
+es temporal, obligan a cambiarla primero. Esto ordena la navegación, pero no
+es la seguridad: cada ruta del backend vuelve a validar el token y el rol. Si
+la API responde 401 a una petición con token, la sesión se borra y se vuelve a
+Ingresar con el aviso "Tu sesión venció".
+
+`POST /auth/ingreso` tiene su propio límite de peticiones (10 por IP cada 15
+minutos) para frenar a quien intente adivinar contraseñas. Los intentos
+exitosos también cuentan, lo que no afecta el uso normal.
