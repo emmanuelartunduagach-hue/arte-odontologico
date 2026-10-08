@@ -166,8 +166,22 @@
     }));
     return AGENDA;
   }
-  let NOTIFICACION = 1;
-  const notificacionDemo = () => ({ id: ++NOTIFICACION, estado: 'pendiente', enlaceWhatsApp: 'https://wa.me/573001234567' });
+  // Mensajes de WhatsApp en memoria (modo manual: quedan por enviar).
+  const TEXTOS_TIPO = {
+    confirmacion: 'quedó agendada', reprogramacion: 'fue reprogramada', cancelacion: 'fue cancelada', recordatorio: 'es mañana',
+  };
+  const NOTIFICACIONES = [];
+  function notificacionDemo(cita, tipo) {
+    const mensaje = `Hola ${cita.paciente.split(' ')[0]}, tu cita en Arte Odontológico del ${cita.fecha} a las ${cita.hora} con ${cita.especialista} ${TEXTOS_TIPO[tipo]}.`;
+    const n = {
+      id: NOTIFICACIONES.length + 1, citaId: cita.id, tipo, estado: 'pendiente', destino: cita.telefono, mensaje, detalle: null,
+      creadoEn: new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 19).replace('T', ' '), paciente: cita.paciente,
+      enlaceWhatsApp: `https://wa.me/${cita.telefono}?text=${encodeURIComponent(mensaje)}`,
+    };
+    NOTIFICACIONES.unshift(n);
+    return { id: n.id, estado: n.estado, enlaceWhatsApp: n.enlaceWhatsApp };
+  }
+  let RECORDATORIOS_HECHOS = false;
 
   window.API_DEMO = async function (ruta, metodo, cuerpo, token) {
     await espera(350);
@@ -227,7 +241,7 @@
       if (metodo === 'PATCH' && partes[3] === 'estado') {
         if (cuerpo.estado === 'cancelada') {
           Object.assign(cita, { estado: 'cancelada', canceladaPor: 'administrador' });
-          return { mensaje: 'Cita cancelada.', notificacion: notificacionDemo() };
+          return { mensaje: 'Cita cancelada.', notificacion: notificacionDemo(cita, 'cancelacion') };
         }
         cita.estado = cuerpo.estado;
         return { mensaje: cuerpo.estado === 'atendida' ? 'Cita marcada como atendida.' : 'Cita marcada como no asistió.' };
@@ -238,18 +252,32 @@
         if (hora === '10:00') throw new ErrorApi('Esa hora acaba de ser tomada. Elige otra.', 409);
         const esp = ESPECIALISTAS_ADMIN.find((e) => e.id === Number(especialistaId));
         Object.assign(cita, { fecha, hora, especialistaId: esp?.id ?? cita.especialistaId, especialista: esp?.nombre ?? cita.especialista });
-        return { mensaje: 'Cita reprogramada.', cita: { ...cita }, notificacion: notificacionDemo() };
+        return { mensaje: 'Cita reprogramada.', cita: { ...cita }, notificacion: notificacionDemo(cita, 'reprogramacion') };
       }
     }
 
-    if (metodo === 'PATCH' && partes[0] === 'admin' && partes[1] === 'notificaciones') {
+    if (partes[0] === 'admin' && partes[1] === 'notificaciones') {
       exigir('administrador');
-      return { mensaje: 'Mensaje marcado como enviado.' };
+      if (!NOTIFICACIONES.length) {
+        // Uno de ejemplo para que la sección no arranque vacía.
+        notificacionDemo(agendaDemo().find((c) => c.paciente === 'Sofía Ramírez'), 'confirmacion');
+      }
+      if (metodo === 'GET') return NOTIFICACIONES.filter((n) => n.estado === (url.searchParams.get('estado') || 'pendiente')).map((n) => ({ ...n }));
+      if (metodo === 'PATCH') {
+        const n = NOTIFICACIONES.find((x) => x.id === Number(partes[2]));
+        if (!n) throw new ErrorApi('Mensaje no encontrado.', 404);
+        n.estado = 'enviada';
+        return { mensaje: 'Mensaje marcado como enviado.' };
+      }
     }
 
-    if (metodo === 'GET' && url.pathname === '/admin/notificaciones') {
+    if (metodo === 'POST' && url.pathname === '/admin/recordatorios') {
       exigir('administrador');
-      return [{ id: 1, citaId: 201, paciente: 'Carlos Gómez', tipo: 'recordatorio', destino: '573001234561', mensaje: 'Hola Carlos…', enlaceWhatsApp: '#', creadoEn: new Date().toISOString() }];
+      const fecha = sumarDias(hoyColombia(), 1);
+      const citas = RECORDATORIOS_HECHOS ? [] : agendaDemo().filter((c) => c.fecha === fecha && c.estado === 'confirmada');
+      RECORDATORIOS_HECHOS = true;
+      const resultados = citas.map((c) => ({ citaId: c.id, estado: notificacionDemo(c, 'recordatorio').estado }));
+      return { fecha, revisadas: citas.length, resultados };
     }
 
     if (metodo === 'GET' && url.pathname === '/especialidades') return ESPECIALIDADES;

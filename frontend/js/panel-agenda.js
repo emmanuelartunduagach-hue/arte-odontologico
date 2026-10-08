@@ -7,50 +7,83 @@
    Para reprogramar se usan el calendario y las horas públicas del especialista:
      GET /especialistas/:id/calendario?mes=   GET /especialistas/:id/horas?fecha=
 
-   Atendida y no asistió solo se ofrecen cuando ya llegó la hora (el
-   servidor lo exige igual). Los filtros se conservan al cambiar de sección. */
+   La agenda se ve por día (‹ Hoy ›). Al buscar un paciente se buscan sus
+   citas de 3 meses atrás a 3 meses adelante. Atendida y no asistió solo
+   se ofrecen cuando ya llegó la hora (el servidor lo exige igual). */
 
 const agenda = {
-  filtros: null,           // { desde, hasta, especialistaId, estado, q }
-  especialistas: null,     // GET /admin/especialistas (para el filtro y para reprogramar)
-  aviso: null,             // resultado de la última acción
-  turno: 0,                // descarta respuestas de una búsqueda anterior
+  fecha: null,             // día que se está viendo
+  especialistaId: '',
+  estado: '',
+  q: '',                   // búsqueda de paciente (cambia la vista a "resultados")
+  especialistas: null,     // GET /admin/especialistas (filtro y reprogramar)
+  turno: 0,                // descarta respuestas de una consulta anterior
 };
 
-const ESTADOS_FILTRO = [
-  ['', 'Todos'], ['confirmada', 'Confirmada'], ['atendida', 'Atendida'],
-  ['no_asistio', 'No asistió'], ['cancelada', 'Cancelada'],
-];
+const DIAS_BUSQUEDA = 90;
 
-function filtrosIniciales() {
-  const hoy = hoyColombia();
-  return { desde: hoy, hasta: hoy, especialistaId: '', estado: '', q: '' };
+/* ---------- Fila de cita (también la usa Inicio) ---------- */
+
+function filaCita(cita, { conFecha = false } = {}) {
+  const llegoLaHora = `${cita.fecha}T${cita.hora}` <= ahoraColombia();
+  const viva = cita.estado === 'confirmada';
+  const [h, m] = cita.hora.split(':').map(Number);
+
+  // La acción más probable va a la vista; el resto, en "Más".
+  const acciones = !viva ? [] : llegoLaHora
+    ? [['Atendida', () => marcarCita(cita, 'atendida')], ['No asistió', () => marcarCita(cita, 'no_asistio')],
+      ['Reprogramar', () => reprogramarCita(cita)], ['Cancelar cita', () => cancelarCita(cita)]]
+    : [['Reprogramar', () => reprogramarCita(cita)], ['Cancelar cita', () => cancelarCita(cita)]];
+  const [principal, ...resto] = acciones;
+
+  return el('article', { class: 'fila-cita' + (viva ? '' : ' fila-cita--cerrada'), 'aria-label': `${horaLarga(cita.hora)}, ${cita.paciente}` },
+    el('div', { class: 'fila-cita__hora' },
+      conFecha && el('span', { class: 'fila-cita__fecha', texto: fechaLarga(cita.fecha) }),
+      el('span', { class: 'fila-cita__reloj', texto: `${h % 12 || 12}:${String(m).padStart(2, '0')}` }),
+      el('span', { class: 'fila-cita__meridiano', texto: h >= 12 ? 'p. m.' : 'a. m.' })),
+    el('div', { class: 'fila-cita__paciente' },
+      el('p', { class: 'fila-cita__nombre', texto: cita.paciente }),
+      el('p', { class: 'fila-cita__detalle' },
+        el('span', { texto: `Doc. ${cita.documento}` }),
+        el('span', { texto: `Tel. ${telefonoLegible(cita.telefono)}` }))),
+    el('div', { class: 'fila-cita__especialista' },
+      el('p', { texto: cita.especialista }),
+      el('p', { class: 'fila-cita__detalle', texto: cita.especialidad })),
+    el('div', { class: 'fila-cita__estado' },
+      chipEstado(cita.estado),
+      cita.estado === 'cancelada' && cita.canceladaPor
+        && el('span', { class: 'fila-cita__detalle', texto: cita.canceladaPor === 'paciente' ? 'por el paciente' : 'por el consultorio' })),
+    el('div', { class: 'fila-cita__acciones' },
+      principal && el('button', {
+        type: 'button', class: `btn ${principal[0] === 'Atendida' ? 'btn--primario' : 'btn--secundario'} btn--compacto`,
+        onclick: principal[1], texto: principal[0],
+      }),
+      resto.length > 0 && el('details', { class: 'menu-acciones' },
+        el('summary', { class: 'btn btn--fantasma btn--compacto', 'aria-label': `Más acciones para ${cita.paciente}`, texto: 'Más' }),
+        el('div', { class: 'menu-acciones__lista' },
+          resto.map(([texto, accion]) => el('button', { type: 'button', onclick: accion, texto }))))));
 }
 
-function consultaAgenda(f) {
-  const p = new URLSearchParams({ desde: f.desde, hasta: f.hasta });
-  if (f.especialistaId) p.set('especialistaId', f.especialistaId);
-  if (f.estado) p.set('estado', f.estado);
-  if (f.q) p.set('q', f.q);
-  return `/admin/citas?${p}`;
+function listaCitas(citas, opciones) {
+  return el('div', { class: 'lista-filas' }, citas.map((c) => filaCita(c, opciones)));
+}
+
+function ordenarPorHora(citas) {
+  return [...citas].sort((a, b) => `${a.fecha} ${a.hora}`.localeCompare(`${b.fecha} ${b.hora}`));
 }
 
 /* ---------- Sección ---------- */
 
 async function montarAgenda(cuerpo) {
-  agenda.filtros ??= filtrosIniciales();
-  agenda.aviso = null;  // el aviso de una acción no sobrevive al cambio de sección
+  agenda.fecha ??= hoyColombia();
   const resultados = el('div', { class: 'agenda__resultados' });
-  const avisos = el('div', { class: 'agenda__avisos' });
 
   pintarEn(cuerpo,
     avisoDemo(),
-    el('h1', { class: 'gestion__titulo', tabindex: '-1', 'data-foco-seccion': true, texto: 'Agenda' }),
-    formularioFiltros(),
-    avisos,
+    encabezadoSeccion('Agenda'),
+    tomarAviso(),
+    barraAgenda(),
     resultados);
-
-  agenda.recargar = () => cargarAgenda(resultados, avisos);
 
   if (!agenda.especialistas) {
     try {
@@ -59,117 +92,95 @@ async function montarAgenda(cuerpo) {
       if (select) llenarEspecialistas(select);
     } catch { /* el filtro queda solo con "Todos"; la agenda carga igual */ }
   }
-  agenda.recargar();
+  cargarAgenda(resultados);
 }
 
-function formularioFiltros() {
-  const f = agenda.filtros;
-  const campo = (etiqueta, control) => el('label', { class: 'campo' }, el('span', { class: 'campo__etiqueta', texto: etiqueta }), control);
+function barraAgenda() {
+  const hoy = hoyColombia();
+  const ir = (fecha) => { agenda.fecha = fecha; agenda.q = ''; panel.refrescar(); };
 
-  const especialista = el('select', { class: 'campo__control', name: 'especialistaId' }, el('option', { value: '', texto: 'Todos' }));
+  const navegacion = el('div', { class: 'agenda__dia' },
+    el('button', { type: 'button', class: 'btn btn--secundario btn--icono', 'aria-label': 'Día anterior', onclick: () => ir(sumarDiasA(agenda.fecha, -1)) },
+      icono('<path d="m15 18-6-6 6-6"/>')),
+    el('button', { type: 'button', class: 'btn btn--secundario btn--compacto', disabled: agenda.fecha === hoy && !agenda.q, onclick: () => ir(hoy), texto: 'Hoy' }),
+    el('button', { type: 'button', class: 'btn btn--secundario btn--icono', 'aria-label': 'Día siguiente', onclick: () => ir(sumarDiasA(agenda.fecha, 1)) },
+      icono('<path d="m9 18 6-6-6-6"/>')),
+    el('label', { class: 'agenda__ir-fecha' },
+      el('span', { class: 'sr-only', texto: 'Ir a una fecha' }),
+      el('input', { class: 'campo__control', type: 'date', value: agenda.fecha, onchange: (e) => e.target.value && ir(e.target.value) })));
+
+  const especialista = el('select', { class: 'campo__control', name: 'especialistaId', 'aria-label': 'Especialista' },
+    el('option', { value: '', texto: 'Todos los especialistas' }));
   if (agenda.especialistas) llenarEspecialistas(especialista);
+  especialista.addEventListener('change', () => { agenda.especialistaId = especialista.value; panel.refrescar(); });
 
-  const form = el('form', { class: 'filtros', role: 'search', 'aria-label': 'Filtrar la agenda' },
-    campo('Desde', el('input', { class: 'campo__control', type: 'date', name: 'desde', value: f.desde, required: true })),
-    campo('Hasta', el('input', { class: 'campo__control', type: 'date', name: 'hasta', value: f.hasta, required: true })),
-    campo('Especialista', especialista),
-    campo('Estado', el('select', { class: 'campo__control', name: 'estado' },
-      ESTADOS_FILTRO.map(([valor, texto]) => el('option', { value: valor, selected: valor === f.estado, texto })))),
-    campo('Paciente', el('input', { class: 'campo__control', type: 'search', name: 'q', value: f.q, placeholder: 'Nombre, documento o teléfono', autocomplete: 'off' })),
-    el('div', { class: 'filtros__botones' },
-      el('button', { type: 'submit', class: 'btn btn--primario', texto: 'Buscar' }),
-      el('button', { type: 'button', class: 'btn btn--fantasma', onclick: () => rango(0), texto: 'Hoy' }),
-      el('button', { type: 'button', class: 'btn btn--fantasma', onclick: () => rango(7), texto: 'Próximos 7 días' })));
+  const estado = el('select', { class: 'campo__control', name: 'estado', 'aria-label': 'Estado' },
+    [['', 'Todos los estados'], ['confirmada', 'Confirmadas'], ['atendida', 'Atendidas'], ['no_asistio', 'No asistió'], ['cancelada', 'Canceladas']]
+      .map(([valor, texto]) => el('option', { value: valor, selected: valor === agenda.estado, texto })));
+  estado.addEventListener('change', () => { agenda.estado = estado.value; panel.refrescar(); });
 
-  function rango(dias) {
-    const hoy = hoyColombia();
-    form.desde.value = hoy;
-    form.hasta.value = sumarDiasA(hoy, dias);
-    form.requestSubmit();
-  }
-
-  form.addEventListener('submit', (e) => {
+  const busqueda = el('form', { class: 'agenda__busqueda', role: 'search' },
+    el('input', { class: 'campo__control', type: 'search', name: 'q', value: agenda.q, 'aria-label': 'Buscar paciente',
+      placeholder: 'Buscar paciente: nombre, documento o teléfono', autocomplete: 'off' }),
+    el('button', { type: 'submit', class: 'btn btn--primario btn--compacto', texto: 'Buscar' }));
+  busqueda.addEventListener('submit', (e) => {
     e.preventDefault();
-    let { desde, hasta } = { desde: form.desde.value, hasta: form.hasta.value };
-    if (!desde) desde = hoyColombia();
-    if (!hasta || hasta < desde) hasta = desde;
-    form.desde.value = desde;
-    form.hasta.value = hasta;
-    agenda.filtros = { desde, hasta, especialistaId: form.especialistaId.value, estado: form.estado.value, q: form.q.value.trim() };
-    agenda.aviso = null;
-    agenda.recargar();
+    agenda.q = busqueda.q.value.trim();
+    panel.refrescar();
   });
-  // Los menús filtran al cambiar; las fechas y el texto, con "Buscar".
-  especialista.addEventListener('change', () => form.requestSubmit());
-  form.estado.addEventListener('change', () => form.requestSubmit());
-  return form;
+
+  return el('div', { class: 'agenda__barra' },
+    navegacion,
+    el('div', { class: 'agenda__filtros' }, especialista, estado),
+    busqueda);
 }
 
 function llenarEspecialistas(select) {
-  pintarEn(select, el('option', { value: '', texto: 'Todos' }),
+  pintarEn(select, el('option', { value: '', texto: 'Todos los especialistas' }),
     agenda.especialistas.map((e) => el('option', {
-      value: String(e.id), selected: String(e.id) === agenda.filtros.especialistaId,
+      value: String(e.id), selected: String(e.id) === agenda.especialistaId,
       texto: e.activo ? e.nombre : `${e.nombre} (inactivo)`,
     })));
 }
 
-async function cargarAgenda(resultados, avisos) {
+async function cargarAgenda(resultados) {
   const turno = ++agenda.turno;
-  pintarEn(avisos, agenda.aviso);
-  pintarEn(resultados, el('p', { class: 'estado-carga', role: 'status', texto: 'Cargando citas…' }));
+  const buscando = Boolean(agenda.q);
+  const p = buscando
+    ? new URLSearchParams({ desde: sumarDiasA(hoyColombia(), -DIAS_BUSQUEDA), hasta: sumarDiasA(hoyColombia(), DIAS_BUSQUEDA), q: agenda.q })
+    : new URLSearchParams({ fecha: agenda.fecha });
+  if (agenda.especialistaId) p.set('especialistaId', agenda.especialistaId);
+  if (agenda.estado) p.set('estado', agenda.estado);
 
+  pintarEn(resultados, estadoCarga('Cargando citas…'));
   let citas;
   try {
-    citas = await api(consultaAgenda(agenda.filtros));
+    citas = await api(`/admin/citas?${p}`);
   } catch (err) {
-    if (turno !== agenda.turno) return;
-    pintarEn(resultados,
-      el('p', { class: 'alerta', role: 'alert', texto: err.message }),
-      el('button', { type: 'button', class: 'btn btn--secundario', onclick: agenda.recargar, texto: 'Reintentar' }));
+    if (turno === agenda.turno) pintarEn(resultados, errorConReintento(err, () => cargarAgenda(resultados)));
     return;
   }
   if (turno !== agenda.turno) return;
 
-  if (!citas.length) {
-    pintarEn(resultados, el('p', { class: 'gestion__intro', role: 'status', texto: 'No hay citas con estos filtros.' }));
-    return;
-  }
-
-  // Agrupadas por día, en orden de hora.
-  const porDia = new Map();
-  [...citas].sort((a, b) => `${a.fecha} ${a.hora}`.localeCompare(`${b.fecha} ${b.hora}`))
-    .forEach((c) => porDia.set(c.fecha, [...(porDia.get(c.fecha) || []), c]));
+  const confirmadas = citas.filter((c) => c.estado === 'confirmada').length;
+  const resumen = citas.length === 0 ? null
+    : `${citas.length === 1 ? '1 cita' : `${citas.length} citas`} · ${confirmadas === 1 ? '1 confirmada' : `${confirmadas} confirmadas`}`;
 
   pintarEn(resultados,
-    el('p', { class: 'agenda__conteo', role: 'status', texto: citas.length === 1 ? '1 cita.' : `${citas.length} citas.` }),
-    [...porDia].map(([fecha, delDia]) => [
-      el('h2', { class: 'lista-citas__grupo', texto: fechaLarga(fecha) }),
-      el('div', { class: 'lista-citas' }, delDia.map(tarjetaAgenda)),
-    ]));
+    el('div', { class: 'agenda__titulo-lista' },
+      el('h2', { texto: buscando ? `Resultados para «${agenda.q}»` : capitalizar(fechaLarga(agenda.fecha)) }),
+      resumen && el('p', { class: 'agenda__conteo', role: 'status', texto: resumen }),
+      buscando && el('button', { type: 'button', class: 'btn btn--fantasma btn--compacto', onclick: () => { agenda.q = ''; panel.refrescar(); }, texto: 'Limpiar búsqueda' })),
+    citas.length
+      ? listaCitas(ordenarPorHora(citas), { conFecha: buscando })
+      : el('div', { class: 'vacio' },
+        el('p', { texto: buscando ? 'No encontramos citas de ese paciente en los últimos y próximos 3 meses.' : 'No hay citas este día.' }),
+        !buscando && agenda.fecha !== hoyColombia()
+          && el('button', { type: 'button', class: 'btn btn--secundario btn--compacto', onclick: () => { agenda.fecha = hoyColombia(); panel.refrescar(); }, texto: 'Volver a hoy' })));
 }
 
-function tarjetaAgenda(cita) {
-  const llegoLaHora = `${cita.fecha}T${cita.hora}` <= ahoraColombia();
-  const viva = cita.estado === 'confirmada';
-  const boton = (texto, clase, accion) => el('button', { type: 'button', class: `btn ${clase}`, onclick: accion, texto });
-
-  return el('article', { class: 'cita' + (viva ? '' : ' cita--pasada'), 'aria-label': `${horaLarga(cita.hora)}, ${cita.paciente}` },
-    el('div', { class: 'cita__cabecera' },
-      el('h3', { class: 'cita__titulo', texto: `${horaLarga(cita.hora)} · ${cita.paciente}` }),
-      chipEstado(cita.estado)),
-    el('dl', { class: 'resumen' },
-      dato('Especialista', `${cita.especialista} (${cita.especialidad})`),
-      dato('Documento', cita.documento),
-      dato('Teléfono', telefonoLegible(cita.telefono)),
-      cita.correo && dato('Correo', cita.correo),
-      cita.estado === 'cancelada' && cita.canceladaPor
-        && dato('Cancelada por', cita.canceladaPor === 'paciente' ? 'El paciente' : 'El consultorio'),
-      cita.reprogramaciones > 0 && dato('Reprogramada por el paciente', 'Sí')),
-    viva && el('div', { class: 'acciones cita__acciones' },
-      llegoLaHora && boton('Atendida', 'btn--primario', () => marcarCita(cita, 'atendida')),
-      llegoLaHora && boton('No asistió', 'btn--secundario', () => marcarCita(cita, 'no_asistio')),
-      boton('Reprogramar', 'btn--secundario', () => reprogramarCita(cita)),
-      boton('Cancelar cita', 'btn--fantasma', () => cancelarCita(cita))));
+function capitalizar(texto) {
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
 /* ---------- Acciones ---------- */
@@ -186,8 +197,8 @@ function marcarCita(cita, estado) {
     si: atendida ? 'Sí, fue atendida' : 'Sí, no asistió',
     accion: async () => {
       const r = await api(`/admin/citas/${cita.id}/estado`, { metodo: 'PATCH', cuerpo: { estado } });
-      agenda.aviso = avisoAccion(r.mensaje);
-      agenda.recargar();
+      panel.aviso = avisoAccion(r.mensaje);
+      panel.refrescar();
     },
   });
 }
@@ -195,21 +206,26 @@ function marcarCita(cita, estado) {
 function cancelarCita(cita) {
   confirmarAccion({
     titulo: '¿Cancelar la cita?',
-    texto: `${nombreCita(cita)}. La hora vuelve a quedar libre y se avisa al paciente por WhatsApp.`,
+    texto: `${nombreCita(cita)}. La hora vuelve a quedar libre y se le avisa al paciente por WhatsApp.`,
     si: 'Sí, cancelar la cita',
     no: 'No, conservarla',
     accion: async () => {
       const r = await api(`/admin/citas/${cita.id}/estado`, { metodo: 'PATCH', cuerpo: { estado: 'cancelada' } });
-      agenda.aviso = avisoAccion(r.mensaje, r.notificacion);
-      agenda.recargar();
+      panel.aviso = avisoAccion(`Cita de ${cita.paciente} cancelada.`, r.notificacion);
+      panel.refrescar();
+      actualizarContadorMensajes();
     },
   });
 }
 
 /* Reprogramar: especialista (de la misma especialidad) → día → hora → confirmar. */
-function reprogramarCita(cita) {
+async function reprogramarCita(cita) {
   const cuerpo = dialogo.abrir('Reprogramar cita');
-  const candidatos = (agenda.especialistas || [])
+  if (!agenda.especialistas) {
+    pintarEn(cuerpo, estadoCarga('Cargando especialistas…'));
+    try { agenda.especialistas = await api('/admin/especialistas'); } catch { agenda.especialistas = []; }
+  }
+  const candidatos = agenda.especialistas
     .filter((e) => e.activo && e.especialidades.some((s) => s.id === cita.especialidadId));
   if (!candidatos.some((e) => e.id === cita.especialistaId)) {
     candidatos.unshift({ id: cita.especialistaId, nombre: cita.especialista });
@@ -262,19 +278,17 @@ function reprogramarCita(cita) {
     pintar();
     try {
       const r = await api(`/admin/citas/${cita.id}/reprogramar`, { metodo: 'POST', cuerpo: { franjaId: estado.hora.franjaId } });
-      agenda.aviso = avisoAccion(`Cita de ${cita.paciente} reprogramada para el ${fechaLarga(r.cita.fecha)} a las ${horaLarga(r.cita.hora)} con ${r.cita.especialista}.`, r.notificacion);
+      panel.aviso = avisoAccion(`Cita de ${cita.paciente} movida al ${fechaLarga(r.cita.fecha)} a las ${horaLarga(r.cita.hora)} con ${r.cita.especialista}.`, r.notificacion);
       dialogo.cerrar();
-      agenda.recargar();
+      panel.refrescar();
+      actualizarContadorMensajes();
     } catch (err) {
       estado.enviando = false;
-      estado.error = err.message;
       // La hora pudo tomarse mientras tanto: se vuelven a pedir las del día.
       if (err.estado === 409 && estado.fecha) {
-        estado.hora = null;
-        const fallo = estado.error;
         await elegirDia(estado.fecha);
-        estado.error = fallo;
       }
+      estado.error = err.message;
       pintar();
     }
   }
@@ -299,7 +313,7 @@ function reprogramarCita(cita) {
       estado.error && el('p', { class: 'alerta', role: 'alert', texto: estado.error }),
       estado.hora
         ? [
-          el('p', { class: 'gestion__intro', texto: `Nueva hora: ${fechaLarga(estado.fecha)}, ${horaLarga(estado.hora.hora)} con ${especialistaElegido()?.nombre}.` }),
+          el('p', { class: 'reprogramar__nueva', texto: `Nueva hora: ${fechaLarga(estado.fecha)}, ${horaLarga(estado.hora.hora)} con ${especialistaElegido()?.nombre}.` }),
           el('div', { class: 'acciones' },
             el('button', { type: 'button', class: 'btn btn--primario', disabled: estado.enviando, 'data-id-foco': 'confirmar', onclick: confirmar,
               texto: estado.enviando ? 'Reprogramando…' : 'Confirmar nueva hora' }),
