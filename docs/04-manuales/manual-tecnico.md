@@ -59,7 +59,7 @@ No hay más dependencias de producción: las funciones de fecha, aleatoriedad y 
 | `backend/src/scripts/` | Consola: `crearAdmin.js` (crear la secretaria), `restablecerAdmin.js` (restablecer su clave) y `enviarRecordatorios.js` |
 | `backend/src/services/recordatorios.js` | Recordatorio del día anterior y su ejecución automática |
 | `backend/.env.example` | Plantilla de configuración |
-| `frontend/` | Páginas públicas (`index.html`, `gestionar-cita.html`, `politica-datos.html`) y con sesión (`cambiar-contrasena.html`, `mis-citas.html`, `panel-secretaria.html`); `css/` (tokens → base → pantalla); `js/` (config, `api.js`, `sesion.js` y un módulo por pantalla; el panel de la secretaria es una sola página con secciones por fragmento de URL, `#inicio`, `#agenda`…: `panel-secretaria.js` las monta y tiene Inicio, `panel-comun.js` tiene los diálogos, avisos y el contador de mensajes, y cada sección vive en su archivo: `panel-agenda.js` (agenda por día, búsqueda de pacientes y acciones), `panel-disponibilidad.js` (semana por especialista: publicar horas en varios días a la vez y quitar horas libres) y `panel-mensajes.js` (WhatsApp por enviar, enviados, con error y recordatorios de mañana)) |
+| `frontend/` | Páginas públicas (`index.html`, `gestionar-cita.html`, `politica-datos.html`) y con sesión (`cambiar-contrasena.html`, `mis-citas.html`, `panel-secretaria.html`); `css/` (tokens → base → pantalla); `js/` (config, `api.js`, `sesion.js` y un módulo por pantalla; el panel de la secretaria es una sola página con secciones por fragmento de URL, `#inicio`, `#agenda`…: `panel-secretaria.js` las monta y tiene Inicio, `panel-comun.js` tiene los diálogos, avisos y el contador de mensajes, y cada sección vive en su archivo: `panel-agenda.js` (agenda por día, búsqueda de pacientes y acciones), `panel-disponibilidad.js` (semana por especialista: publicar horas en varios días a la vez y quitar horas libres) y `panel-mensajes.js` (WhatsApp por enviar, enviados, con error y recordatorios de mañana)); `mis-citas.js` es el panel del paciente (próxima cita, otras próximas, historial, mis datos, y reprogramar o cancelar en un diálogo) |
 | `docs/` | Documentación del proyecto |
 
 **Flujo de una petición:** `routes` aplica los middlewares (sesión, rol, límite) → el `controller` valida el cuerpo con `utils/validaciones`, aplica las reglas y llama a los `models` → si algo falla lanza un `ErrorHttp(status, mensaje, campos)` → el manejador central de `app.js` responde `{ error, campos? }` sin exponer detalles internos (la traza completa queda solo en la consola del servidor).
@@ -93,7 +93,7 @@ Todas las rutas cuelgan de `/api` y responden JSON. El contrato completo con eje
 | Agendar | `POST /citas` | Público (con sesión opcional de paciente) |
 | Gestionar cita | `GET /citas/gestion/:codigo` · `POST …/reprogramar` · `POST …/cancelar` | Público con código |
 | Sesión | `POST /auth/ingreso` · `POST /auth/cambiar-contrasena` · `GET /auth/perfil` | Público / sesión |
-| Paciente | `GET /mis-citas` | Rol paciente |
+| Paciente | `GET /mis-citas` · `POST /mis-citas/:id/reprogramar` · `POST /mis-citas/:id/cancelar` | Rol paciente (solo sus citas) |
 | Pacientes | `POST /pacientes` · `GET /pacientes?q=` · `GET /pacientes/:id` · `POST /pacientes/:id/restablecer-contrasena` | Rol administrador |
 | Historia clínica | `GET/POST /pacientes/:id/historia` · `POST /admin/historia/:id/correccion` | Rol administrador |
 | Especialidades | `GET/POST /admin/especialidades` · `PATCH /admin/especialidades/:id` | Rol administrador |
@@ -124,6 +124,7 @@ Todas las rutas cuelgan de `/api` y responden JSON. El contrato completo con eje
 | La cita queda a nombre de un paciente solo si agenda con su sesión | Middleware `sesionOpcional` y comparación del documento con el usuario de la sesión |
 | El paciente reprograma una sola vez | `UPDATE … WHERE reprogramaciones < 1` (la condición va en la misma sentencia para evitar dobles clics) |
 | Reprogramar o cancelar hasta 24 h antes | `reglasGestion` compara la fecha y hora de la cita con la hora de Bogotá + 24 h |
+| Las mismas reglas desde el enlace y desde "Mis citas" | `reprogramarPorPaciente` y `cancelarPorPaciente` las comparten; con sesión, `citaPropia` exige que la cita sea del paciente (si no, 404) |
 | La secretaria reprograma sin límite y puede cambiar de especialista | `reprogramarAdmin` no toca el contador; valida que el especialista atienda la especialidad |
 | No quitar una hora con cita | `quitarFranja` responde 409 si hay cita viva; si no, la desactiva (no la borra) |
 | Marcar asistencia solo cuando llegó la hora | `cambiarEstado` compara con la hora actual |

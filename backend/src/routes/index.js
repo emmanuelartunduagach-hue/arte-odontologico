@@ -17,7 +17,10 @@ router.use('/especialistas',  require('./especialistas.routes'));
 router.use('/citas',          require('./citas.routes'));
 
 // Paciente con usuario
-router.get('/mis-citas', requiereSesion, requiereRol('paciente'), citas.misCitas);
+const soloPaciente = [requiereSesion, requiereRol('paciente')];
+router.get('/mis-citas', soloPaciente, citas.misCitas);
+router.post('/mis-citas/:id/reprogramar', soloPaciente, citas.reprogramarMia);
+router.post('/mis-citas/:id/cancelar', soloPaciente, citas.cancelarMia);
 
 // Secretaria
 router.use('/pacientes', require('./pacientes.routes'));

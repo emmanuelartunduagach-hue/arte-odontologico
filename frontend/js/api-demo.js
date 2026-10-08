@@ -126,20 +126,33 @@
     }
   }
 
+  // Citas de paciente@demo.co, en memoria (se pierden al recargar). La de
+  // dentro de 12 días ya se reprogramó una vez: solo se puede cancelar.
+  let MIS_CITAS = null;
   function citasDePaciente() {
+    if (MIS_CITAS) return MIS_CITAS;
     const hoy = hoyColombia();
-    const cita = (dias, hora, estado, especialidad) => ({
+    const cita = (dias, hora, estado, especialidad, reprogramaciones = 0) => ({
       id: 100 + dias, estado, paciente: 'Ana Pérez', especialidad, especialistaId: 31,
       especialista: 'Dra. Prueba Uno', fecha: sumarDias(hoy, dias), hora, sede: 'Rivera',
-      direccion: 'Carrera 7 No. 3-61, Rivera', reprogramaciones: 0,
+      direccion: 'Carrera 7 No. 3-61, Rivera', reprogramaciones,
     });
-    return [
-      cita(12, '15:30', 'confirmada', 'Ortodoncia'),
+    MIS_CITAS = [
+      cita(12, '15:30', 'confirmada', 'Ortodoncia', 1),
       cita(3, '09:30', 'confirmada', 'Odontología general'),
       cita(-20, '08:00', 'atendida', 'Odontología general'),
       cita(-45, '10:00', 'cancelada', 'Diseño de sonrisa'),
     ];
+    return MIS_CITAS;
   }
+  const conReglas = (c) => ({ ...c, ...reglasDemo(c) });
+  const ordenarMisCitas = () => citasDePaciente().sort((a, b) => `${b.fecha} ${b.hora}`.localeCompare(`${a.fecha} ${a.hora}`));
+
+  const PERFILES = {
+    1: { id: 1, nombreCompleto: 'Secretaria de Prueba', documento: '1000000001', correo: 'secretaria@demo.co', telefono: '573000000001', rol: 'administrador' },
+    2: { id: 2, nombreCompleto: 'Ana Pérez', documento: '1075123456', correo: 'paciente@demo.co', telefono: '573001234567', rol: 'paciente' },
+    3: { id: 3, nombreCompleto: 'Paciente Nuevo', documento: '1075999888', correo: 'nuevo@demo.co', telefono: '573109998877', rol: 'paciente' },
+  };
 
   // Agenda de la secretaria: citas de ayer a 6 días, en memoria (se
   // pierden al recargar). Ortodoncia la atienden los especialistas 31 y 32.
@@ -242,9 +255,36 @@
       return { mensaje: 'Contraseña actualizada correctamente.' };
     }
 
+    if (metodo === 'GET' && url.pathname === '/auth/perfil') {
+      exigir();
+      return { ...PERFILES[usuario.id] };
+    }
+
     if (metodo === 'GET' && url.pathname === '/mis-citas') {
       exigir('paciente');
-      return citasDePaciente();
+      return usuario.id === 2 ? ordenarMisCitas().map(conReglas) : [];
+    }
+
+    // Reprogramar o cancelar con sesión: mismas reglas que el enlace.
+    // La hora 10:00 simula que otra persona la acaba de tomar.
+    if (metodo === 'POST' && partes[0] === 'mis-citas' && partes[1]) {
+      exigir('paciente');
+      const cita = usuario.id === 2 && citasDePaciente().find((c) => c.id === Number(partes[1]));
+      if (!cita) throw new ErrorApi('Cita no encontrada.', 404);
+      const reglas = reglasDemo(cita);
+
+      if (partes[2] === 'reprogramar') {
+        if (!reglas.puedeReprogramar) throw new ErrorApi(reglas.motivo, 409);
+        const [, fecha, hora] = String(cuerpo.franjaId).split('|');
+        if (hora === '10:00') throw new ErrorApi('Esa hora acaba de ser tomada por otra persona. Elige otra.', 409);
+        Object.assign(cita, { fecha, hora, reprogramaciones: cita.reprogramaciones + 1 });
+        return { mensaje: 'Tu cita fue reprogramada.', cita: conReglas(cita), whatsapp: 'pendiente' };
+      }
+      if (partes[2] === 'cancelar') {
+        if (!reglas.puedeCancelar) throw new ErrorApi(reglas.motivo, 409);
+        cita.estado = 'cancelada';
+        return { mensaje: 'Tu cita fue cancelada. La hora quedó libre para otra persona.' };
+      }
     }
 
     if (metodo === 'GET' && url.pathname === '/admin/citas') {

@@ -6,7 +6,9 @@
      POST /api/citas/gestion/:codigo/reprogramar  una sola vez
      POST /api/citas/gestion/:codigo/cancelar
    Paciente con usuario:
-     GET  /api/mis-citas
+     GET  /api/mis-citas                          con lo que puede hacer en cada una
+     POST /api/mis-citas/:id/reprogramar          mismas reglas que el enlace
+     POST /api/mis-citas/:id/cancelar
      (y POST /api/citas con su sesión: sin límite de citas activas)
    Secretaria:
      GET  /api/admin/citas                        agenda con filtros
@@ -16,7 +18,7 @@
    Reglas acordadas (documento "Alcance v2"):
    - La cita queda confirmada al agendar.
    - El paciente reprograma 1 vez; después solo puede cancelar.
-   - Reprogramar o cancelar desde el enlace: hasta 24 h antes.
+   - Reprogramar o cancelar desde el enlace o desde "Mis citas": hasta 24 h antes.
    - Las canceladas no se borran: quedan como 'cancelada'. */
 
 const citaModelo = require('../models/cita.model');
@@ -182,41 +184,65 @@ async function verGestion(req, res, next) {
   }
 }
 
+/* Reprograma o cancela una cita a pedido del paciente, ya sea desde el
+   enlace de gestión o desde "Mis citas" con su sesión. Las reglas son las
+   mismas en los dos casos (reglasGestion). `codigo` es el del enlace, si
+   se tiene: sin él, el mensaje de WhatsApp lleva un enlace nuevo y el
+   anterior deja de servir. */
+async function reprogramarPorPaciente(cita, cuerpo, codigo) {
+  const reglas = reglasGestion(cita);
+  if (!reglas.puedeReprogramar) throw new ErrorHttp(409, reglas.motivo);
+
+  const franjaId = aId(cuerpo?.franjaId);
+  if (!franjaId) throw new ErrorHttp(400, 'Elige un día y una hora.', { franjaId: 'Elige un día y una hora.' });
+  if (franjaId === cita.franjaId) throw new ErrorHttp(400, 'Elige una hora distinta a la actual.');
+
+  const franja = await franjaModelo.buscarLibre(franjaId, ahoraBogota());
+  if (!franja) throw new ErrorHttp(409, 'Esa hora ya no está disponible. Elige otra.');
+  if (franja.especialistaId !== cita.especialistaId) {
+    throw new ErrorHttp(400, 'Elige una hora del mismo especialista.');
+  }
+
+  let cambiada;
+  try {
+    cambiada = await citaModelo.cambiarFranja(cita.id, franjaId, { contarAlPaciente: true });
+  } catch (error) {
+    if (esHoraTomada(error)) throw new ErrorHttp(409, MENSAJE_HORA_TOMADA);
+    throw error;
+  }
+  if (!cambiada) throw new ErrorHttp(409, 'Esta cita ya no se puede reprogramar.');
+
+  const notificacion = await notificarCita({ citaId: cita.id, tipo: 'reprogramacion', codigo });
+  return {
+    actualizada: await citaModelo.buscarDetalle(cita.id),
+    whatsapp: notificacion.estado === 'enviada' ? 'enviado' : 'pendiente',
+  };
+}
+
+async function cancelarPorPaciente(cita) {
+  const reglas = reglasGestion(cita);
+  if (!reglas.puedeCancelar) throw new ErrorHttp(409, reglas.motivo);
+
+  if (!(await citaModelo.cancelar(cita.id, 'paciente'))) {
+    throw new ErrorHttp(409, 'Esta cita ya no se puede cancelar.');
+  }
+  await notificarCita({ citaId: cita.id, tipo: 'cancelacion' });
+}
+
+const MENSAJE_CANCELADA = 'Tu cita fue cancelada. La hora quedó libre para otra persona.';
+
 /* POST /api/citas/gestion/:codigo/reprogramar   { franjaId }
    La nueva hora debe ser del mismo especialista. */
 async function reprogramarGestion(req, res, next) {
   try {
     const codigo = req.params.codigo;
     const cita = await citaDesdeCodigo(codigo);
-    const reglas = reglasGestion(cita);
-    if (!reglas.puedeReprogramar) throw new ErrorHttp(409, reglas.motivo);
-
-    const franjaId = aId(req.body?.franjaId);
-    if (!franjaId) throw new ErrorHttp(400, 'Elige un día y una hora.', { franjaId: 'Elige un día y una hora.' });
-    if (franjaId === cita.franjaId) throw new ErrorHttp(400, 'Elige una hora distinta a la actual.');
-
-    const franja = await franjaModelo.buscarLibre(franjaId, ahoraBogota());
-    if (!franja) throw new ErrorHttp(409, 'Esa hora ya no está disponible. Elige otra.');
-    if (franja.especialistaId !== cita.especialistaId) {
-      throw new ErrorHttp(400, 'Elige una hora del mismo especialista.');
-    }
-
-    let cambiada;
-    try {
-      cambiada = await citaModelo.cambiarFranja(cita.id, franjaId, { contarAlPaciente: true });
-    } catch (error) {
-      if (esHoraTomada(error)) throw new ErrorHttp(409, MENSAJE_HORA_TOMADA);
-      throw error;
-    }
-    if (!cambiada) throw new ErrorHttp(409, 'Esta cita ya no se puede reprogramar.');
-
-    const notificacion = await notificarCita({ citaId: cita.id, tipo: 'reprogramacion', codigo });
-    const actualizada = await citaModelo.buscarDetalle(cita.id);
+    const { actualizada, whatsapp } = await reprogramarPorPaciente(cita, req.body, codigo);
     res.json({
       mensaje: 'Tu cita fue reprogramada.',
       cita: vistaPublica(actualizada),
       ...reglasGestion(actualizada),
-      whatsapp: notificacion.estado === 'enviada' ? 'enviado' : 'pendiente',
+      whatsapp,
     });
   } catch (error) {
     next(error);
@@ -226,15 +252,8 @@ async function reprogramarGestion(req, res, next) {
 /* POST /api/citas/gestion/:codigo/cancelar */
 async function cancelarGestion(req, res, next) {
   try {
-    const cita = await citaDesdeCodigo(req.params.codigo);
-    const reglas = reglasGestion(cita);
-    if (!reglas.puedeCancelar) throw new ErrorHttp(409, reglas.motivo);
-
-    if (!(await citaModelo.cancelar(cita.id, 'paciente'))) {
-      throw new ErrorHttp(409, 'Esta cita ya no se puede cancelar.');
-    }
-    await notificarCita({ citaId: cita.id, tipo: 'cancelacion' });
-    res.json({ mensaje: 'Tu cita fue cancelada. La hora quedó libre para otra persona.' });
+    await cancelarPorPaciente(await citaDesdeCodigo(req.params.codigo));
+    res.json({ mensaje: MENSAJE_CANCELADA });
   } catch (error) {
     next(error);
   }
@@ -242,11 +261,48 @@ async function cancelarGestion(req, res, next) {
 
 /* ---------- Paciente con usuario ---------- */
 
-/* GET /api/mis-citas */
+/* Cita con lo que el paciente puede hacer con ella. */
+function vistaPaciente(cita) {
+  return { ...vistaPublica(cita), ...reglasGestion(cita) };
+}
+
+/* GET /api/mis-citas
+   Cada cita trae puedeReprogramar, puedeCancelar y motivo, como en el
+   enlace de gestión. */
 async function misCitas(req, res, next) {
   try {
     const citas = await citaModelo.listarDePaciente(req.usuario.id);
-    res.json(citas.map(vistaPublica));
+    res.json(citas.map(vistaPaciente));
+  } catch (error) {
+    next(error);
+  }
+}
+
+/* Cita del paciente con sesión. Si es de otra persona responde 404,
+   igual que si no existiera, para no revelar qué ids hay. */
+async function citaPropia(req) {
+  const id = aId(req.params.id);
+  const cita = id ? await citaModelo.buscarDetalle(id) : null;
+  if (!cita || cita.pacienteId !== req.usuario.id) throw new ErrorHttp(404, 'Cita no encontrada.');
+  return cita;
+}
+
+/* POST /api/mis-citas/:id/reprogramar   { franjaId } */
+async function reprogramarMia(req, res, next) {
+  try {
+    const cita = await citaPropia(req);
+    const { actualizada, whatsapp } = await reprogramarPorPaciente(cita, req.body);
+    res.json({ mensaje: 'Tu cita fue reprogramada.', cita: vistaPaciente(actualizada), whatsapp });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/* POST /api/mis-citas/:id/cancelar */
+async function cancelarMia(req, res, next) {
+  try {
+    await cancelarPorPaciente(await citaPropia(req));
+    res.json({ mensaje: MENSAJE_CANCELADA });
   } catch (error) {
     next(error);
   }
@@ -375,6 +431,8 @@ module.exports = {
   reprogramarGestion,
   cancelarGestion,
   misCitas,
+  reprogramarMia,
+  cancelarMia,
   agenda,
   cambiarEstado,
   reprogramarAdmin,

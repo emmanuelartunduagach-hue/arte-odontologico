@@ -8,6 +8,7 @@
 
 let especialidades = null;  // lista que devuelve GET /especialidades
 let turno = 0;              // descarta respuestas de un flujo ya abandonado
+let datosPaciente = null;   // con sesión de paciente: sus datos para precargar el formulario
 const estado = {};
 
 /* ---------- Tarjetas de especialidades ---------- */
@@ -54,12 +55,29 @@ function reiniciar() {
   });
 }
 
+/** Paciente con sesión: trae sus datos (GET /auth/perfil) para no
+    tener que escribirlos. Si falla, el formulario queda vacío. */
+async function cargarDatosPaciente() {
+  if (datosPaciente || obtenerSesion()?.usuario.rol !== 'paciente') return;
+  try {
+    const p = await api('/auth/perfil');
+    datosPaciente = {
+      nombreCompleto: p.nombreCompleto,
+      documento: p.documento,
+      telefono: String(p.telefono || '').replace(/^57(?=\d{10}$)/, ''),
+      correo: p.correo || '',
+    };
+  } catch { /* se llenan a mano */ }
+}
+
 async function comenzar(codigo) {
   const mio = ++turno;
   reiniciar();
   estado.mensaje = 'Cargando especialistas…';
   pintar();
   try {
+    await cargarDatosPaciente();
+    if (datosPaciente) estado.datos = { ...datosPaciente };
     const lista = await cargarEspecialidades();
     const esp = lista.find((e) => e.codigo === codigo);
     if (!esp) throw new ErrorApi('Esa especialidad no está disponible por ahora.', 404);
@@ -373,7 +391,9 @@ function pintarListo() {
     el('p', { class: 'agendar__nota', texto: whatsapp === 'enviado'
       ? 'Te enviamos la confirmación por WhatsApp, con un enlace para reprogramar o cancelar tu cita.'
       : 'Te enviaremos la confirmación por WhatsApp, con un enlace para reprogramar o cancelar tu cita.' }),
-    el('button', { type: 'button', class: 'btn btn--primario btn--bloque', onclick: () => cerrarModal(document.getElementById('modal-agendar')), texto: 'Listo' }),
+    obtenerSesion()?.usuario.rol === 'paciente'
+      ? el('a', { class: 'btn btn--primario btn--bloque', href: 'mis-citas.html', texto: 'Ver mis citas' })
+      : el('button', { type: 'button', class: 'btn btn--primario btn--bloque', onclick: () => cerrarModal(document.getElementById('modal-agendar')), texto: 'Listo' }),
   ];
 }
 

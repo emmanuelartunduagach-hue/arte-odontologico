@@ -74,7 +74,14 @@ Un solo formulario de **Ingresar** para los dos; el rol decide a qué panel va: 
 | `POST /auth/ingreso` `{ correo, contrasena }` | `{ token, usuario: { id, nombre, rol, debeCambiarContrasena } }`. Si `debeCambiarContrasena`, lleva a cambiar la clave antes de todo. Correo o clave incorrectos → **401**; más de 10 intentos en 15 minutos desde la misma IP → **429** |
 | `POST /auth/cambiar-contrasena` `{ contrasenaActual, contrasenaNueva }` | Clave actual incorrecta → **400** (no 401) |
 | `GET /auth/perfil` | `{ id, nombreCompleto, documento, correo, telefono, rol }` |
-| `GET /mis-citas` (paciente) | Lista de citas con el formato de `cita` de arriba, la más reciente primero |
+| `GET /mis-citas` (paciente) | Lista de citas con el formato de `cita` de arriba, la más reciente primero. Cada una trae además `puedeReprogramar`, `puedeCancelar` y `motivo`, como en la sección 2 |
+| `POST /mis-citas/:id/reprogramar` `{ franjaId }` (paciente) | `{ mensaje, cita, whatsapp }`; `cita` trae también las reglas actualizadas. Mismas reglas que el enlace: una vez, hasta 24 h antes, mismo especialista |
+| `POST /mis-citas/:id/cancelar` (paciente) | `{ mensaje }`. Hasta 24 h antes |
+
+- **Cita de otra persona o inexistente:** **404** "Cita no encontrada.", para no revelar qué citas existen.
+- **Regla incumplida** (ya reprogramó, menos de 24 h, cancelada o pasada): **409** con el `motivo` como mensaje. Hora tomada por otra persona: **409**.
+- **Enlace de WhatsApp:** al reprogramar desde "Mis citas" el mensaje lleva un enlace nuevo y el anterior deja de servir, igual que cuando reprograma la secretaria.
+- **Agendar con sesión:** el formulario se llena con `GET /auth/perfil`; el paciente solo confirma la autorización de datos.
 
 ## 4. Panel de la secretaria (todo exige rol administrador)
 
@@ -121,4 +128,3 @@ Un solo formulario de **Ingresar** para los dos; el rol decide a qué panel va: 
 ## Aún no existe
 
 - Importación desde Excel.
-- Reprogramar o cancelar desde "Mis citas" con sesión. Por ahora el paciente usa el enlace del WhatsApp.
