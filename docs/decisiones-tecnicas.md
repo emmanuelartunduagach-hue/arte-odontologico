@@ -278,3 +278,20 @@ Ingresar con el aviso "Tu sesión venció".
 `POST /auth/ingreso` tiene su propio límite de peticiones (10 por IP cada 15
 minutos) para frenar a quien intente adivinar contraseñas. Los intentos
 exitosos también cuentan, lo que no afecta el uso normal.
+
+## 22. Twilio como proveedor de pruebas de WhatsApp (8 de octubre)
+
+La API de WhatsApp Cloud exige una app en Meta for Developers, y crear la
+cuenta no fue posible a tiempo. Para probar el envío automático sin esa
+cuenta se agregó el modo `twilio`, que usa el WhatsApp Sandbox de Twilio:
+se registra con correo y celular, tiene crédito de prueba y envía el texto
+completo del mensaje, sin plantillas aprobadas.
+
+Es solo para pruebas: en el sandbox cada número debe unirse antes enviando
+un código. La entrega a la clínica sigue siendo el modo `manual`, como
+respaldo, o el modo `api` cuando la clínica tenga su cuenta de Meta.
+Cambiar de uno a otro es solo la variable `WHATSAPP_MODO`.
+
+Si el envío automático falla, la cita igual queda registrada y la API
+devuelve el enlace de WhatsApp con el texto listo, para que la secretaria
+lo envíe a mano desde el panel.
