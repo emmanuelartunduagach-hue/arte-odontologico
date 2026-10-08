@@ -116,7 +116,8 @@ cp .env.example .env        # en Windows: copy .env.example .env
 | `RECORDATORIOS_AUTOMATICOS` | No | `false` desactiva el recordatorio automático | `true` |
 | `RECORDATORIO_DESDE`, `RECORDATORIO_HASTA` | No | Horas (de Colombia) entre las que se generan los recordatorios | `8`, `19` |
 | `RECORDATORIO_HORAS_MINIMAS` | No | No recordar citas agendadas hace menos de estas horas | `12` |
-| `WHATSAPP_MODO` | No | `manual`, `consola` o `api` (ver sección 7) | `manual` |
+| `WHATSAPP_MODO` | No | `manual`, `consola`, `twilio` o `api` (ver sección 7) | `manual` |
+| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_DESDE` | Solo modo `twilio` | Credenciales de Twilio y número del sandbox | — |
 | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID` | Solo modo `api` | Credenciales de Meta | — |
 | `WHATSAPP_PLANTILLA_*` | Solo modo `api` | Nombres de las plantillas aprobadas | `cita_agendada` |
 
@@ -164,7 +165,22 @@ Si dice `No fue posible conectar con MySQL`, revisar que el servicio de MySQL es
 |---|---|---|
 | `manual` (por defecto) | Los mensajes quedan pendientes en el panel de la secretaria, que los envía con un clic desde su WhatsApp Business | Ninguno |
 | `consola` | El mensaje se imprime en la terminal del backend | Ninguno. Para desarrollo y demostraciones |
+| `twilio` | El servidor envía el mensaje automáticamente con Twilio. Para pruebas con el WhatsApp Sandbox mientras la clínica tramita la API de Meta | Cuenta de Twilio (sin Facebook); cada número que recibe se une antes al sandbox |
 | `api` | El servidor envía el mensaje automáticamente con la API de WhatsApp Cloud | App en Meta for Developers, número verificado, plantillas aprobadas, método de pago |
+
+Para el modo `twilio` (pruebas):
+1. En <https://console.twilio.com>, abrir **Messaging → Try it out → Send a WhatsApp message**. Ahí aparecen el número del sandbox (por ejemplo `+1 415 523 8886`) y un código del tipo `join palabra-palabra`.
+2. Desde cada celular que vaya a recibir mensajes de prueba, enviar ese `join …` por WhatsApp al número del sandbox. Twilio responde confirmando.
+3. En `backend/.env`:
+   ```
+   WHATSAPP_MODO=twilio
+   TWILIO_ACCOUNT_SID=ACxxxxxxxx...   # Account Info, en la página principal de la consola
+   TWILIO_AUTH_TOKEN=...              # junto al SID; no se sube a Git
+   TWILIO_WHATSAPP_DESDE=+14155238886 # número del sandbox
+   ```
+4. Reiniciar el backend y agendar una cita poniendo como teléfono uno de los celulares unidos al sandbox.
+
+El sandbox es solo para pruebas: si un número no se ha unido, o pasó mucho tiempo desde su último mensaje al sandbox, Twilio rechaza el envío. Ese mensaje queda "con error" en el panel y se puede enviar a mano. En ese caso basta con volver a enviar el `join …`.
 
 Para el modo `api`:
 1. Crear una app con el caso de uso WhatsApp en <https://developers.facebook.com>.

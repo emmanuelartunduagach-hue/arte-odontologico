@@ -100,7 +100,9 @@ function avisoAccion(mensaje, notificacion) {
 
   if (notificacion?.estado === 'enviada') {
     partes.push(el('p', { texto: 'Se avisó al paciente por WhatsApp.' }));
-  } else if (notificacion?.estado === 'pendiente' && notificacion.enlaceWhatsApp) {
+  } else if ((notificacion?.estado === 'pendiente' || notificacion?.estado === 'fallida') && notificacion.enlaceWhatsApp) {
+    // Pendiente: modo manual. Fallida: el envío automático no funcionó.
+    const fallida = notificacion.estado === 'fallida';
     const marcar = el('button', { type: 'button', class: 'btn btn--secundario', texto: 'Ya lo envié' });
     marcar.addEventListener('click', async () => {
       marcar.disabled = true;
@@ -114,7 +116,9 @@ function avisoAccion(mensaje, notificacion) {
       }
     });
     partes.push(
-      el('p', { texto: 'Falta avisarle al paciente: abre el mensaje en WhatsApp, envíalo y confírmalo aquí.' }),
+      el('p', { texto: fallida
+        ? 'El WhatsApp automático no se pudo enviar. Ábrelo en WhatsApp, envíalo tú y confírmalo aquí.'
+        : 'Falta avisarle al paciente: abre el mensaje en WhatsApp, envíalo y confírmalo aquí.' }),
       el('div', { class: 'acciones aviso-accion__botones' },
         el('a', { class: 'btn btn--whatsapp', href: notificacion.enlaceWhatsApp, target: '_blank', rel: 'noopener', texto: 'Abrir en WhatsApp' }),
         marcar));

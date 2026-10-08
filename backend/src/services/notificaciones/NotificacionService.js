@@ -26,6 +26,7 @@ const ProveedorWhatsApp = require('./proveedores/ProveedorWhatsApp');
  */
 async function notificarCita({ citaId, tipo, codigo }) {
   let notificacionId;
+  let enlace = null;  // si el envío falla, la secretaria lo envía a mano con este enlace
   try {
     const cita = await citaModelo.buscarDetalle(citaId);
     if (!cita) throw new Error(`Cita ${citaId} no encontrada`);
@@ -38,6 +39,7 @@ async function notificarCita({ citaId, tipo, codigo }) {
     }
 
     const { texto, datos } = mensajes.construir(tipo, cita, codigoUsado);
+    enlace = mensajes.enlaceWhatsApp(cita.telefono, texto);
     notificacionId = await notificacionModelo.crear({
       citaId,
       tipo,
@@ -51,14 +53,14 @@ async function notificarCita({ citaId, tipo, codigo }) {
     return {
       id: notificacionId,
       estado: resultado.estado,
-      enlaceWhatsApp: mensajes.enlaceWhatsApp(cita.telefono, texto),
+      enlaceWhatsApp: enlace,
     };
   } catch (error) {
     console.error(`No se pudo notificar la cita ${citaId} (${tipo}):`, error.message);
     if (notificacionId) {
       await notificacionModelo.marcar(notificacionId, 'fallida', error.message).catch(() => {});
     }
-    return { id: notificacionId, estado: 'fallida' };
+    return { id: notificacionId, estado: 'fallida', enlaceWhatsApp: notificacionId ? enlace : null };
   }
 }
 
