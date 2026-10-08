@@ -141,17 +141,33 @@
     ];
   }
 
-  function agendaDeHoy() {
+  // Agenda de la secretaria: citas de ayer a 6 días, en memoria (se
+  // pierden al recargar). Ortodoncia la atienden los especialistas 31 y 32.
+  const ESPECIALISTAS_ADMIN = [
+    { id: 31, nombre: 'Dra. Prueba Uno', activo: true, especialidades: [{ id: 3, nombre: 'Ortodoncia' }] },
+    { id: 32, nombre: 'Dr. Prueba Dos', activo: true, especialidades: [{ id: 3, nombre: 'Ortodoncia' }, { id: 1, nombre: 'Odontología general' }] },
+    { id: 11, nombre: 'Dra. Prueba Tres', activo: false, especialidades: [{ id: 1, nombre: 'Odontología general' }] },
+  ];
+  let AGENDA = null;
+  function agendaDemo() {
+    if (AGENDA) return AGENDA;
     const hoy = hoyColombia();
-    return [
-      ['08:00', 'Ana Pérez', 'atendida'], ['09:30', 'Carlos Gómez', 'confirmada'],
-      ['11:00', 'Luisa Rojas', 'cancelada'], ['15:30', 'Pedro Díaz', 'confirmada'],
-    ].map(([hora, paciente, estado], i) => ({
-      id: 200 + i, estado, paciente, especialidad: 'Ortodoncia', especialistaId: 31, especialista: 'Dra. Prueba Uno',
-      fecha: hoy, hora, sede: 'Rivera', direccion: 'Carrera 7 No. 3-61, Rivera', reprogramaciones: 0,
-      documento: `10751234${i}`, telefono: `57300123456${i}`, correo: null, pacienteId: null,
+    AGENDA = [
+      [-1, '10:00', 'Laura Méndez', 'atendida', 31], [0, '07:00', 'Ana Pérez', 'confirmada', 31],
+      [0, '09:30', 'Carlos Gómez', 'confirmada', 32], [0, '11:00', 'Luisa Rojas', 'cancelada', 31],
+      [0, '17:30', 'Pedro Díaz', 'confirmada', 31], [1, '08:30', 'Sofía Ramírez', 'confirmada', 32],
+      [3, '15:00', 'Jorge Castro', 'confirmada', 31], [6, '09:00', 'Marta Ruiz', 'confirmada', 32],
+    ].map(([dias, hora, paciente, estado, especialistaId], i) => ({
+      id: 200 + i, estado, paciente, especialidadId: 3, especialidad: 'Ortodoncia', especialistaId,
+      especialista: ESPECIALISTAS_ADMIN.find((e) => e.id === especialistaId).nombre,
+      fecha: sumarDias(hoy, dias), hora, sede: 'Rivera', direccion: 'Carrera 7 No. 3-61, Rivera', reprogramaciones: 0,
+      documento: `10751234${i}`, telefono: `57300123456${i}`, correo: i === 2 ? 'carlos@ejemplo.co' : null,
+      pacienteId: null, canceladaPor: estado === 'cancelada' ? 'paciente' : null,
     }));
+    return AGENDA;
   }
+  let NOTIFICACION = 1;
+  const notificacionDemo = () => ({ id: ++NOTIFICACION, estado: 'pendiente', enlaceWhatsApp: 'https://wa.me/573001234567' });
 
   window.API_DEMO = async function (ruta, metodo, cuerpo, token) {
     await espera(350);
@@ -186,7 +202,49 @@
 
     if (metodo === 'GET' && url.pathname === '/admin/citas') {
       exigir('administrador');
-      return agendaDeHoy();
+      const p = url.searchParams;
+      const desde = p.get('fecha') || p.get('desde') || hoyColombia();
+      const hasta = p.get('fecha') || p.get('hasta') || sumarDias(desde, 30);
+      const q = (p.get('q') || '').toLowerCase();
+      return agendaDemo().filter((c) => c.fecha >= desde && c.fecha <= hasta
+        && (!p.get('especialistaId') || c.especialistaId === Number(p.get('especialistaId')))
+        && (!p.get('estado') || c.estado === p.get('estado'))
+        && (!q || [c.paciente, c.documento, c.telefono].some((v) => v.toLowerCase().includes(q))))
+        .map((c) => ({ ...c }));
+    }
+
+    if (metodo === 'GET' && url.pathname === '/admin/especialistas') {
+      exigir('administrador');
+      return ESPECIALISTAS_ADMIN;
+    }
+
+    if (partes[0] === 'admin' && partes[1] === 'citas' && partes[2]) {
+      exigir('administrador');
+      const cita = agendaDemo().find((c) => c.id === Number(partes[2]));
+      if (!cita) throw new ErrorApi('Cita no encontrada.', 404);
+      if (cita.estado !== 'confirmada') throw new ErrorApi(`La cita ya está ${cita.estado.replace('_', ' ')}.`, 409);
+
+      if (metodo === 'PATCH' && partes[3] === 'estado') {
+        if (cuerpo.estado === 'cancelada') {
+          Object.assign(cita, { estado: 'cancelada', canceladaPor: 'administrador' });
+          return { mensaje: 'Cita cancelada.', notificacion: notificacionDemo() };
+        }
+        cita.estado = cuerpo.estado;
+        return { mensaje: cuerpo.estado === 'atendida' ? 'Cita marcada como atendida.' : 'Cita marcada como no asistió.' };
+      }
+
+      if (metodo === 'POST' && partes[3] === 'reprogramar') {
+        const [especialistaId, fecha, hora] = String(cuerpo.franjaId).split('|');
+        if (hora === '10:00') throw new ErrorApi('Esa hora acaba de ser tomada. Elige otra.', 409);
+        const esp = ESPECIALISTAS_ADMIN.find((e) => e.id === Number(especialistaId));
+        Object.assign(cita, { fecha, hora, especialistaId: esp?.id ?? cita.especialistaId, especialista: esp?.nombre ?? cita.especialista });
+        return { mensaje: 'Cita reprogramada.', cita: { ...cita }, notificacion: notificacionDemo() };
+      }
+    }
+
+    if (metodo === 'PATCH' && partes[0] === 'admin' && partes[1] === 'notificaciones') {
+      exigir('administrador');
+      return { mensaje: 'Mensaje marcado como enviado.' };
     }
 
     if (metodo === 'GET' && url.pathname === '/admin/notificaciones') {
