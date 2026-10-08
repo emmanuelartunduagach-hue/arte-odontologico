@@ -45,9 +45,11 @@ Reglas que hay que explicar:
 ## 3. Para pacientes con usuario
 - **3.1 Cómo se obtiene el usuario:** lo crea la secretaria en el consultorio.
 - **3.2 Primer ingreso y cambio de la clave temporal:** capturas.
-- **3.3 Mis citas:** captura.
-- **3.4 Agendar con los datos ya cargados.**
-- **3.5 Cerrar sesión.**
+- **3.3 Mis citas:** captura. Tu próxima cita (fecha, hora, especialista, dirección y "Cómo llegar"), otras citas próximas, historial y mis datos.
+- **3.4 Reprogramar o cancelar desde Mis citas:** una sola reprogramación y hasta 24 horas antes, igual que con el enlace del WhatsApp.
+- **3.5 Agendar con los datos ya cargados.**
+- **3.6 Corregir un dato:** botón "Escríbenos por WhatsApp" en Mis datos.
+- **3.7 Cerrar sesión.**
 
 ## 4. Para la secretaria (administración)
 - **4.1 Ingresar al panel.**

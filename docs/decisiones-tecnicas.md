@@ -295,3 +295,22 @@ Cambiar de uno a otro es solo la variable `WHATSAPP_MODO`.
 Si el envío automático falla, la cita igual queda registrada y la API
 devuelve el enlace de WhatsApp con el texto listo, para que la secretaria
 lo envíe a mano desde el panel.
+
+## 23. El paciente con sesión gestiona su cita desde "Mis citas" (8 de octubre)
+
+Antes, el paciente con usuario solo veía sus citas: para reprogramar o
+cancelar tenía que buscar el enlace del WhatsApp. Ahora lo hace desde su
+panel con `POST /mis-citas/:id/reprogramar` y `POST /mis-citas/:id/cancelar`.
+
+Las reglas son exactamente las del enlace (una reprogramación, hasta 24 horas
+antes, con el mismo especialista), y el código que las aplica es el mismo:
+`reprogramarPorPaciente` y `cancelarPorPaciente` en el controlador de citas.
+Así no puede pasar que una regla cambie en un camino y no en el otro, ni que
+el paciente evite el límite usando el panel en vez del enlace.
+
+Si la cita no es del paciente de la sesión, la respuesta es 404 y no 403: con
+403 alguien podría probar números de cita y saber cuáles existen.
+
+Al reprogramar desde el panel no se tiene el código del enlace en claro (en la
+base solo está su hash), así que el WhatsApp de confirmación lleva un enlace
+nuevo y el anterior deja de servir, como cuando reprograma la secretaria.
