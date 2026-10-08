@@ -1,0 +1,67 @@
+/* ============================================================
+   Páginas con sesión: cambiar contraseña, mis citas y panel de
+   la secretaria. Se carga después de landing.css y reutiliza
+   .gestion, .gestion__tarjeta, .resumen, .alerta y .acciones.
+   ============================================================ */
+
+.encabezado__usuario {
+  font-size: var(--txt-sm);
+  color: var(--ink-600);
+}
+
+.gestion__tarjeta--ancha { max-width: 880px; }
+.gestion__intro { margin-bottom: var(--e-5); color: var(--ink-600); }
+
+/* ---------- Lista de citas del paciente ---------- */
+
+.lista-citas { display: grid; gap: var(--e-4); margin-top: var(--e-5); }
+
+.cita {
+  padding: var(--e-5);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-md);
+  background: var(--papel);
+}
+.cita--pasada { background: var(--lienzo); }
+.cita__cabecera {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--e-2) var(--e-4);
+  margin-bottom: var(--e-3);
+}
+.cita__titulo { font-size: var(--txt-base); font-weight: var(--peso-semi); color: var(--ink-900); }
+.cita .resumen { margin: 0; }
+
+.lista-citas__grupo {
+  margin-top: var(--e-6);
+  font-size: var(--txt-sm);
+  font-weight: var(--peso-semi);
+  color: var(--ink-600);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Estado de la cita: el texto siempre acompaña al color. */
+.estado {
+  display: inline-block;
+  padding: 2px var(--e-3);
+  border-radius: 999px;
+  font-size: var(--txt-xs);
+  font-weight: var(--peso-semi);
+}
+.estado--confirmada { background: var(--menta-100); color: var(--menta-600); }
+.estado--pendiente  { background: var(--ambar-100); color: var(--ambar-700); }
+.estado--cancelada  { background: var(--rosa-100);  color: var(--rosa-700); }
+.estado--atendida   { background: var(--violeta-100); color: var(--violeta-600); }
+.estado--no_asistio { background: var(--borde); color: var(--ink-600); }
+
+/* ---------- Cambiar contraseña ---------- */
+
+.form-clave { max-width: 420px; }
+.form-clave .campo__error[hidden] { display: none; }
+
+@media (max-width: 640px) {
+  .encabezado__usuario { display: none; }
+}
