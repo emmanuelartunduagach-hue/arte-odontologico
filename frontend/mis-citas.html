@@ -36,19 +36,31 @@
   </div>
 </header>
 
-<main id="contenido" class="gestion">
-  <div class="contenedor">
-    <div class="gestion__tarjeta gestion__tarjeta--ancha">
-      <!-- El contenido lo construye js/mis-citas.js. -->
-      <div id="panel-cuerpo" aria-live="polite"></div>
-    </div>
+<main id="contenido" class="gestion paciente">
+  <div class="contenedor paciente__contenido">
+    <!-- El contenido lo construye js/mis-citas.js. -->
+    <div id="panel-cuerpo" class="paciente__cuerpo"></div>
   </div>
 </main>
+
+<!-- ══════════ Diálogo: reprogramar o cancelar (lo llena js/mis-citas.js) ══════════ -->
+<div class="modal" id="modal-paciente" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-paciente" hidden>
+  <div class="modal__panel modal__panel--ancho">
+    <div class="modal__cabecera">
+      <h2 id="titulo-modal-paciente" style="font-size:var(--txt-lg)"></h2>
+      <button type="button" class="modal__cerrar" data-cerrar aria-label="Cerrar">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div id="modal-paciente-cuerpo"></div>
+  </div>
+</div>
 
 <script src="js/config.js"></script>
 <script src="js/sesion.js"></script>
 <script src="js/api.js"></script>
 <script src="js/api-demo.js"></script>
+<script src="js/modales.js"></script>
 <script src="js/comun.js"></script>
 <script src="js/mis-citas.js"></script>
 </body>
