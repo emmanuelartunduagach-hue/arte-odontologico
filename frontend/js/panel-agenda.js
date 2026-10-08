@@ -179,10 +179,6 @@ async function cargarAgenda(resultados) {
           && el('button', { type: 'button', class: 'btn btn--secundario btn--compacto', onclick: () => { agenda.fecha = hoyColombia(); panel.refrescar(); }, texto: 'Volver a hoy' })));
 }
 
-function capitalizar(texto) {
-  return texto.charAt(0).toUpperCase() + texto.slice(1);
-}
-
 /* ---------- Acciones ---------- */
 
 function nombreCita(cita) {

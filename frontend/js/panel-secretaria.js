@@ -1,9 +1,9 @@
 /* Panel de la secretaria (panel-secretaria.html), solo rol administrador.
 
    Una sola página con secciones; el menú lateral cambia la sección por
-   el fragmento de la URL (#inicio, #agenda, #mensajes) para que Atrás
+   el fragmento de la URL (#inicio, #agenda, #disponibilidad, #mensajes) para que Atrás
    funcione y cada sección se pueda enlazar. Cada sección vive en su
-   archivo (panel-agenda.js, panel-mensajes.js) y expone `montar(cuerpo)`.
+   archivo (panel-agenda.js, panel-disponibilidad.js, panel-mensajes.js) y expone `montar(cuerpo)`.
 
    Inicio (contrato API v2, sección 4):
      GET /admin/citas?fecha=hoy               agenda de hoy
@@ -16,6 +16,7 @@ const cuerpo = document.getElementById('panel-cuerpo');
 const SECCIONES = {
   inicio: { titulo: 'Inicio', montar: montarInicio },
   agenda: { titulo: 'Agenda', montar: montarAgenda },
+  disponibilidad: { titulo: 'Disponibilidad', montar: montarDisponibilidad },
   mensajes: { titulo: 'Mensajes', montar: montarMensajes },
 };
 
@@ -28,7 +29,11 @@ function mostrarSeccion({ enfocar = false } = {}) {
   const nombre = seccionActual();
   dialogo.cerrar();
   document.querySelectorAll('[data-seccion]').forEach((enlace) => {
-    if (enlace.dataset.seccion === nombre) enlace.setAttribute('aria-current', 'page');
+    if (enlace.dataset.seccion === nombre) {
+      enlace.setAttribute('aria-current', 'page');
+      // En celular el menú es una barra que se desplaza: deja visible la sección activa.
+      enlace.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    }
     else enlace.removeAttribute('aria-current');
   });
   document.title = `${SECCIONES[nombre].titulo} · Panel de la secretaria — Arte Odontológico`;
