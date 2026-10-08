@@ -112,6 +112,7 @@ cp .env.example .env        # en Windows: copy .env.example .env
 | `HORAS_MINIMAS_GESTION` | No | Horas antes de la cita hasta las que el paciente puede reprogramar o cancelar | `24` |
 | `LIMITE_CITAS_ACTIVAS_SIN_USUARIO` | No | Citas activas a la vez por documento sin cuenta (0 = sin límite) | `1` |
 | `LIMITE_ESCRITURAS_POR_IP`, `LIMITE_LECTURAS_POR_IP` | No | Peticiones públicas por IP cada 15 minutos | `15`, `60` |
+| `LIMITE_INGRESOS_POR_IP` | No | Intentos de ingreso por IP cada 15 minutos | `10` |
 | `RECORDATORIOS_AUTOMATICOS` | No | `false` desactiva el recordatorio automático | `true` |
 | `RECORDATORIO_DESDE`, `RECORDATORIO_HASTA` | No | Horas (de Colombia) entre las que se generan los recordatorios | `8`, `19` |
 | `RECORDATORIO_HORAS_MINIMAS` | No | No recordar citas agendadas hace menos de estas horas | `12` |
@@ -209,4 +210,4 @@ La guía completa de pruebas está en `docs/06-pruebas/`.
 | El navegador muestra error de CORS | El frontend no está en la dirección de `ORIGEN_PERMITIDO` | Abrirlo con Live Server en `http://localhost:5500` |
 | `Unknown column` o `Table doesn't exist` | Base creada con una versión anterior | Ejecutar las migraciones (5.2) |
 | Tildes raras (`OdontologÃ­a`) | Script cargado con otra codificación | Recrear la base con el `schema.sql` actual, que fija `utf8mb4` |
-| HTTP 429 "Demasiados intentos" | Límite de peticiones por IP | Esperar 15 minutos o subir `LIMITE_ESCRITURAS_POR_IP` en desarrollo |
+| HTTP 429 "Demasiados intentos" | Límite de peticiones por IP | Esperar 15 minutos o subir `LIMITE_ESCRITURAS_POR_IP` (o `LIMITE_INGRESOS_POR_IP` si es al ingresar) en desarrollo |
