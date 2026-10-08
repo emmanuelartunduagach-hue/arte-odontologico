@@ -281,6 +281,7 @@ async function agenda(req, res, next) {
     res.json(
       citas.map((c) => ({
         ...vistaPublica(c),
+        especialidadId: c.especialidadId,
         documento: c.documento,
         telefono: c.telefono,
         correo: c.correo,
