@@ -293,6 +293,82 @@
 }
 .mensaje__acciones { margin-top: var(--e-3); }
 
+/* Disponibilidad */
+.disponibilidad__especialista { display: grid; gap: var(--e-1); flex: 1 1 260px; }
+.disponibilidad__especialista .campo__etiqueta { margin: 0; }
+.disponibilidad__especialista .campo__control { padding-block: var(--e-2); }
+.disponibilidad__rango { min-width: 120px; text-align: center; font-weight: var(--peso-semi); }
+
+.semana__rejilla {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: var(--e-2);
+  margin-top: var(--e-3);
+}
+.semana__dia {
+  min-height: 160px;
+  padding: var(--e-2);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-md);
+  background: var(--papel);
+}
+.semana__dia--hoy { border-color: var(--violeta-300); box-shadow: 0 0 0 2px var(--violeta-100); }
+.semana__dia--pasado { background: var(--lienzo); }
+.semana__titulo { display: grid; font-size: var(--txt-sm); margin-bottom: var(--e-2); font-family: var(--fuente-ui); }
+.semana__fecha { font-size: var(--txt-xs); font-weight: var(--peso-normal); color: var(--ink-600); }
+.semana__horas { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--e-1); }
+.semana__vacio { font-size: var(--txt-xs); color: var(--ink-400); }
+
+.chip-hora {
+  display: inline-grid;
+  width: 100%;
+  padding: 3px var(--e-2);
+  border-radius: var(--radio-sm);
+  font-size: var(--txt-xs);
+  font-weight: var(--peso-semi);
+  text-align: left;
+  border: 1px solid transparent;
+}
+.chip-hora--libre { background: var(--menta-100); color: var(--menta-600); border-color: var(--menta-100); cursor: pointer; }
+.chip-hora--libre:hover, .chip-hora--libre:focus-visible { border-color: var(--rosa-700); background: var(--rosa-100); color: var(--rosa-700); text-decoration: line-through; }
+.chip-hora--ocupada { background: var(--violeta-100); color: var(--violeta-600); }
+.chip-hora--pasada { background: var(--lienzo); color: var(--ink-400); border: 1px dashed var(--borde-fuerte); }
+.chip-hora__paciente { font-weight: var(--peso-normal); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.disponibilidad__leyenda { margin-top: var(--e-4); font-size: var(--txt-xs); color: var(--ink-600); display: flex; flex-wrap: wrap; gap: var(--e-2); align-items: center; }
+.disponibilidad__leyenda .chip-hora { width: auto; }
+
+/* Diálogo "Publicar horas" */
+.publicar__grupo { border: 0; padding: 0; margin: 0 0 var(--e-4); }
+.publicar__opciones { display: flex; flex-wrap: wrap; gap: var(--e-2); }
+.publicar__opciones--horas { display: grid; grid-template-columns: repeat(auto-fill, minmax(116px, 1fr)); }
+.publicar__atajos { display: flex; flex-wrap: wrap; gap: var(--e-1); margin-bottom: var(--e-2); }
+.casilla-opcion {
+  display: inline-flex;
+  width: auto;
+  margin: 0;
+  white-space: nowrap;
+  align-items: center;
+  gap: var(--e-2);
+  padding: var(--e-2) var(--e-3);
+  border: 1px solid var(--borde-fuerte);
+  border-radius: var(--radio-sm);
+  font-size: var(--txt-sm);
+  cursor: pointer;
+}
+.casilla-opcion:has(input:checked) { background: var(--violeta-100); border-color: var(--violeta-600); }
+.casilla-opcion input { accent-color: var(--violeta-600); }
+.casilla-opcion--inactiva { opacity: .45; cursor: not-allowed; }
+.publicar__resumen { font-weight: var(--peso-semi); margin-bottom: var(--e-2); }
+
+@media (max-width: 1100px) {
+  .semana__rejilla { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (max-width: 560px) {
+  .semana__rejilla { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .semana__dia { min-height: 0; }
+}
+
 @media (max-width: 1100px) {
   .fila-cita { grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1fr); }
   .fila-cita__especialista { grid-column: 3; }

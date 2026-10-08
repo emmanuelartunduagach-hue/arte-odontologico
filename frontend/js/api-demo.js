@@ -166,6 +166,39 @@
     }));
     return AGENDA;
   }
+  // Disponibilidad en memoria: horas publicadas por especialista. Se
+  // arranca con las horas de ejemplo de horasDe() de lunes a sábado.
+  const FRANJAS = new Map();          // clave "esp|fecha|hora" → { id, especialistaId, fecha, hora, activa }
+  const FRANJA_POR_ID = new Map();
+  function franja(especialistaId, fecha, hora) {
+    const clave = `${especialistaId}|${fecha}|${hora}`;
+    if (!FRANJAS.has(clave)) {
+      const f = { id: FRANJAS.size + 1, especialistaId, fecha, hora, activa: false };
+      FRANJAS.set(clave, f);
+      FRANJA_POR_ID.set(f.id, f);
+    }
+    return FRANJAS.get(clave);
+  }
+  const SEMBRADAS = new Set();
+  function franjasDe(especialistaId, desde, hasta) {
+    const lista = [];
+    for (let fecha = desde; fecha <= hasta; fecha = sumarDias(fecha, 1)) {
+      const clave = `${especialistaId}|${fecha}`;
+      const [a, m, d] = fecha.split('-').map(Number);
+      if (!SEMBRADAS.has(clave) && new Date(Date.UTC(a, m - 1, d)).getUTCDay() !== 0) {
+        horasDe(fecha).forEach((h) => { franja(especialistaId, fecha, h).activa = true; });
+      }
+      SEMBRADAS.add(clave);
+      [...FRANJAS.values()].filter((f) => f.activa && f.especialistaId === especialistaId && f.fecha === fecha)
+        .sort((x, y) => x.hora.localeCompare(y.hora))
+        .forEach((f) => {
+          const cita = agendaDemo().find((c) => c.especialistaId === especialistaId && c.fecha === f.fecha && c.hora === f.hora && c.estado !== 'cancelada');
+          lista.push({ id: f.id, fecha: f.fecha, hora: f.hora, cita: cita ? { id: cita.id, paciente: cita.paciente, estado: cita.estado } : null });
+        });
+    }
+    return lista;
+  }
+
   // Mensajes de WhatsApp en memoria (modo manual: quedan por enviar).
   const TEXTOS_TIPO = {
     confirmacion: 'quedó agendada', reprogramacion: 'fue reprogramada', cancelacion: 'fue cancelada', recordatorio: 'es mañana',
@@ -225,6 +258,32 @@
         && (!p.get('estado') || c.estado === p.get('estado'))
         && (!q || [c.paciente, c.documento, c.telefono].some((v) => v.toLowerCase().includes(q))))
         .map((c) => ({ ...c }));
+    }
+
+    if (partes[0] === 'admin' && partes[1] === 'especialistas' && partes[3] === 'franjas') {
+      exigir('administrador');
+      const especialistaId = Number(partes[2]);
+      if (metodo === 'GET') {
+        const desde = url.searchParams.get('desde') || hoyColombia();
+        return franjasDe(especialistaId, desde, url.searchParams.get('hasta') || sumarDias(desde, 30));
+      }
+      if (metodo === 'POST') {
+        cuerpo.fechas.forEach((fecha) => {
+          franjasDe(especialistaId, fecha, fecha);  // siembra el día antes de sumar horas
+          cuerpo.horas.forEach((h) => { franja(especialistaId, fecha, h).activa = true; });
+        });
+        return { mensaje: 'Horas publicadas.', total: cuerpo.fechas.length * cuerpo.horas.length };
+      }
+    }
+
+    if (metodo === 'DELETE' && partes[0] === 'admin' && partes[1] === 'franjas') {
+      exigir('administrador');
+      const f = FRANJA_POR_ID.get(Number(partes[2]));
+      if (!f || !f.activa) throw new ErrorApi('Hora no encontrada.', 404);
+      const cita = agendaDemo().find((c) => c.especialistaId === f.especialistaId && c.fecha === f.fecha && c.hora === f.hora && c.estado !== 'cancelada');
+      if (cita) throw new ErrorApi(`Esta hora tiene una cita de ${cita.paciente}. Reprográmala o cancélala antes de quitar la hora.`, 409);
+      f.activa = false;
+      return { mensaje: 'Hora quitada.' };
     }
 
     if (metodo === 'GET' && url.pathname === '/admin/especialistas') {
