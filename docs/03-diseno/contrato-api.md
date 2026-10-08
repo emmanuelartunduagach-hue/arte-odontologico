@@ -94,9 +94,10 @@ Un solo formulario de **Ingresar** para los dos; el rol decide a qué panel va: 
 - **Quitar:** `DELETE /admin/franjas/:id`. Si la hora tiene cita → **409** con el nombre del paciente; hay que reprogramar o cancelar primero.
 
 **Agenda**
-- **Ver:** `GET /admin/citas?fecha=` o `?desde=&hasta=`, más `&especialistaId=&estado=&q=` (`q` busca por nombre, documento o teléfono) → citas con `documento`, `telefono`, `correo`, `pacienteId`, `canceladaPor`, `creadoEn`.
+- **Ver:** `GET /admin/citas?fecha=` o `?desde=&hasta=`, más `&especialistaId=&estado=&q=` (`q` busca por nombre, documento o teléfono) → citas con `especialidadId`, `documento`, `telefono`, `correo`, `pacienteId`, `canceladaPor`, `creadoEn`.
 - **Cambiar estado:** `PATCH /admin/citas/:id/estado` `{ estado: "atendida" | "no_asistio" | "cancelada" }`. Atendida o no asistió solo se permite cuando ya llegó la hora.
-- **Reprogramar:** `POST /admin/citas/:id/reprogramar` `{ franjaId }`. No tiene límite y puede pasar la cita a otro especialista de la misma especialidad.
+- **Reprogramar:** `POST /admin/citas/:id/reprogramar` `{ franjaId }`. No tiene límite y puede pasar la cita a otro especialista de la misma especialidad. Respuesta: `{ mensaje, cita, notificacion }`.
+- **Cancelar** (`PATCH …/estado` con `cancelada`) responde `{ mensaje, notificacion }`. `notificacion` es `{ id, estado, enlaceWhatsApp }`: si `estado` es `pendiente`, el panel ofrece "Enviar por WhatsApp" y "Marcar como enviado" ahí mismo.
 
 **Mensajes de WhatsApp (modo manual)**
 - `GET /admin/notificaciones?estado=pendiente` (o `fallida`, `enviada`) → `[{ id, citaId, paciente, tipo, destino, mensaje, enlaceWhatsApp, creadoEn }]`
