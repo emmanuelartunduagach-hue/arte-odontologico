@@ -47,6 +47,10 @@ function telefonoLegible(telefono) {
   return /^\d{10}$/.test(local) ? `${local.slice(0, 3)} ${local.slice(3, 6)} ${local.slice(6)}` : telefono;
 }
 
+function capitalizar(texto) {
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
 function chipEstado(estado) {
   return el('span', { class: `estado estado--${estado}`, texto: NOMBRE_ESTADO[estado] || estado });
 }

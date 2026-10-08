@@ -31,7 +31,7 @@ async function montarMensajes(cuerpo) {
 
   pintarEn(cuerpo,
     avisoDemo(),
-    encabezadoSeccion('Mensajes de WhatsApp', 'Avisos para los pacientes que aún no se han enviado.', generar),
+    encabezadoSeccion('Mensajes de WhatsApp', 'Avisos que el sistema no pudo enviar solo. Mientras el envío automático no esté activo, todos llegan aquí para enviarlos desde WhatsApp.', generar),
     tomarAviso(),
     el('div', { class: 'pestanas', role: 'tablist', 'aria-label': 'Estado de los mensajes' },
       PESTANAS_MENSAJES.map(([valor, texto]) => el('button', {
