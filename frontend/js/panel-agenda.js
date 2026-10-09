@@ -42,14 +42,25 @@ function accionesDe(cita) {
     : [['Reprogramar', () => reprogramarCita(cita)], ['Cancelar cita', () => cancelarCita(cita)]];
 }
 
-function filaCita(cita, { conFecha = false } = {}) {
+const TEXTO_NOVEDAD = { nueva: 'Pedida por la web', cambio: 'El paciente cambió la hora', cancelada: 'El paciente la canceló' };
+
+/** '2026-10-09 15:05:00' → 'hoy, 3:05 p. m.' / 'ayer, …' / '7 de octubre, …' */
+function cuandoPaso(fechaHora) {
+  if (!fechaHora) return '';
+  const [fecha, hora] = fechaHora.split(' ');
+  const hoy = hoyColombia();
+  const dia = fecha === hoy ? 'hoy' : fecha === sumarDiasA(hoy, -1) ? 'ayer' : fechaLarga(fecha).replace(/^\S+ /, '');
+  return `${dia}, ${horaLarga(hora.slice(0, 5))}`;
+}
+
+function filaCita(cita, { conFecha = false, conNovedad = false } = {}) {
   const viva = ['pendiente', 'confirmada'].includes(cita.estado);
   const [h, m] = cita.hora.split(':').map(Number);
   const acciones = accionesDe(cita);
   const visibles = cita.estado === 'pendiente' && acciones[0]?.[0] === 'Aceptar' ? 2 : 1;
   const principales = acciones.slice(0, visibles);
   const resto = acciones.slice(visibles);
-  const cambioDeHora = cita.estado === 'pendiente' && cita.fechaAnterior && cita.horaAnterior;
+  const cambioDeHora = ['pendiente', 'confirmada'].includes(cita.estado) && cita.fechaAnterior && cita.horaAnterior;
   const clases = 'fila-cita' + (viva ? '' : ' fila-cita--cerrada') + (cita.estado === 'pendiente' ? ' fila-cita--pendiente' : '');
 
   return el('article', { class: clases, 'aria-label': `${horaLarga(cita.hora)}, ${cita.paciente}` },
@@ -69,11 +80,15 @@ function filaCita(cita, { conFecha = false } = {}) {
       el('p', { class: 'fila-cita__detalle', texto: cita.especialidad })),
     el('div', { class: 'fila-cita__estado' },
       chipEstado(cita.estado),
+      // Novedades de la web (Inicio): qué pasó y cuándo.
+      conNovedad && cita.novedad && el('span', { class: `fila-cita__novedad fila-cita__novedad--${cita.novedad}` },
+        el('strong', { texto: TEXTO_NOVEDAD[cita.novedad] }),
+        ` · ${cuandoPaso(cita.novedad === 'nueva' ? cita.creadoEn : cita.actualizadoEn)}`),
       // El paciente reprogramó desde su enlace: se muestra qué hora tenía.
       cambioDeHora && el('span', { class: 'fila-cita__cambio' },
-        el('strong', { texto: 'Cambio de hora' }),
-        ` · antes: ${fechaLarga(cita.fechaAnterior)}, ${horaLarga(cita.horaAnterior)}`),
-      cita.estado === 'cancelada' && cita.canceladaPor
+        el('strong', { texto: conNovedad ? 'Antes' : 'Cambió la hora' }),
+        ` · ${conNovedad ? '' : 'antes: '}${fechaLarga(cita.fechaAnterior)}, ${horaLarga(cita.horaAnterior)}`),
+      cita.estado === 'cancelada' && cita.canceladaPor && !(conNovedad && cita.novedad === 'cancelada')
         && el('span', { class: 'fila-cita__detalle', texto: cita.canceladaPor === 'paciente' ? 'por el paciente' : 'por el consultorio' })),
     el('div', { class: 'fila-cita__acciones' },
       principales.map(([texto, accion]) => el('button', {
@@ -137,7 +152,7 @@ function barraAgenda() {
   especialista.addEventListener('change', () => { agenda.especialistaId = especialista.value; panel.refrescar(); });
 
   const estado = el('select', { class: 'campo__control', name: 'estado', 'aria-label': 'Estado' },
-    [['', 'Todos los estados'], ['pendiente', 'Por confirmar'], ['confirmada', 'Confirmadas'], ['atendida', 'Atendidas'],
+    [['', 'Todos los estados'], ['confirmada', 'Confirmadas'], ['atendida', 'Atendidas'],
       ['no_asistio', 'No asistió'], ['cancelada', 'Canceladas'], ['rechazada', 'Rechazadas']]
       .map(([valor, texto]) => el('option', { value: valor, selected: valor === agenda.estado, texto })));
   estado.addEventListener('change', () => { agenda.estado = estado.value; panel.refrescar(); });

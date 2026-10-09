@@ -9,8 +9,9 @@
    falla, aparece en Inicio (tarjeta de panel-mensajes.js).
 
    Inicio (contrato API v2, sección 4):
-     GET /admin/citas?estado=pendiente&desde=hoy&hasta=+180   solicitudes por confirmar
+     GET /admin/citas/novedades?horas=48                      lo que pasó en la web
      GET /admin/citas?fecha=hoy                               agenda de hoy
+     GET /admin/citas?estado=pendiente&desde=hoy&hasta=+180   citas antiguas sin confirmar
      GET /admin/notificaciones?estado=pendiente y ?estado=fallida   WhatsApp sin enviar */
 
 const sesion = exigirSesion('administrador');
@@ -56,6 +57,8 @@ panel.refrescar = () => mostrarSeccion();
 
 /* ---------- Inicio ---------- */
 
+const HORAS_NOVEDADES = 48;
+
 function saludo() {
   const hora = Number(ahoraColombia().slice(11, 13));
   return hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
@@ -80,9 +83,10 @@ async function montarInicio(destino) {
 
   pintarEn(destino, avisoDemo(), encabezado, aviso, estadoCarga('Cargando el resumen del día…'));
 
-  let solicitudes, deHoy, porEnviar, conError;
+  let novedades, solicitudes, deHoy, porEnviar, conError;
   try {
-    [solicitudes, deHoy, porEnviar, conError] = await Promise.all([
+    [novedades, solicitudes, deHoy, porEnviar, conError] = await Promise.all([
+      api(`/admin/citas/novedades?horas=${HORAS_NOVEDADES}`),
       api(`/admin/citas?estado=pendiente&desde=${hoy}&hasta=${sumarDiasA(hoy, 180)}`),
       api(`/admin/citas?fecha=${hoy}`),
       api('/admin/notificaciones?estado=pendiente'),
@@ -100,15 +104,18 @@ async function montarInicio(destino) {
   const porAtender = ordenadas.filter((c) => c.estado === 'confirmada');
   const siguiente = porAtender.find((c) => `${c.fecha}T${c.hora}` > ahora);
   const sinMarcar = porAtender.filter((c) => `${c.fecha}T${c.hora}` <= ahora);
+  // Citas que quedaron pendientes de antes de que las de la web se
+  // confirmaran solas (decisión 27). Solo se muestran si existen.
   const porConfirmar = ordenarPorHora(solicitudes);
+  const nuevas = novedades.filter((c) => c.novedad === 'nueva').length;
 
   pintarEn(destino,
     avisoDemo(),
     encabezado,
     aviso,
     el('div', { class: 'datos-panel' },
-      tarjetaDato(porConfirmar.length, porConfirmar.length === 1 ? 'solicitud por confirmar' : 'solicitudes por confirmar', 'titulo-solicitudes', porConfirmar.length > 0),
-      tarjetaDato(porAtender.length, porAtender.length === 1 ? 'cita por atender hoy' : 'citas por atender hoy', '#agenda')),
+      tarjetaDato(porAtender.length, porAtender.length === 1 ? 'cita por atender hoy' : 'citas por atender hoy', '#agenda'),
+      tarjetaDato(nuevas, nuevas === 1 ? 'cita nueva por la web (48 h)' : 'citas nuevas por la web (48 h)', 'titulo-novedades')),
 
     // Solo aparece si el WhatsApp automático falló (o el servidor está en
     // modo manual): son avisos que el paciente aún no recibió.
@@ -118,13 +125,10 @@ async function montarInicio(destino) {
       el('p', { class: 'alerta bloque-panel__ayuda', texto: 'El envío automático no pudo entregar estos avisos. Ábrelos en WhatsApp, envíalos y confírmalo aquí.' }),
       el('div', { class: 'mensajes__lista' }, sinEnviar.map(tarjetaMensaje))),
 
-    // Lo primero que hay que hacer: responder a quienes pidieron cita.
-    el('section', { class: 'bloque-panel', 'aria-labelledby': 'titulo-solicitudes' },
-      el('h2', { id: 'titulo-solicitudes', class: 'bloque-panel__titulo', texto: 'Solicitudes por confirmar' }),
-      porConfirmar.length
-        ? [el('p', { class: 'bloque-panel__ayuda', texto: 'Al aceptar, al paciente le llega el WhatsApp con los datos de su cita y el enlace para reprogramar o cancelar.' }),
-          listaCitas(porConfirmar, { conFecha: true })]
-        : el('div', { class: 'vacio' }, el('p', { texto: 'No hay solicitudes nuevas. Todo al día.' }))),
+    porConfirmar.length > 0 && el('section', { class: 'bloque-panel', 'aria-labelledby': 'titulo-solicitudes' },
+      el('h2', { id: 'titulo-solicitudes', class: 'bloque-panel__titulo', texto: 'Citas anteriores sin confirmar' }),
+      el('p', { class: 'bloque-panel__ayuda', texto: 'Se pidieron cuando las citas de la web todavía se aprobaban a mano. Acéptalas o recházalas; las nuevas ya llegan confirmadas.' }),
+      listaCitas(porConfirmar, { conFecha: true })),
 
     sinMarcar.length > 0 && el('p', { class: 'alerta alerta--info bloque-panel', texto: sinMarcar.length === 1
       ? 'Hay 1 cita de hoy que ya pasó y falta marcar si el paciente asistió.'
@@ -140,7 +144,16 @@ async function montarInicio(destino) {
         el('a', { href: '#agenda', class: 'bloque-panel__enlace', onclick: () => { agenda.fecha = hoy; agenda.q = ''; }, texto: 'Ver agenda completa' })),
       ordenadas.length
         ? listaCitas(ordenadas)
-        : el('div', { class: 'vacio' }, el('p', { texto: 'No hay citas para hoy.' }))));
+        : el('div', { class: 'vacio' }, el('p', { texto: 'No hay citas para hoy.' }))),
+
+    // Lo que pasó en la web sin que la secretaria tuviera que hacer nada:
+    // citas nuevas (ya confirmadas) y cambios o cancelaciones del paciente.
+    el('section', { class: 'bloque-panel', 'aria-labelledby': 'titulo-novedades' },
+      el('h2', { id: 'titulo-novedades', class: 'bloque-panel__titulo', texto: 'Novedades de la web' }),
+      el('p', { class: 'bloque-panel__ayuda', texto: 'Últimas 48 horas. Las citas pedidas por la web quedan confirmadas solas y al paciente le llega el WhatsApp.' }),
+      novedades.length
+        ? listaCitas(novedades, { conFecha: true, conNovedad: true })
+        : el('div', { class: 'vacio' }, el('p', { texto: 'No hubo movimientos en la web en las últimas 48 horas.' }))));
 }
 
 if (sesion) {
