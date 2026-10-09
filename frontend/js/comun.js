@@ -8,6 +8,16 @@ const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', '
 const DIAS = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
 const DIAS_CORTOS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
+/* Tipos de documento (los mismos que acepta el servidor). */
+const TIPOS_DOCUMENTO = {
+  CC: 'Cédula de ciudadanía',
+  TI: 'Tarjeta de identidad',
+  RC: 'Registro civil',
+  CE: 'Cédula de extranjería',
+  PA: 'Pasaporte',
+  PPT: 'Permiso por protección temporal',
+};
+
 /** Crea un nodo. Los hijos de tipo texto se agregan como texto, no como HTML. */
 function el(etiqueta, props = {}, ...hijos) {
   const nodo = document.createElement(etiqueta);

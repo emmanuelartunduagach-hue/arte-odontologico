@@ -6,23 +6,31 @@ const { pool } = require('../config/db');
 const VERSION_POLITICA_DATOS = '1.0';
 
 const SELECT_PACIENTE = `
-  SELECT id, nombre_completo AS nombreCompleto, documento, telefono, correo, origen,
+  SELECT id, nombres, apellidos, nombre_completo AS nombreCompleto,
+         tipo_documento AS tipoDocumento, documento, telefono, telefono_fijo AS telefonoFijo,
+         correo, origen, motivo_consulta AS motivoConsulta,
          DATE_FORMAT(fecha_autorizacion, '%Y-%m-%d %H:%i:%s') AS fechaAutorizacion,
          DATE_FORMAT(creado_en, '%Y-%m-%d %H:%i:%s') AS creadoEn
     FROM pacientes`;
 
 /* Crea un paciente.
    - origen 'consultorio': la secretaria lo registra en persona y
-     confirma que autorizó el tratamiento de sus datos (ahora).
+     confirma que autorizó el tratamiento de sus datos (ahora). Puede
+     anotar a qué vino (`motivoConsulta`).
    - origen 'web': se crea al aceptar su primera cita; la autorización
-     es la que dio al pedirla (`fechaAutorizacion` de la cita). */
-async function crear({ nombreCompleto, documento, telefono, correo, origen, fechaAutorizacion, creadoPor }) {
+     es la que dio al pedirla (`fechaAutorizacion` de la cita).
+   El nombre completo lo calcula la base (nombres + apellidos). */
+async function crear({
+  nombres, apellidos, tipoDocumento, documento, telefono, telefonoFijo = null, correo,
+  origen, motivoConsulta = null, fechaAutorizacion, creadoPor,
+}) {
   const [r] = await pool.execute(
     `INSERT INTO pacientes
-       (nombre_completo, documento, telefono, correo, origen,
+       (nombres, apellidos, tipo_documento, documento, telefono, telefono_fijo, correo, origen, motivo_consulta,
         autorizacion_datos, fecha_autorizacion, version_politica_datos, creado_por)
-     VALUES (?, ?, ?, ?, ?, TRUE, COALESCE(?, UTC_TIMESTAMP()), ?, ?)`,
-    [nombreCompleto, documento, telefono, correo, origen, fechaAutorizacion || null, VERSION_POLITICA_DATOS, creadoPor]
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE, COALESCE(?, UTC_TIMESTAMP()), ?, ?)`,
+    [nombres, apellidos, tipoDocumento, documento, telefono, telefonoFijo || null, correo, origen, motivoConsulta || null,
+      fechaAutorizacion || null, VERSION_POLITICA_DATOS, creadoPor]
   );
   return r.insertId;
 }

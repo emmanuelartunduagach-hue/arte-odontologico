@@ -69,6 +69,17 @@ Si la base se creó con una versión anterior del proyecto, ejecutar **una sola 
 | `001_alta_pacientes_por_administrador.sql` | Clave temporal y registro de quién crea cada paciente |
 | `002_especialistas_y_citas_sin_usuario.sql` | Especialistas, franjas por especialista, citas sin cuenta, historia clínica. **Borra franjas y citas existentes** (pensado para datos de prueba) |
 | `003_pacientes_sin_login_y_aprobacion.sql` | Tabla `pacientes` (sin login), citas pendientes y rechazadas, `confirmada_en` y mensaje de rechazo. Conserva los datos: copia los pacientes que había en `usuarios` |
+| `004_datos_paciente_y_hora_anterior.sql` | Nombres y apellidos por separado, tipo de documento, teléfono fijo y motivo de consulta; hora anterior de las citas que el paciente reprograma. Conserva los datos: parte el nombre que ya existía y deja el tipo de documento en CC |
+
+Antes de una migración, saca un respaldo. En PowerShell de Windows (ajusta la versión de la carpeta si no es 8.0):
+
+```powershell
+$bin = "C:\Program Files\MySQL\MySQL Server 8.0\bin"
+& "$bin\mysqldump.exe" -u root -p arte_odontologico --result-file=respaldo.sql
+& "$bin\mysql.exe" -u root -p -e "source backend/database/migraciones/004_datos_paciente_y_hora_anterior.sql"
+```
+
+Se usa `--result-file` y no `>` porque en PowerShell `>` guarda el archivo en UTF-16 y después `mysql` no lo puede leer.
 
 ### 5.3 Usuario de base de datos para producción
 

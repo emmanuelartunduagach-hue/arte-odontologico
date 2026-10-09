@@ -2,15 +2,16 @@
 
    Una sola página con secciones; el menú cambia la sección por el
    fragmento de la URL (#inicio, #agenda, #pacientes, #pacientes/12,
-   #disponibilidad, #mensajes) para que Atrás funcione y cada sección se
-   pueda enlazar. Cada sección vive en su archivo (panel-agenda.js,
-   panel-pacientes.js, panel-disponibilidad.js, panel-mensajes.js) y
-   expone `montar(cuerpo, parametro)`.
+   #disponibilidad) para que Atrás funcione y cada sección se pueda
+   enlazar. Cada sección vive en su archivo (panel-agenda.js,
+   panel-pacientes.js, panel-disponibilidad.js) y expone
+   `montar(cuerpo, parametro)`. Los WhatsApp se envían solos; si alguno
+   falla, aparece en Inicio (tarjeta de panel-mensajes.js).
 
    Inicio (contrato API v2, sección 4):
      GET /admin/citas?estado=pendiente&desde=hoy&hasta=+180   solicitudes por confirmar
      GET /admin/citas?fecha=hoy                               agenda de hoy
-     GET /admin/notificaciones?estado=pendiente */
+     GET /admin/notificaciones?estado=pendiente y ?estado=fallida   WhatsApp sin enviar */
 
 const sesion = exigirSesion('administrador');
 const cuerpo = document.getElementById('panel-cuerpo');
@@ -20,7 +21,6 @@ const SECCIONES = {
   agenda: { titulo: 'Agenda', montar: montarAgenda },
   pacientes: { titulo: 'Pacientes', montar: montarPacientes },
   disponibilidad: { titulo: 'Horarios', montar: montarDisponibilidad },
-  mensajes: { titulo: 'Mensajes', montar: montarMensajes },
 };
 
 /** '#pacientes/12' → { nombre: 'pacientes', parametro: '12' }. */
@@ -80,19 +80,20 @@ async function montarInicio(destino) {
 
   pintarEn(destino, avisoDemo(), encabezado, aviso, estadoCarga('Cargando el resumen del día…'));
 
-  let solicitudes, deHoy, mensajes;
+  let solicitudes, deHoy, porEnviar, conError;
   try {
-    [solicitudes, deHoy, mensajes] = await Promise.all([
+    [solicitudes, deHoy, porEnviar, conError] = await Promise.all([
       api(`/admin/citas?estado=pendiente&desde=${hoy}&hasta=${sumarDiasA(hoy, 180)}`),
       api(`/admin/citas?fecha=${hoy}`),
       api('/admin/notificaciones?estado=pendiente'),
+      api('/admin/notificaciones?estado=fallida'),
     ]);
   } catch (err) {
     pintarEn(destino, avisoDemo(), encabezado, aviso, errorConReintento(err, panel.refrescar));
     return;
   }
   if (seccionActual() !== 'inicio') return;
-  mostrarContadorMensajes(mensajes.length);
+  const sinEnviar = [...conError, ...porEnviar];
 
   const ahora = ahoraColombia();
   const ordenadas = ordenarPorHora(deHoy);
@@ -107,8 +108,15 @@ async function montarInicio(destino) {
     aviso,
     el('div', { class: 'datos-panel' },
       tarjetaDato(porConfirmar.length, porConfirmar.length === 1 ? 'solicitud por confirmar' : 'solicitudes por confirmar', 'titulo-solicitudes', porConfirmar.length > 0),
-      tarjetaDato(porAtender.length, porAtender.length === 1 ? 'cita por atender hoy' : 'citas por atender hoy', '#agenda'),
-      tarjetaDato(mensajes.length, mensajes.length === 1 ? 'mensaje por enviar' : 'mensajes por enviar', '#mensajes', mensajes.length > 0)),
+      tarjetaDato(porAtender.length, porAtender.length === 1 ? 'cita por atender hoy' : 'citas por atender hoy', '#agenda')),
+
+    // Solo aparece si el WhatsApp automático falló (o el servidor está en
+    // modo manual): son avisos que el paciente aún no recibió.
+    sinEnviar.length > 0 && el('section', { class: 'bloque-panel', 'aria-labelledby': 'titulo-sin-enviar' },
+      el('h2', { id: 'titulo-sin-enviar', class: 'bloque-panel__titulo',
+        texto: sinEnviar.length === 1 ? '1 WhatsApp sin enviar' : `${sinEnviar.length} WhatsApp sin enviar` }),
+      el('p', { class: 'alerta bloque-panel__ayuda', texto: 'El envío automático no pudo entregar estos avisos. Ábrelos en WhatsApp, envíalos y confírmalo aquí.' }),
+      el('div', { class: 'mensajes__lista' }, sinEnviar.map(tarjetaMensaje))),
 
     // Lo primero que hay que hacer: responder a quienes pidieron cita.
     el('section', { class: 'bloque-panel', 'aria-labelledby': 'titulo-solicitudes' },
@@ -140,6 +148,4 @@ if (sesion) {
   document.querySelectorAll('[data-inicial-usuario]').forEach((nodo) => { nodo.textContent = sesion.usuario.nombre.charAt(0).toUpperCase(); });
   window.addEventListener('hashchange', () => mostrarSeccion({ enfocar: true }));
   mostrarSeccion();
-  // Inicio y Mensajes ya traen los pendientes; las demás secciones no.
-  if (!['inicio', 'mensajes'].includes(seccionActual())) actualizarContadorMensajes();
 }

@@ -8,6 +8,7 @@ erDiagram
     especialistas ||--o{ franjas_horarias : "disponible en"
     sedes ||--o{ franjas_horarias : "ubicada en"
     franjas_horarias ||--o{ citas : "ocupada por (máx. 1 viva)"
+    franjas_horarias |o--o{ citas : "hora anterior (cambio)"
     citas ||--o{ notificaciones : "genera"
     citas |o--o{ historia_clinica : "origina"
     historia_clinica |o--o{ historia_clinica : "corrige a"
@@ -25,11 +26,16 @@ erDiagram
     }
     pacientes {
         int id PK
-        varchar nombre_completo
+        varchar nombres
+        varchar apellidos
+        varchar nombre_completo "generada"
+        enum tipo_documento "CC | TI | RC | CE | PA | PPT"
         varchar documento UK
-        varchar telefono
+        varchar telefono "celular"
+        varchar telefono_fijo
         varchar correo
         enum origen "web | consultorio"
+        varchar motivo_consulta
         bool autorizacion_datos
         datetime fecha_autorizacion
         int creado_por FK
@@ -69,10 +75,15 @@ erDiagram
         int paciente_id FK "al aceptarla"
         int servicio_id FK
         int franja_id FK
+        int franja_anterior_id FK "si el paciente la reprogramó"
         enum estado "pendiente | confirmada | rechazada | cancelada | atendida | no_asistio"
-        varchar nombre_paciente
+        varchar nombres_paciente
+        varchar apellidos_paciente
+        varchar nombre_paciente "generada"
+        enum tipo_documento_paciente
         varchar documento_paciente
         varchar telefono_paciente
+        varchar telefono_fijo_paciente
         varchar correo_paciente
         bool autorizacion_datos
         char codigo_gestion_hash UK

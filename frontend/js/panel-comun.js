@@ -80,22 +80,6 @@ function errorConReintento(err, reintentar) {
     el('button', { type: 'button', class: 'btn btn--secundario alerta__accion', onclick: reintentar, texto: 'Reintentar' }));
 }
 
-/* ---------- Contador de mensajes del menú ---------- */
-
-function mostrarContadorMensajes(cantidad) {
-  const contador = document.querySelector('[data-contador-mensajes]');
-  if (!contador) return;
-  contador.textContent = cantidad > 99 ? '99+' : String(cantidad);
-  contador.hidden = !cantidad;
-  contador.setAttribute('aria-label', cantidad === 1 ? '1 por enviar' : `${cantidad} por enviar`);
-}
-
-async function actualizarContadorMensajes() {
-  try {
-    mostrarContadorMensajes((await api('/admin/notificaciones?estado=pendiente')).length);
-  } catch { /* el contador no es crítico */ }
-}
-
 /** Aviso tras una acción que generó un WhatsApp. En modo manual el
     mensaje queda pendiente: se ofrece enviarlo y marcarlo como enviado
     sin salir de la pantalla. */
@@ -114,7 +98,6 @@ function avisoAccion(mensaje, notificacion) {
       try {
         await api(`/admin/notificaciones/${notificacion.id}`, { metodo: 'PATCH', cuerpo: { estado: 'enviada' } });
         pintarEn(caja, el('p', { class: 'aviso-accion__titulo', texto: mensaje }), el('p', { texto: 'Mensaje marcado como enviado.' }));
-        actualizarContadorMensajes();
       } catch (err) {
         marcar.disabled = false;
         marcar.after(el('p', { class: 'campo__error', texto: err.message }));

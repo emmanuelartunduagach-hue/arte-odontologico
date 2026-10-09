@@ -21,7 +21,7 @@
 .estado--confirmada { background: var(--menta-100); color: var(--menta-600); }
 .estado--pendiente  { background: var(--ambar-100); color: var(--ambar-700); }
 .estado--cancelada  { background: var(--rosa-100);  color: var(--rosa-700); }
-.estado--atendida   { background: var(--violeta-100); color: var(--violeta-600); }
+.estado--atendida   { background: var(--violeta-100); color: var(--acento-texto); }
 .estado--no_asistio { background: var(--borde); color: var(--ink-600); }
 .estado--rechazada  { background: var(--rosa-100);  color: var(--rosa-700); }
 
@@ -39,6 +39,11 @@
   background-color: var(--violeta-50);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='76' height='76' viewBox='0 0 76 76'%3E%3Cpath d='M14 62V34a24 24 0 0 1 48 0v28' fill='none' stroke='%234a1f60' stroke-opacity='.06' stroke-width='1.5'/%3E%3C/svg%3E");
   background-attachment: fixed;
+}
+/* Modo oscuro: los mismos arcos, en lila claro y muy tenues. (El color
+   va dentro del SVG, por eso no puede ser una variable.) */
+:root[data-tema="oscuro"] .pagina-panel {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='76' height='76' viewBox='0 0 76 76'%3E%3Cpath d='M14 62V34a24 24 0 0 1 48 0v28' fill='none' stroke='%23d6bfec' stroke-opacity='.035' stroke-width='1.5'/%3E%3C/svg%3E");
 }
 
 /* Menú de la cuenta (encabezado) */
@@ -67,7 +72,7 @@
   height: 34px;
   border-radius: 50%;
   background: var(--violeta-600);
-  color: var(--papel);
+  color: var(--sobre-marca);
   font-family: var(--fuente-titular);
   font-size: var(--txt-md);
 }
@@ -132,22 +137,11 @@
   font-size: var(--txt-base);
 }
 .panel-nav a:hover { text-decoration: none; background: var(--violeta-100); color: var(--ink-900); }
-.panel-nav a[aria-current="page"] { background: var(--violeta-600); color: var(--papel); }
+.panel-nav a[aria-current="page"] { background: var(--violeta-600); color: var(--sobre-marca); }
 .panel-nav svg {
   width: 20px; height: 20px; flex-shrink: 0;
   fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
 }
-.panel-nav__contador {
-  margin-left: auto;
-  min-width: 22px;
-  padding: 1px 7px;
-  border-radius: var(--radio-pill);
-  background: var(--rosa-700);
-  color: var(--papel);
-  font-size: var(--txt-xs);
-  text-align: center;
-}
-.panel-nav__contador[hidden] { display: none; }
 
 .panel-contenido {
   padding: var(--e-6);
@@ -188,10 +182,10 @@
   gap: var(--e-3);
 }
 
-/* Inicio: tres datos grandes */
+/* Inicio: dos datos grandes */
 .datos-panel {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--e-4);
   margin-bottom: var(--e-5);
 }
@@ -205,7 +199,7 @@
   color: var(--ink-900);
 }
 .dato-panel:hover { text-decoration: none; border-color: var(--violeta-300); }
-.dato-panel__numero { font-family: var(--fuente-titular, inherit); font-size: var(--txt-xl); line-height: 1; color: var(--violeta-600); }
+.dato-panel__numero { font-family: var(--fuente-titular, inherit); font-size: var(--txt-xl); line-height: 1; color: var(--acento-texto); }
 .dato-panel__etiqueta { font-size: var(--txt-sm); color: var(--ink-600); }
 .dato-panel--alerta { background: var(--rosa-100); border-color: var(--rosa-100); }
 .dato-panel--alerta .dato-panel__numero { color: var(--rosa-700); }
@@ -237,7 +231,7 @@
   height: 40px;
   border-radius: 50%;
   background: var(--violeta-100);
-  color: var(--violeta-600);
+  color: var(--acento-texto);
   font-family: var(--fuente-titular);
   font-size: var(--txt-md);
 }
@@ -318,7 +312,8 @@ textarea.campo__control { resize: vertical; min-height: 96px; font: inherit; }
 
 .fila-cita {
   display: grid;
-  grid-template-columns: 70px minmax(0, 1.5fr) minmax(0, 1.2fr) 120px 190px;
+  /* Acciones a su ancho: una solicitud muestra Aceptar, Rechazar y Más. */
+  grid-template-columns: 70px minmax(0, 1.5fr) minmax(0, 1.2fr) minmax(120px, 1fr) auto;
   gap: var(--e-2) var(--e-4);
   align-items: center;
   padding: var(--e-3) var(--e-4);
@@ -328,7 +323,7 @@ textarea.campo__control { resize: vertical; min-height: 96px; font: inherit; }
 .fila-cita--cerrada { background: var(--lienzo); }
 .fila-cita--pendiente { box-shadow: inset 4px 0 0 var(--ambar-700); background: var(--ambar-50); }
 a.fila-cita__nombre { display: block; color: var(--ink-900); }
-a.fila-cita__nombre:hover { color: var(--violeta-600); }
+a.fila-cita__nombre:hover { color: var(--acento-texto); }
 .fila-cita--cerrada .fila-cita__nombre,
 .fila-cita--cerrada .fila-cita__reloj { color: var(--ink-600); }
 
@@ -341,7 +336,10 @@ a.fila-cita__nombre:hover { color: var(--violeta-600); }
 .fila-cita__paciente .fila-cita__detalle span { display: block; }
 .fila-cita__especialista { font-size: var(--txt-sm); }
 .fila-cita__estado { display: grid; justify-items: start; gap: 2px; }
-.fila-cita__acciones { display: flex; gap: var(--e-2); justify-content: flex-end; align-items: center; }
+/* Solicitud de cambio de hora hecha por el paciente: qué hora tenía. */
+.fila-cita__cambio { font-size: var(--txt-xs); color: var(--ambar-700); line-height: var(--alto-normal); }
+.fila-cita__cambio strong { font-weight: var(--peso-semi); }
+.fila-cita__acciones { display: flex; flex-wrap: wrap; gap: var(--e-2); justify-content: flex-end; align-items: center; }
 
 /* Menú "Más" */
 .menu-acciones { position: relative; }
@@ -408,7 +406,7 @@ a.fila-cita__nombre:hover { color: var(--violeta-600); }
   color: var(--ink-600);
   cursor: pointer;
 }
-.pestanas__item[aria-selected="true"] { color: var(--violeta-600); border-bottom-color: var(--violeta-600); }
+.pestanas__item[aria-selected="true"] { color: var(--acento-texto); border-bottom-color: var(--violeta-600); }
 .mensajes__lista { display: grid; gap: var(--e-3); }
 .mensaje { padding: var(--e-4); border: 1px solid var(--borde); border-radius: var(--radio-md); }
 .mensaje__cabecera { display: flex; justify-content: space-between; gap: var(--e-3); margin-bottom: var(--e-3); }
@@ -461,7 +459,7 @@ a.fila-cita__nombre:hover { color: var(--violeta-600); }
 }
 .chip-hora--libre { background: var(--menta-100); color: var(--menta-600); border-color: var(--menta-100); cursor: pointer; }
 .chip-hora--libre:hover, .chip-hora--libre:focus-visible { border-color: var(--rosa-700); background: var(--rosa-100); color: var(--rosa-700); text-decoration: line-through; }
-.chip-hora--ocupada { background: var(--violeta-100); color: var(--violeta-600); }
+.chip-hora--ocupada { background: var(--violeta-100); color: var(--acento-texto); }
 .chip-hora--pasada { background: var(--lienzo); color: var(--ink-400); border: 1px dashed var(--borde-fuerte); }
 .chip-hora__paciente { font-weight: var(--peso-normal); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .disponibilidad__leyenda { margin-top: var(--e-4); font-size: var(--txt-xs); color: var(--ink-600); display: flex; flex-wrap: wrap; gap: var(--e-2); align-items: center; }
@@ -529,7 +527,7 @@ a.fila-cita__nombre:hover { color: var(--violeta-600); }
     top: auto;
     z-index: 40;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0;
     padding: var(--e-1) var(--e-1) calc(var(--e-1) + env(safe-area-inset-bottom));
     background: var(--papel);
@@ -545,9 +543,8 @@ a.fila-cita__nombre:hover { color: var(--violeta-600); }
     border-radius: var(--radio-md);
     text-align: center;
   }
-  .panel-nav a[aria-current="page"] { background: var(--violeta-100); color: var(--violeta-600); }
+  .panel-nav a[aria-current="page"] { background: var(--violeta-100); color: var(--acento-texto); }
   .panel-nav svg { width: 22px; height: 22px; }
-  .panel-nav__contador { position: absolute; top: 2px; left: 55%; margin: 0; min-width: 18px; padding: 0 5px; }
 
   .panel-contenido { padding: var(--e-4); }
   .datos-panel { grid-template-columns: minmax(0, 1fr); gap: var(--e-2); }
@@ -565,3 +562,15 @@ a.fila-cita__nombre:hover { color: var(--violeta-600); }
   .nota-hc { padding: var(--e-3) var(--e-4); }
   .nota-hc::before { left: calc(-1 * var(--e-4) - 7px); }
 }
+
+/* Motivo de consulta en la ficha del paciente */
+.ficha__motivo {
+  margin-block: var(--e-3) var(--e-4);
+  padding: var(--e-3) var(--e-4);
+  border-left: 3px solid var(--violeta-300);
+  background: var(--violeta-50);
+  border-radius: 0 var(--radio-sm) var(--radio-sm) 0;
+  font-size: var(--txt-sm);
+  white-space: pre-line;
+}
+.ficha__motivo-titulo { font-size: var(--txt-xs); font-weight: var(--peso-semi); color: var(--ink-600); margin-bottom: var(--e-1); }

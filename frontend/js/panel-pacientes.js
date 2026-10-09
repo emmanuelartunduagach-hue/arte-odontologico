@@ -7,7 +7,8 @@
 
    Contrato API v2, sección 4:
      GET  /pacientes?q=                   lista y búsqueda
-     POST /pacientes                      { nombreCompleto, documento, telefono, correo, autorizacionDatos }
+     POST /pacientes                      { nombres, apellidos, tipoDocumento, documento, telefono, telefonoFijo?,
+                                            correo, motivoConsulta?, autorizacionDatos }
      GET  /pacientes/:id                  { paciente, citas, historia }
      POST /pacientes/:id/historia         { fechaAtencion, procedimiento, notas?, citaId? }
      POST /admin/historia/:id/correccion  { notas, procedimiento? }
@@ -42,6 +43,15 @@ function campoForm(nombre, etiqueta, tipo = 'text', extra = {}) {
   return el('div', { class: 'campo' },
     el('label', { class: 'campo__etiqueta', for: id, texto: etiqueta }),
     control,
+    el('p', { class: 'campo__error', id: `${id}-error`, hidden: true }));
+}
+
+function campoSelect(nombre, etiqueta, opciones, elegido) {
+  const id = `pac-${nombre}`;
+  return el('div', { class: 'campo' },
+    el('label', { class: 'campo__etiqueta', for: id, texto: etiqueta }),
+    el('select', { class: 'campo__control', id, name: nombre, 'aria-describedby': `${id}-error` },
+      Object.entries(opciones).map(([valor, texto]) => el('option', { value: valor, selected: valor === elegido, texto }))),
     el('p', { class: 'campo__error', id: `${id}-error`, hidden: true }));
 }
 
@@ -128,11 +138,18 @@ function nuevoPaciente() {
   const alerta = el('div', { class: 'alerta', role: 'alert', hidden: true });
   const form = el('form', { novalidate: true },
     el('p', { class: 'agendar__nota', texto: 'Para quien llega al consultorio sin haber pedido cita por la web. Después podrás agendarle su cita desde su ficha.' }),
-    campoForm('nombreCompleto', 'Nombre completo', 'text', { autocomplete: 'off' }),
     el('div', { class: 'rejilla-2' },
-      campoForm('documento', 'Documento de identidad', 'text', { inputmode: 'numeric', autocomplete: 'off' }),
-      campoForm('telefono', 'Celular (WhatsApp)', 'tel', { placeholder: '300 123 4567', autocomplete: 'off' })),
+      campoForm('nombres', 'Nombres', 'text', { autocomplete: 'off' }),
+      campoForm('apellidos', 'Apellidos', 'text', { autocomplete: 'off' })),
+    el('div', { class: 'rejilla-2' },
+      campoSelect('tipoDocumento', 'Tipo de documento', TIPOS_DOCUMENTO, 'CC'),
+      campoForm('documento', 'Número de documento', 'text', { autocomplete: 'off' })),
     campoForm('correo', 'Correo electrónico', 'email', { autocomplete: 'off' }),
+    el('div', { class: 'rejilla-2' },
+      campoForm('telefono', 'Celular (WhatsApp)', 'tel', { placeholder: '300 123 4567', autocomplete: 'off' }),
+      campoForm('telefonoFijo', 'Teléfono fijo (opcional)', 'tel', { placeholder: '608 837 0000', autocomplete: 'off' })),
+    campoForm('motivoConsulta', 'Motivo de consulta (opcional)', 'textarea',
+      { rows: '3', maxlength: '500', placeholder: 'Ej.: dolor en una muela, valoración para ortodoncia, limpieza…' }),
     el('div', { class: 'campo' },
       el('label', { class: 'casilla' },
         el('input', { type: 'checkbox', name: 'autorizacionDatos', 'aria-describedby': 'pac-autorizacionDatos-error' }),
@@ -153,8 +170,10 @@ function nuevoPaciente() {
       const r = await api('/pacientes', {
         metodo: 'POST',
         cuerpo: {
-          nombreCompleto: form.nombreCompleto.value, documento: form.documento.value,
-          telefono: form.telefono.value, correo: form.correo.value,
+          nombres: form.nombres.value, apellidos: form.apellidos.value,
+          tipoDocumento: form.tipoDocumento.value, documento: form.documento.value,
+          telefono: form.telefono.value, telefonoFijo: form.telefonoFijo.value,
+          correo: form.correo.value, motivoConsulta: form.motivoConsulta.value,
           autorizacionDatos: form.autorizacionDatos.checked,
         },
       });
@@ -177,7 +196,7 @@ function nuevoPaciente() {
     }
   });
   pintarEn(nodo, form);
-  form.nombreCompleto.focus();
+  form.nombres.focus();
 }
 
 /* ---------- Ficha del paciente ---------- */
@@ -214,9 +233,13 @@ async function montarFicha(cuerpo, idTexto) {
       el('section', { class: 'ficha__bloque', 'aria-labelledby': 'titulo-datos' },
         el('h2', { id: 'titulo-datos', class: 'bloque-panel__titulo', texto: 'Datos' }),
         el('dl', { class: 'resumen' },
-          dato('Documento', paciente.documento),
+          dato('Documento', `${paciente.tipoDocumento} ${paciente.documento}`),
           dato('Celular', telefonoLegible(paciente.telefono)),
+          paciente.telefonoFijo && dato('Teléfono fijo', telefonoLegible(paciente.telefonoFijo)),
           dato('Correo', paciente.correo)),
+        paciente.motivoConsulta && el('div', { class: 'ficha__motivo' },
+          el('p', { class: 'ficha__motivo-titulo', texto: 'Motivo de consulta' }),
+          el('p', { texto: paciente.motivoConsulta })),
         el('a', { class: 'btn btn--whatsapp btn--compacto', href: `https://wa.me/${paciente.telefono}`, target: '_blank', rel: 'noopener', texto: 'Escribir por WhatsApp' })),
 
       el('section', { class: 'ficha__bloque', 'aria-labelledby': 'titulo-citas' },
@@ -462,7 +485,6 @@ async function agendarParaPaciente(paciente) {
       panel.aviso = avisoAccion(`Cita de ${paciente.nombreCompleto} agendada para el ${fechaLarga(r.cita.fecha)} a las ${horaLarga(r.cita.hora)}`, r.notificacion);
       dialogo.cerrar();
       panel.refrescar();
-      actualizarContadorMensajes();
     } catch (err) {
       paso.enviando = false;
       paso.hora = null;

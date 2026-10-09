@@ -174,7 +174,7 @@ function pintar() {
 }
 
 function subtitulo() {
-  if (estado.paso === 'listo') return 'Tu cita quedó registrada.';
+  if (estado.paso === 'listo') return 'Tu solicitud quedó registrada.';
   if (estado.especialidad) return estado.especialidad.nombre;
   return 'Agenda tu cita en pocos pasos.';
 }
@@ -225,6 +225,8 @@ function pintarDia() {
 
 /* ---------- Formulario de datos ---------- */
 
+const CAMPOS_DATOS = ['nombres', 'apellidos', 'tipoDocumento', 'documento', 'telefono', 'telefonoFijo', 'correo'];
+
 function campo(nombre, etiqueta, tipo, extra = {}) {
   const id = `agendar-${nombre}`;
   return el('div', { class: 'campo' },
@@ -233,13 +235,28 @@ function campo(nombre, etiqueta, tipo, extra = {}) {
     el('p', { class: 'campo__error', id: `error-${nombre}`, hidden: true }));
 }
 
+/* Tipo de documento: la lista vive en js/comun.js (TIPOS_DOCUMENTO). */
+function campoTipoDocumento() {
+  const elegido = estado.datos.tipoDocumento || 'CC';
+  return el('div', { class: 'campo' },
+    el('label', { class: 'campo__etiqueta', for: 'agendar-tipoDocumento', texto: 'Tipo de documento' }),
+    el('select', { class: 'campo__control', id: 'agendar-tipoDocumento', name: 'tipoDocumento', 'aria-describedby': 'error-tipoDocumento', 'aria-required': 'true' },
+      Object.entries(TIPOS_DOCUMENTO).map(([valor, texto]) => el('option', { value: valor, selected: valor === elegido, texto }))),
+    el('p', { class: 'campo__error', id: 'error-tipoDocumento', hidden: true }));
+}
+
 function pintarDatos() {
-  const form = el('form', { id: 'form-agendar', novalidate: true, onsubmit: enviar, oninput: guardarBorrador },
-    campo('nombreCompleto', 'Nombre completo', 'text', { autocomplete: 'name', 'aria-required': 'true' }),
+  const form = el('form', { id: 'form-agendar', novalidate: true, onsubmit: enviar, oninput: guardarBorrador, onchange: guardarBorrador },
     el('div', { class: 'rejilla-2' },
-      campo('documento', 'Documento de identidad', 'text', { inputmode: 'numeric', autocomplete: 'off', 'aria-required': 'true' }),
-      campo('telefono', 'Celular', 'tel', { autocomplete: 'tel', placeholder: '300 123 4567', 'aria-required': 'true' })),
+      campo('nombres', 'Nombres', 'text', { autocomplete: 'given-name', 'aria-required': 'true' }),
+      campo('apellidos', 'Apellidos', 'text', { autocomplete: 'family-name', 'aria-required': 'true' })),
+    el('div', { class: 'rejilla-2' },
+      campoTipoDocumento(),
+      campo('documento', 'Número de documento', 'text', { autocomplete: 'off', 'aria-required': 'true' })),
     campo('correo', 'Correo electrónico', 'email', { autocomplete: 'email', 'aria-required': 'true' }),
+    el('div', { class: 'rejilla-2' },
+      campo('telefono', 'Celular (WhatsApp)', 'tel', { autocomplete: 'tel', placeholder: '300 123 4567', 'aria-required': 'true' }),
+      campo('telefonoFijo', 'Teléfono fijo (opcional)', 'tel', { autocomplete: 'off', placeholder: '608 837 0000' })),
 
     // Campo trampa contra bots: oculto con CSS (no con type="hidden"), fuera del
     // orden de tabulación y de los lectores de pantalla. Debe viajar vacío.
@@ -260,20 +277,35 @@ function pintarDatos() {
   return [titulo('Tus datos'), resumen(true), form];
 }
 
-function guardarBorrador(e) {
-  const f = e.currentTarget;
-  estado.datos = {
-    nombreCompleto: f.nombreCompleto.value, documento: f.documento.value,
-    telefono: f.telefono.value, correo: f.correo.value, autorizacionDatos: f.autorizacionDatos.checked,
-  };
+function leerDatos(f) {
+  const datos = Object.fromEntries(CAMPOS_DATOS.map((n) => [n, f.elements[n].value]));
+  datos.autorizacionDatos = f.autorizacionDatos.checked;
+  return datos;
 }
 
+function guardarBorrador(e) {
+  estado.datos = leerDatos(e.currentTarget);
+}
+
+/* Mismas reglas que el servidor (utils/validaciones.js); el servidor
+   vuelve a validar todo. */
 function validar(d) {
   const errores = {};
-  if (d.nombreCompleto.trim().length < 3) errores.nombreCompleto = 'Escribe tu nombre completo.';
-  if (!/^\d{5,20}$/.test(d.documento.trim())) errores.documento = 'Escribe tu documento solo con números (de 5 a 20 dígitos).';
-  if (!/^\d{7,15}$/.test(d.telefono.replace(/[\s\-+]/g, ''))) errores.telefono = 'Escribe un celular válido, por ejemplo 300 123 4567.';
+  const nombres = d.nombres.trim();
+  const apellidos = d.apellidos.trim();
+  const documento = d.documento.replace(/[.\s-]/g, '').toUpperCase();
+  if (nombres.length < 2 || /\d/.test(nombres)) errores.nombres = 'Escribe tus nombres (sin números).';
+  if (apellidos.length < 2 || /\d/.test(apellidos)) errores.apellidos = 'Escribe tus apellidos (sin números).';
+  if (!TIPOS_DOCUMENTO[d.tipoDocumento]) errores.tipoDocumento = 'Elige el tipo de documento.';
+  if (d.tipoDocumento === 'PA') {
+    if (!/^[A-Z0-9]{5,20}$/.test(documento)) errores.documento = 'El pasaporte debe tener entre 5 y 20 letras o números.';
+  } else if (!/^\d{5,20}$/.test(documento)) {
+    errores.documento = 'Escribe tu documento solo con números (de 5 a 20 dígitos).';
+  }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.correo.trim())) errores.correo = 'Escribe un correo válido, por ejemplo nombre@correo.com.';
+  if (!/^\d{7,15}$/.test(d.telefono.replace(/[\s\-()+]/g, ''))) errores.telefono = 'Escribe un celular válido, por ejemplo 300 123 4567.';
+  const fijo = d.telefonoFijo.replace(/[\s\-()+]/g, '');
+  if (fijo && !/^\d{7,15}$/.test(fijo)) errores.telefonoFijo = 'Escribe un teléfono válido o déjalo vacío.';
   if (!d.autorizacionDatos) errores.autorizacionDatos = 'Debes autorizar el tratamiento de tus datos para agendar.';
   return errores;
 }
@@ -313,10 +345,7 @@ async function enviar(e) {
   if (estado.enviando) return;
   const form = e.currentTarget;
   const boton = form.querySelector('[type="submit"]');
-  const datos = {
-    nombreCompleto: form.nombreCompleto.value, documento: form.documento.value, telefono: form.telefono.value,
-    correo: form.correo.value, autorizacionDatos: form.autorizacionDatos.checked, sitioWeb: form.sitioWeb.value,
-  };
+  const datos = leerDatos(form);
 
   limpiarErrores(form);
   const errores = validar(datos);
@@ -331,12 +360,15 @@ async function enviar(e) {
       cuerpo: {
         especialidadId: estado.especialidad.id,
         franjaId: estado.franja.franjaId,
-        nombreCompleto: datos.nombreCompleto.trim(),
+        nombres: datos.nombres.trim(),
+        apellidos: datos.apellidos.trim(),
+        tipoDocumento: datos.tipoDocumento,
         documento: datos.documento.trim(),
         telefono: datos.telefono.trim(),
+        telefonoFijo: datos.telefonoFijo.trim(),
         correo: datos.correo.trim(),
         autorizacionDatos: true,
-        sitioWeb: datos.sitioWeb,
+        sitioWeb: form.sitioWeb.value,
       },
     });
     estado.paso = 'listo';

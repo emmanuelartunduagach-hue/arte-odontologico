@@ -350,3 +350,50 @@ La migración 003 lleva las bases existentes al modelo nuevo sin perder datos:
 copia los pacientes de `usuarios` a `pacientes` con el mismo id, de modo que
 sus citas e historia clínica siguen apuntando a ellos.
 
+## 25. Datos completos del paciente, cambio de hora visible y modo oscuro (9 de octubre)
+
+Después de revisar el flujo con el consultorio:
+
+- **Nombres y apellidos por separado, tipo de documento y teléfono fijo.**
+  El formulario de pedir cita y el registro en el consultorio piden lo
+  mismo: nombres, apellidos, tipo y número de documento, correo, celular
+  (WhatsApp) y un teléfono fijo opcional. Los tipos son los usados en
+  Colombia (CC, TI, RC, CE, PA y PPT); el pasaporte admite letras. El nombre
+  completo se volvió una **columna generada** (`nombres + apellidos`) en
+  `pacientes` y en `citas`: todo lo que ya lo leía (agenda, búsqueda,
+  mensajes, la vista `v_agenda`) sigue igual y no puede quedar desalineado.
+- **Motivo de consulta** (`pacientes.motivo_consulta`, opcional): cuando la
+  secretaria registra a quien llega al consultorio, anota a qué vino. Se
+  muestra en la ficha. No reemplaza la historia clínica, que se sigue
+  llenando después de cada cita atendida.
+- **Cambio de hora visible.** Cuando el paciente reprograma desde su enlace,
+  la cita guarda la hora que tenía (`citas.franja_anterior_id`) y en las
+  solicitudes por confirmar aparece "Cambio de hora · antes: …". Así la
+  secretaria distingue una solicitud nueva de un cambio.
+- **Rechazar a la vista.** En las solicitudes, "Aceptar" y "Rechazar" son
+  dos botones visibles; "Cambiar hora" queda en "Más".
+- **Mensaje de límite según el caso.** Si la persona ya tiene una solicitud
+  pendiente, no tiene enlace todavía: el mensaje le dice que espere la
+  confirmación por WhatsApp. Si ya está confirmada, que use su enlace.
+- **Acceso del consultorio con un candado** junto a "Agendar cita", en el
+  encabezado, además del enlace del pie de página.
+- **Modo oscuro en el panel.** Se activa desde el menú de la cuenta y se
+  recuerda en el navegador; si la secretaria nunca eligió, sigue el tema del
+  sistema. Se implementó con las mismas variables de `tokens.css`,
+  redefinidas bajo `:root[data-tema="oscuro"]`, y tres roles nuevos
+  (`--acento-texto`, `--sobre-marca`, `--fondo-encabezado`) para separar el
+  morado como texto del morado como fondo. Contrastes verificados: texto
+  principal 14:1, secundario 8.6:1, botones 7.5:1. La página pública sigue
+  en modo claro.
+
+- **Sin sección de Mensajes.** Con el envío automático por la API de
+  WhatsApp, la secretaria no tiene que enviar nada: se quitan la sección
+  Mensajes, su contador del menú y la tarjeta "mensajes por enviar" de
+  Inicio. Como red de seguridad, si un envío falla (token vencido, Meta
+  caído) o el servidor está en modo manual, Inicio muestra "WhatsApp sin
+  enviar" con el botón para enviarlo a mano; si no hay ninguno, no aparece.
+  Los recordatorios se siguen generando solos cada 30 minutos.
+
+La migración 004 lleva las bases existentes al modelo nuevo sin perder
+datos: parte el nombre que ya existía (con 4 palabras o más, las 2 primeras
+son nombres; con 2 o 3, la primera) y deja el tipo de documento en CC.

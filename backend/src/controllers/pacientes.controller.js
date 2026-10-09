@@ -12,12 +12,18 @@ const { validarDatosPersona } = require('../utils/validaciones');
 const { ErrorHttp } = require('../utils/errores');
 
 /* POST /api/pacientes
-   { nombreCompleto, documento, telefono, correo, autorizacionDatos: true }
+   { nombres, apellidos, tipoDocumento, documento, telefono, telefonoFijo?,
+     correo, motivoConsulta?, autorizacionDatos: true }
    autorizacionDatos: la secretaria confirma que el paciente autorizó el
-   tratamiento de sus datos (Ley 1581 de 2012). */
+   tratamiento de sus datos (Ley 1581 de 2012).
+   motivoConsulta: a qué vino la persona (hasta 500 caracteres). */
 async function crear(req, res, next) {
   try {
     const { valores, errores } = validarDatosPersona(req.body);
+    const motivoConsulta = typeof req.body?.motivoConsulta === 'string' ? req.body.motivoConsulta.trim() : '';
+    if (motivoConsulta.length > 500) {
+      errores.motivoConsulta = 'El motivo de consulta puede tener hasta 500 caracteres.';
+    }
     if (req.body?.autorizacionDatos !== true) {
       errores.autorizacionDatos = 'Confirma que el paciente autorizó el tratamiento de sus datos personales.';
     }
@@ -35,7 +41,9 @@ async function crear(req, res, next) {
 
     let id;
     try {
-      id = await pacienteModelo.crear({ ...valores, origen: 'consultorio', creadoPor: req.usuario.id });
+      id = await pacienteModelo.crear({
+        ...valores, motivoConsulta: motivoConsulta || null, origen: 'consultorio', creadoPor: req.usuario.id,
+      });
     } catch (error) {
       if (error.code === 'ER_DUP_ENTRY') {
         const mensaje = 'Ya existe un paciente con este documento.';
