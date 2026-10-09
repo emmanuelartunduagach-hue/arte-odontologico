@@ -10,8 +10,9 @@ const VERSION_POLITICA_DATOS = '1.0';
 /* Detalle completo de una cita, para respuestas y mensajes. */
 const SELECT_DETALLE = `
   SELECT c.id, c.estado, c.reprogramaciones, c.paciente_id AS pacienteId,
-         c.nombre_paciente AS nombrePaciente, c.documento_paciente AS documento,
-         c.telefono_paciente AS telefono, c.correo_paciente AS correo,
+         c.nombre_paciente AS nombrePaciente, c.nombres_paciente AS nombres, c.apellidos_paciente AS apellidos,
+         c.tipo_documento_paciente AS tipoDocumento, c.documento_paciente AS documento,
+         c.telefono_paciente AS telefono, c.telefono_fijo_paciente AS telefonoFijo, c.correo_paciente AS correo,
          c.cancelada_por AS canceladaPor,
          DATE_FORMAT(c.fecha_autorizacion, '%Y-%m-%d %H:%i:%s') AS fechaAutorizacion,
          DATE_FORMAT(c.confirmada_en, '%Y-%m-%d %H:%i:%s') AS confirmadaEn,
@@ -21,12 +22,15 @@ const SELECT_DETALLE = `
          TIME_FORMAT(f.hora_inicio, '%H:%i') AS hora,
          DATE_FORMAT(TIMESTAMP(f.fecha, f.hora_inicio), '%Y-%m-%d %H:%i:%s') AS fechaHora,
          se.nombre AS sede, se.direccion, se.ciudad,
+         DATE_FORMAT(fa.fecha, '%Y-%m-%d') AS fechaAnterior,
+         TIME_FORMAT(fa.hora_inicio, '%H:%i') AS horaAnterior,
          DATE_FORMAT(c.creado_en, '%Y-%m-%d %H:%i:%s') AS creadoEn
     FROM citas c
     JOIN servicios s         ON s.id = c.servicio_id
     JOIN franjas_horarias f  ON f.id = c.franja_id
     JOIN especialistas e     ON e.id = f.especialista_id
-    JOIN sedes se            ON se.id = f.sede_id`;
+    JOIN sedes se            ON se.id = f.sede_id
+    LEFT JOIN franjas_horarias fa ON fa.id = c.franja_anterior_id`;
 
 async function buscarDetalle(id) {
   const [filas] = await pool.execute(`${SELECT_DETALLE} WHERE c.id = ?`, [id]);
@@ -39,32 +43,40 @@ async function buscarPorCodigoHash(hash) {
 }
 
 /* `estado`: 'pendiente' si la pide el paciente por la web (la
-   secretaria debe aceptarla) o 'confirmada' si la agenda la secretaria. */
-async function crear({ pacienteId, servicioId, franjaId, estado, nombre, documento, telefono, correo, codigoHash = null }) {
+   secretaria debe aceptarla) o 'confirmada' si la agenda la secretaria.
+   El nombre completo lo calcula la base (nombres + apellidos). */
+async function crear({
+  pacienteId, servicioId, franjaId, estado,
+  nombres, apellidos, tipoDocumento, documento, telefono, telefonoFijo = null, correo, codigoHash = null,
+}) {
   const [r] = await pool.execute(
     `INSERT INTO citas
        (paciente_id, servicio_id, franja_id, estado, confirmada_en,
-        nombre_paciente, documento_paciente, telefono_paciente, correo_paciente,
+        nombres_paciente, apellidos_paciente, tipo_documento_paciente, documento_paciente,
+        telefono_paciente, telefono_fijo_paciente, correo_paciente,
         autorizacion_datos, fecha_autorizacion, version_politica_datos,
         codigo_gestion_hash)
-     VALUES (?, ?, ?, ?, IF(? = 'confirmada', NOW(), NULL), ?, ?, ?, ?, TRUE, UTC_TIMESTAMP(), ?, ?)`,
-    [pacienteId, servicioId, franjaId, estado, estado, nombre, documento, telefono, correo, VERSION_POLITICA_DATOS, codigoHash]
+     VALUES (?, ?, ?, ?, IF(? = 'confirmada', NOW(), NULL), ?, ?, ?, ?, ?, ?, ?, TRUE, UTC_TIMESTAMP(), ?, ?)`,
+    [pacienteId, servicioId, franjaId, estado, estado, nombres, apellidos, tipoDocumento, documento,
+      telefono, telefonoFijo || null, correo, VERSION_POLITICA_DATOS, codigoHash]
   );
   return r.insertId;
 }
 
-/* Citas pendientes o confirmadas que aún no pasan, de un documento.
-   Se usa para limitar cuántas puede pedir a la vez una persona. */
+/* Citas pendientes o confirmadas que aún no pasan, de un documento,
+   contadas por estado: { pendientes, confirmadas }. Se usa para
+   limitar cuántas puede pedir a la vez una persona. */
 async function contarActivasPorDocumento(documento, ahora) {
   const [filas] = await pool.execute(
-    `SELECT COUNT(*) AS total
+    `SELECT COALESCE(SUM(c.estado = 'pendiente'), 0) AS pendientes,
+            COALESCE(SUM(c.estado = 'confirmada'), 0) AS confirmadas
        FROM citas c
        JOIN franjas_horarias f ON f.id = c.franja_id
       WHERE c.documento_paciente = ? AND c.estado IN ('pendiente','confirmada')
         AND TIMESTAMP(f.fecha, f.hora_inicio) > ?`,
     [documento, ahora]
   );
-  return Number(filas[0].total);
+  return { pendientes: Number(filas[0].pendientes), confirmadas: Number(filas[0].confirmadas) };
 }
 
 /* Mueve la cita a otra franja. Devuelve true si se cambió.
@@ -76,7 +88,8 @@ async function contarActivasPorDocumento(documento, ahora) {
    - Si la reprograma la secretaria: sin límite y sin cambiar el estado. */
 async function cambiarFranja(id, nuevaFranjaId, { porPaciente }) {
   const sql = porPaciente
-    ? `UPDATE citas SET franja_id = ?, reprogramaciones = reprogramaciones + 1,
+    ? `UPDATE citas SET franja_anterior_id = franja_id, franja_id = ?,
+              reprogramaciones = reprogramaciones + 1,
               estado = 'pendiente', confirmada_en = NULL
         WHERE id = ? AND estado = 'confirmada' AND reprogramaciones < 1`
     : `UPDATE citas SET franja_id = ?

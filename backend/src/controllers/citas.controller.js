@@ -101,8 +101,8 @@ function esHoraTomada(error) {
 /* ---------- Público ---------- */
 
 /* POST /api/citas
-   { especialidadId, franjaId, nombreCompleto, documento, telefono,
-     correo, autorizacionDatos: true, sitioWeb: '' }
+   { especialidadId, franjaId, nombres, apellidos, tipoDocumento, documento,
+     telefono, telefonoFijo?, correo, autorizacionDatos: true, sitioWeb: '' }
    La cita queda pendiente: aparta la hora hasta que la secretaria la
    acepte o la rechace. El WhatsApp con el enlace llega al aceptarla.
    `sitioWeb` es un campo trampa: el formulario lo oculta, así que
@@ -133,11 +133,12 @@ async function crear(req, res, next) {
 
     if (LIMITE_POR_DOCUMENTO() > 0) {
       const activas = await citaModelo.contarActivasPorDocumento(valores.documento, ahora);
-      if (activas >= LIMITE_POR_DOCUMENTO()) {
-        throw new ErrorHttp(
-          409,
-          'Ya tienes una cita pedida. Para pedir otra, primero asiste a esa cita o cancélala desde el enlace que te llegó por WhatsApp.'
-        );
+      if (activas.pendientes + activas.confirmadas >= LIMITE_POR_DOCUMENTO()) {
+        // Una solicitud pendiente todavía no tiene enlace: solo llega por
+        // WhatsApp cuando el consultorio la acepta.
+        throw new ErrorHttp(409, activas.pendientes > 0
+          ? 'Ya tienes una solicitud de cita en revisión. Te avisaremos por WhatsApp cuando el consultorio la confirme; si necesitas cambiarla antes, escríbenos.'
+          : 'Ya tienes una cita confirmada. Para pedir otra, primero asiste a esa cita o cancélala desde el enlace que te llegó por WhatsApp.');
       }
     }
 
@@ -148,10 +149,7 @@ async function crear(req, res, next) {
         servicioId: especialidadId,
         franjaId,
         estado: 'pendiente',
-        nombre: valores.nombreCompleto,
-        documento: valores.documento,
-        telefono: valores.telefono,
-        correo: valores.correo,
+        ...valores,
       });
     } catch (error) {
       if (esHoraTomada(error)) throw new ErrorHttp(409, MENSAJE_HORA_TOMADA, { franjaId: MENSAJE_HORA_TOMADA });
@@ -272,8 +270,13 @@ async function agenda(req, res, next) {
       citas.map((c) => ({
         ...vistaPublica(c),
         especialidadId: c.especialidadId,
+        tipoDocumento: c.tipoDocumento,
         documento: c.documento,
         telefono: c.telefono,
+        telefonoFijo: c.telefonoFijo,
+        // Si el paciente la reprogramó: la hora que tenía antes.
+        fechaAnterior: c.fechaAnterior,
+        horaAnterior: c.horaAnterior,
         correo: c.correo,
         pacienteId: c.pacienteId,
         canceladaPor: c.canceladaPor,
@@ -375,9 +378,12 @@ async function pacienteDeCita(cita, creadoPor) {
   if (existente) return { paciente: existente, nuevo: false };
   try {
     const id = await pacienteModelo.crear({
-      nombreCompleto: cita.nombrePaciente,
+      nombres: cita.nombres,
+      apellidos: cita.apellidos,
+      tipoDocumento: cita.tipoDocumento,
       documento: cita.documento,
       telefono: cita.telefono,
+      telefonoFijo: cita.telefonoFijo,
       correo: cita.correo || '',
       origen: 'web',
       fechaAutorizacion: cita.fechaAutorizacion,
@@ -467,9 +473,12 @@ async function crearAdmin(req, res, next) {
         servicioId: especialidadId,
         franjaId,
         estado: 'confirmada',
-        nombre: paciente.nombreCompleto,
+        nombres: paciente.nombres,
+        apellidos: paciente.apellidos,
+        tipoDocumento: paciente.tipoDocumento,
         documento: paciente.documento,
         telefono: paciente.telefono,
+        telefonoFijo: paciente.telefonoFijo,
         correo: paciente.correo,
       });
     } catch (error) {

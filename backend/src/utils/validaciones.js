@@ -97,21 +97,66 @@ function validarUsuario(datos = {}, { exigirContrasena = true } = {}) {
   };
 }
 
+/* Tipos de documento aceptados (Colombia). */
+const TIPOS_DOCUMENTO = {
+  CC: 'Cédula de ciudadanía',
+  TI: 'Tarjeta de identidad',
+  RC: 'Registro civil',
+  CE: 'Cédula de extranjería',
+  PA: 'Pasaporte',
+  PPT: 'Permiso por protección temporal',
+};
+
+function errorParteNombre(valor, que) {
+  if (valor.length < 2 || valor.length > 60) return `Escribe ${que} (entre 2 y 60 caracteres).`;
+  if (/\d/.test(valor)) return `${que.charAt(0).toUpperCase()}${que.slice(1)} no pueden llevar números.`;
+  return '';
+}
+
+/* El pasaporte puede llevar letras; los demás documentos, solo números. */
+function errorDocumentoSegunTipo(documento, tipo) {
+  if (tipo === 'PA') {
+    return /^[A-Z0-9]{5,20}$/.test(documento)
+      ? ''
+      : 'El pasaporte debe tener entre 5 y 20 letras o números.';
+  }
+  return errorDocumento(documento);
+}
+
+function errorTelefonoFijo(telefono) {
+  return /^\d{7,15}$/.test(telefono)
+    ? ''
+    : 'Escribe un teléfono válido, por ejemplo 608 837 0000, o déjalo vacío.';
+}
+
 /* Datos de una persona al pedir su cita o al registrarla en el
-   consultorio: nombre, documento, celular y correo, todos obligatorios. */
+   consultorio. Obligatorios: nombres, apellidos, tipo y número de
+   documento, celular y correo. Opcional: teléfono fijo. */
 function validarDatosPersona(datos = {}) {
   const errores = {};
-  const nombreCompleto = normalizarNombre(datos.nombreCompleto);
-  const documento = normalizarDocumento(datos.documento);
+  const nombres = normalizarNombre(datos.nombres);
+  const apellidos = normalizarNombre(datos.apellidos);
+  const tipoDocumento = limpiar(datos.tipoDocumento).toUpperCase();
+  const documento = normalizarDocumento(datos.documento).toUpperCase();
   const telefono = normalizarTelefono(datos.telefono);
+  const telefonoFijo = limpiar(datos.telefonoFijo).replace(/[\s\-()+]/g, '');
   const correo = limpiar(datos.correo).toLowerCase();
 
-  agregar(errores, 'nombreCompleto', errorNombre(nombreCompleto));
-  agregar(errores, 'documento', errorDocumento(documento));
+  agregar(errores, 'nombres', errorParteNombre(nombres, 'los nombres'));
+  agregar(errores, 'apellidos', errorParteNombre(apellidos, 'los apellidos'));
+  if (!TIPOS_DOCUMENTO[tipoDocumento]) agregar(errores, 'tipoDocumento', 'Elige el tipo de documento.');
+  agregar(errores, 'documento', errorDocumentoSegunTipo(documento, tipoDocumento));
   agregar(errores, 'telefono', errorTelefono(telefono));
+  if (telefonoFijo) agregar(errores, 'telefonoFijo', errorTelefonoFijo(telefonoFijo));
   agregar(errores, 'correo', correo ? errorCorreo(correo) : 'Escribe tu correo electrónico.');
 
-  return { valores: { nombreCompleto, documento, telefono, correo }, errores };
+  return {
+    valores: {
+      nombres, apellidos, nombreCompleto: `${nombres} ${apellidos}`.trim(),
+      tipoDocumento, documento, telefono, telefonoFijo: telefonoFijo || null, correo,
+    },
+    errores,
+  };
 }
 
 /* ---------- Fechas, horas e identificadores ---------- */
@@ -140,6 +185,7 @@ function aId(valor) {
 }
 
 module.exports = {
+  TIPOS_DOCUMENTO,
   validarUsuario,
   validarDatosPersona,
   validarContrasena,

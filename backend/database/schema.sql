@@ -68,11 +68,20 @@ CREATE TABLE usuarios (
 -- ------------------------------------------------------------
 CREATE TABLE pacientes (
   id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  nombre_completo     VARCHAR(120)  NOT NULL,
+  nombres             VARCHAR(60)   NOT NULL,
+  apellidos           VARCHAR(60)   NOT NULL,
+  -- Calculado: así la búsqueda y los listados siguen usando un solo campo.
+  nombre_completo     VARCHAR(121)
+    AS (CONCAT_WS(' ', nombres, NULLIF(apellidos, ''))) STORED NOT NULL,
+  -- CC cédula, TI tarjeta de identidad, RC registro civil,
+  -- CE cédula de extranjería, PA pasaporte, PPT permiso por protección temporal
+  tipo_documento      ENUM('CC','TI','RC','CE','PA','PPT') NOT NULL DEFAULT 'CC',
   documento           VARCHAR(20)   NOT NULL,
-  telefono            VARCHAR(20)   NOT NULL,   -- con indicativo, ej. 573001234567
+  telefono            VARCHAR(20)   NOT NULL,   -- celular (WhatsApp) con indicativo, ej. 573001234567
+  telefono_fijo       VARCHAR(20)   NULL,       -- opcional
   correo              VARCHAR(160)  NOT NULL,   -- no es único: una madre puede usar el suyo para sus hijos
   origen              ENUM('web','consultorio') NOT NULL,
+  motivo_consulta     VARCHAR(500)  NULL,       -- a qué vino, si se registró en el consultorio
 
   -- Ley 1581 de 2012: cuándo y bajo qué versión de la política
   -- autorizó el tratamiento de sus datos.
@@ -201,14 +210,20 @@ CREATE TABLE citas (
   paciente_id         INT UNSIGNED NULL,
   servicio_id         INT UNSIGNED NOT NULL,   -- especialidad
   franja_id           INT UNSIGNED NOT NULL,
+  franja_anterior_id  INT UNSIGNED NULL,       -- hora que tenía antes de que el paciente la reprogramara
   estado              ENUM('pendiente','confirmada','rechazada','cancelada','atendida','no_asistio')
                         NOT NULL DEFAULT 'pendiente',
   notas               VARCHAR(300) NULL,
 
   -- Datos de quien pide la cita
-  nombre_paciente     VARCHAR(120) NOT NULL,
+  nombres_paciente    VARCHAR(60)  NOT NULL,
+  apellidos_paciente  VARCHAR(60)  NOT NULL,
+  nombre_paciente     VARCHAR(121)
+    AS (CONCAT_WS(' ', nombres_paciente, NULLIF(apellidos_paciente, ''))) STORED NOT NULL,
+  tipo_documento_paciente ENUM('CC','TI','RC','CE','PA','PPT') NOT NULL DEFAULT 'CC',
   documento_paciente  VARCHAR(20)  NOT NULL,
-  telefono_paciente   VARCHAR(20)  NOT NULL,   -- con indicativo, ej. 573001234567
+  telefono_paciente   VARCHAR(20)  NOT NULL,   -- celular con indicativo, ej. 573001234567
+  telefono_fijo_paciente VARCHAR(20) NULL,
   correo_paciente     VARCHAR(160) NULL,       -- obligatorio al pedir la cita (NULL en citas antiguas)
 
   -- Ley 1581 de 2012: autorización dada al agendar
@@ -237,6 +252,8 @@ CREATE TABLE citas (
     REFERENCES servicios(id) ON DELETE RESTRICT,
   CONSTRAINT fk_cita_franja   FOREIGN KEY (franja_id)
     REFERENCES franjas_horarias(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_cita_franja_anterior FOREIGN KEY (franja_anterior_id)
+    REFERENCES franjas_horarias(id) ON DELETE SET NULL,
 
   INDEX idx_citas_franja (franja_id),
   INDEX idx_citas_paciente (paciente_id, estado),
