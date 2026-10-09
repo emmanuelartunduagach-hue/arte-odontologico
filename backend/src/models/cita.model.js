@@ -1,7 +1,8 @@
 /* Acceso a `citas`.
    La regla "una hora, una sola cita viva" la garantiza el índice
-   único sobre `franja_ocupada`: si dos personas confirman la misma
-   hora a la vez, una de las dos recibe ER_DUP_ENTRY. */
+   único sobre `franja_ocupada`: si dos personas piden la misma hora
+   a la vez, una de las dos recibe ER_DUP_ENTRY. Una cita pendiente
+   ya aparta la hora; una cancelada o rechazada la libera. */
 const { pool } = require('../config/db');
 
 const VERSION_POLITICA_DATOS = '1.0';
@@ -12,6 +13,8 @@ const SELECT_DETALLE = `
          c.nombre_paciente AS nombrePaciente, c.documento_paciente AS documento,
          c.telefono_paciente AS telefono, c.correo_paciente AS correo,
          c.cancelada_por AS canceladaPor,
+         DATE_FORMAT(c.fecha_autorizacion, '%Y-%m-%d %H:%i:%s') AS fechaAutorizacion,
+         DATE_FORMAT(c.confirmada_en, '%Y-%m-%d %H:%i:%s') AS confirmadaEn,
          c.servicio_id AS especialidadId, s.nombre AS especialidad,
          f.id AS franjaId, f.especialista_id AS especialistaId, e.nombre AS especialista,
          DATE_FORMAT(f.fecha, '%Y-%m-%d') AS fecha,
@@ -35,43 +38,49 @@ async function buscarPorCodigoHash(hash) {
   return filas[0] || null;
 }
 
-async function crear({ pacienteId, servicioId, franjaId, nombre, documento, telefono, correo, codigoHash }) {
+/* `estado`: 'pendiente' si la pide el paciente por la web (la
+   secretaria debe aceptarla) o 'confirmada' si la agenda la secretaria. */
+async function crear({ pacienteId, servicioId, franjaId, estado, nombre, documento, telefono, correo, codigoHash = null }) {
   const [r] = await pool.execute(
     `INSERT INTO citas
-       (paciente_id, servicio_id, franja_id, estado,
+       (paciente_id, servicio_id, franja_id, estado, confirmada_en,
         nombre_paciente, documento_paciente, telefono_paciente, correo_paciente,
         autorizacion_datos, fecha_autorizacion, version_politica_datos,
         codigo_gestion_hash)
-     VALUES (?, ?, ?, 'confirmada', ?, ?, ?, ?, TRUE, UTC_TIMESTAMP(), ?, ?)`,
-    [pacienteId, servicioId, franjaId, nombre, documento, telefono, correo, VERSION_POLITICA_DATOS, codigoHash]
+     VALUES (?, ?, ?, ?, IF(? = 'confirmada', NOW(), NULL), ?, ?, ?, ?, TRUE, UTC_TIMESTAMP(), ?, ?)`,
+    [pacienteId, servicioId, franjaId, estado, estado, nombre, documento, telefono, correo, VERSION_POLITICA_DATOS, codigoHash]
   );
   return r.insertId;
 }
 
-/* Citas confirmadas que aún no pasan, de un documento. Se usa para
-   limitar cuántas puede tener a la vez alguien sin usuario. */
+/* Citas pendientes o confirmadas que aún no pasan, de un documento.
+   Se usa para limitar cuántas puede pedir a la vez una persona. */
 async function contarActivasPorDocumento(documento, ahora) {
   const [filas] = await pool.execute(
     `SELECT COUNT(*) AS total
        FROM citas c
        JOIN franjas_horarias f ON f.id = c.franja_id
-      WHERE c.documento_paciente = ? AND c.estado = 'confirmada'
+      WHERE c.documento_paciente = ? AND c.estado IN ('pendiente','confirmada')
         AND TIMESTAMP(f.fecha, f.hora_inicio) > ?`,
     [documento, ahora]
   );
   return Number(filas[0].total);
 }
 
-/* Mueve la cita a otra franja. `contarAlPaciente` suma 1 a sus
-   reprogramaciones y exige que aún no haya usado la suya (la
-   condición va en el WHERE para que dos clics seguidos no cuenten
-   como dos reprogramaciones). Devuelve true si se cambió. */
-async function cambiarFranja(id, nuevaFranjaId, { contarAlPaciente }) {
-  const sql = contarAlPaciente
-    ? `UPDATE citas SET franja_id = ?, reprogramaciones = reprogramaciones + 1
+/* Mueve la cita a otra franja. Devuelve true si se cambió.
+   - Si la reprograma el paciente (`porPaciente`): suma 1 a sus
+     reprogramaciones, exige que aún no haya usado la suya y la cita
+     vuelve a 'pendiente' hasta que la secretaria acepte la nueva hora.
+     Las condiciones van en el WHERE para que dos clics seguidos no
+     cuenten como dos reprogramaciones.
+   - Si la reprograma la secretaria: sin límite y sin cambiar el estado. */
+async function cambiarFranja(id, nuevaFranjaId, { porPaciente }) {
+  const sql = porPaciente
+    ? `UPDATE citas SET franja_id = ?, reprogramaciones = reprogramaciones + 1,
+              estado = 'pendiente', confirmada_en = NULL
         WHERE id = ? AND estado = 'confirmada' AND reprogramaciones < 1`
     : `UPDATE citas SET franja_id = ?
-        WHERE id = ? AND estado = 'confirmada'`;
+        WHERE id = ? AND estado IN ('pendiente','confirmada')`;
   const [r] = await pool.execute(sql, [nuevaFranjaId, id]);
   return r.affectedRows === 1;
 }
@@ -79,8 +88,26 @@ async function cambiarFranja(id, nuevaFranjaId, { contarAlPaciente }) {
 async function cancelar(id, canceladaPor) {
   const [r] = await pool.execute(
     `UPDATE citas SET estado = 'cancelada', cancelada_por = ?
-      WHERE id = ? AND estado = 'confirmada'`,
+      WHERE id = ? AND estado IN ('pendiente','confirmada')`,
     [canceladaPor, id]
+  );
+  return r.affectedRows === 1;
+}
+
+/* La secretaria acepta una cita pendiente y la enlaza con su paciente. */
+async function aceptar(id, pacienteId) {
+  const [r] = await pool.execute(
+    `UPDATE citas SET estado = 'confirmada', confirmada_en = NOW(), paciente_id = ?
+      WHERE id = ? AND estado = 'pendiente'`,
+    [pacienteId, id]
+  );
+  return r.affectedRows === 1;
+}
+
+async function rechazar(id) {
+  const [r] = await pool.execute(
+    `UPDATE citas SET estado = 'rechazada' WHERE id = ? AND estado = 'pendiente'`,
+    [id]
   );
   return r.affectedRows === 1;
 }
@@ -97,7 +124,7 @@ async function actualizarCodigoHash(id, hash) {
   await pool.execute(`UPDATE citas SET codigo_gestion_hash = ? WHERE id = ?`, [hash, id]);
 }
 
-/* Asocia al usuario recién creado las citas que pidió antes sin cuenta.
+/* Asocia al paciente recién creado en el consultorio las citas que pidió antes por la web.
    Se exige que coincidan documento Y teléfono, para no pegarle citas
    que otra persona pidió escribiendo su documento. */
 async function vincularPaciente({ documento, telefono }, pacienteId) {
@@ -136,38 +163,42 @@ async function listarAgenda({ desde, hasta, especialistaId, estado, busqueda }) 
   return filas;
 }
 
-async function listarDePaciente(pacienteId) {
+/* Citas de un paciente, la más reciente primero. Incluye las que pidió
+   por la web con su documento y aún no se le enlazan (pendientes). */
+async function listarDePaciente(pacienteId, documento) {
   const [filas] = await pool.execute(
-    `${SELECT_DETALLE} WHERE c.paciente_id = ? ORDER BY f.fecha DESC, f.hora_inicio DESC`,
-    [pacienteId]
+    `${SELECT_DETALLE}
+      WHERE c.paciente_id = ? OR (c.paciente_id IS NULL AND c.documento_paciente = ?)
+      ORDER BY f.fecha DESC, f.hora_inicio DESC`,
+    [pacienteId, documento]
   );
   return filas;
 }
 
-/* Citas confirmadas de una fecha que todavía necesitan recordatorio:
-   - aún no pasan (por si el proceso corre el mismo día),
-   - se agendaron hace más de `horasMinimas` horas (quien agenda hoy
-     para mañana ya recibió la confirmación; no hace falta otro mensaje),
+/* Citas confirmadas que necesitan recordatorio:
+   - empiezan dentro de las próximas 24 horas (entre `ahora` y `limite`),
+   - se aceptaron hace más de `horasMinimas` horas (quien quedó
+     confirmado hace poco ya tiene su mensaje fresco),
    - y no tienen un recordatorio posterior a su última confirmación o
      reprogramación (si la cita se movió, el recordatorio viejo no cuenta). */
-async function pendientesDeRecordatorio(fecha, ahora, horasMinimas) {
+async function pendientesDeRecordatorio(ahora, limite, horasMinimas) {
   const [filas] = await pool.execute(
     `SELECT c.id
        FROM citas c
        JOIN franjas_horarias f ON f.id = c.franja_id
       WHERE c.estado = 'confirmada'
-        AND f.fecha = ?
         AND TIMESTAMP(f.fecha, f.hora_inicio) > ?
-        AND c.creado_en < (NOW() - INTERVAL ? HOUR)
+        AND TIMESTAMP(f.fecha, f.hora_inicio) <= ?
+        AND c.confirmada_en < (NOW() - INTERVAL ? HOUR)
         AND NOT EXISTS (
           SELECT 1 FROM notificaciones r
            WHERE r.cita_id = c.id AND r.tipo = 'recordatorio'
              AND r.id > COALESCE((SELECT MAX(n.id) FROM notificaciones n
                                    WHERE n.cita_id = c.id
                                      AND n.tipo IN ('confirmacion','reprogramacion')), 0))
-      ORDER BY f.hora_inicio
+      ORDER BY f.fecha, f.hora_inicio
       LIMIT 500`,
-    [fecha, ahora, horasMinimas]
+    [ahora, limite, horasMinimas]
   );
   return filas.map((f) => f.id);
 }
@@ -180,6 +211,8 @@ module.exports = {
   contarActivasPorDocumento,
   cambiarFranja,
   cancelar,
+  aceptar,
+  rechazar,
   marcarEstado,
   actualizarCodigoHash,
   vincularPaciente,

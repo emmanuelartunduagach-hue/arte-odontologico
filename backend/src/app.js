@@ -29,6 +29,7 @@ app.use((err, req, res, next) => {
     error: err.publico || (estado < 500 ? 'Solicitud inválida' : 'Error interno del servidor'),
   };
   if (err.campos) cuerpo.campos = err.campos;
+  if (err.extra) Object.assign(cuerpo, err.extra); // datos útiles, ej. el id de un registro repetido
   res.status(estado).json(cuerpo);
 });
 

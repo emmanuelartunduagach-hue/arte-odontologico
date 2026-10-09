@@ -50,7 +50,7 @@ El repositorio es privado: la cuenta de GitHub debe tener acceso.
 2. **File → Open SQL Script…** y abrir `backend/database/schema.sql`.
 3. Ejecutar todo el script (botón del rayo).
 
-El script crea la base `arte_odontologico`, las 9 tablas, la vista `v_agenda` y los datos iniciales: la sede de Rivera y 9 especialidades. No crea usuarios ni especialistas.
+El script crea la base `arte_odontologico`, las 10 tablas, la vista `v_agenda` y los datos iniciales: la sede de Rivera y 9 especialidades. No crea usuarios ni especialistas.
 
 Desde la línea de comandos (Linux o macOS):
 
@@ -68,6 +68,7 @@ Si la base se creó con una versión anterior del proyecto, ejecutar **una sola 
 |---|---|
 | `001_alta_pacientes_por_administrador.sql` | Clave temporal y registro de quién crea cada paciente |
 | `002_especialistas_y_citas_sin_usuario.sql` | Especialistas, franjas por especialista, citas sin cuenta, historia clínica. **Borra franjas y citas existentes** (pensado para datos de prueba) |
+| `003_pacientes_sin_login_y_aprobacion.sql` | Tabla `pacientes` (sin login), citas pendientes y rechazadas, `confirmada_en` y mensaje de rechazo. Conserva los datos: copia los pacientes que había en `usuarios` |
 
 ### 5.3 Usuario de base de datos para producción
 
@@ -110,7 +111,7 @@ cp .env.example .env        # en Windows: copy .env.example .env
 | `URL_PUBLICA` | Sí | Dirección pública del frontend; se usa en los enlaces de WhatsApp | `https://arteodontologico.com` |
 | `PROXY_CONFIABLE` | No | `1` si el servidor está detrás de un proxy (Render, Railway, Nginx) | `1` |
 | `HORAS_MINIMAS_GESTION` | No | Horas antes de la cita hasta las que el paciente puede reprogramar o cancelar | `24` |
-| `LIMITE_CITAS_ACTIVAS_SIN_USUARIO` | No | Citas activas a la vez por documento sin cuenta (0 = sin límite) | `1` |
+| `LIMITE_CITAS_ACTIVAS_POR_DOCUMENTO` | No | Citas pendientes o confirmadas a la vez por documento (0 = sin límite). Se acepta el nombre anterior `LIMITE_CITAS_ACTIVAS_SIN_USUARIO` | `1` |
 | `LIMITE_ESCRITURAS_POR_IP`, `LIMITE_LECTURAS_POR_IP` | No | Peticiones públicas por IP cada 15 minutos | `15`, `60` |
 | `LIMITE_INGRESOS_POR_IP` | No | Intentos de ingreso por IP cada 15 minutos | `10` |
 | `RECORDATORIOS_AUTOMATICOS` | No | `false` desactiva el recordatorio automático | `true` |
@@ -186,13 +187,13 @@ Para el modo `api`:
 1. Crear una app con el caso de uso WhatsApp en <https://developers.facebook.com>.
 2. Copiar el **Phone number ID** a `WHATSAPP_PHONE_ID` y un token permanente de usuario del sistema a `WHATSAPP_TOKEN`.
 3. Crear y aprobar en el administrador de WhatsApp las plantillas de categoría "utilidad". Sus parámetros van en este orden: `{{1}}` nombre, `{{2}}` fecha, `{{3}}` hora, `{{4}}` especialista, `{{5}}` dirección y `{{6}}` enlace.
-4. Escribir sus nombres en `WHATSAPP_PLANTILLA_CONFIRMACION`, `_REPROGRAMACION`, `_CANCELACION` y `_RECORDATORIO`.
+4. Escribir sus nombres en `WHATSAPP_PLANTILLA_CONFIRMACION`, `_REPROGRAMACION`, `_CANCELACION`, `_RECHAZO` y `_RECORDATORIO`.
 
 Si el envío falla, la cita igual queda registrada y el mensaje aparece como "fallida" en el panel para enviarlo a mano.
 
 La plantilla del recordatorio usa solo los 5 primeros parámetros (no lleva enlace): `WHATSAPP_PARAMETROS_RECORDATORIO=5`.
 
-**Recordatorio del día anterior.** Mientras el backend esté encendido, revisa cada 30 minutos (entre `RECORDATORIO_DESDE` y `RECORDATORIO_HASTA`) las citas de mañana y genera su recordatorio. Si el servidor se apaga de noche, se puede programar `npm run recordatorios` una vez al día con el Programador de tareas de Windows o con `cron` en Linux.
+**Recordatorio 24 horas antes.** Mientras el backend esté encendido, revisa cada 30 minutos (entre `RECORDATORIO_DESDE` y `RECORDATORIO_HASTA`) las citas confirmadas que empiezan en las próximas 24 horas y genera su recordatorio. Una cita de las 7:00 lo recibe a las 8:00 del día anterior. Si el servidor se apaga de noche, se puede programar `npm run recordatorios` cada hora con el Programador de tareas de Windows o con `cron` en Linux.
 
 ## 8. Frontend
 

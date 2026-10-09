@@ -45,7 +45,7 @@ async function montarDisponibilidad(cuerpo) {
 
   pintarEn(cuerpo,
     avisoDemo(),
-    encabezadoSeccion('Disponibilidad', 'Marca las horas en que atiende cada especialista. Solo esas horas aparecen para agendar.',
+    encabezadoSeccion('Horarios de atención', 'Marca las horas en que atiende cada especialista. Solo esas horas aparecen para agendar.',
       el('button', { type: 'button', class: 'btn btn--primario', 'data-publicar': true, hidden: true, onclick: abrirPublicar, texto: 'Publicar horas' })),
     tomarAviso(),
     contenido);

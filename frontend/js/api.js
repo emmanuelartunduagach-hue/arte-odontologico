@@ -9,11 +9,12 @@
    significa sesión vencida: se borra la sesión y se lleva a Ingresar. */
 
 class ErrorApi extends Error {
-  constructor(mensaje, estado = 0, campos = null) {
+  constructor(mensaje, estado = 0, campos = null, datos = {}) {
     super(mensaje);
     this.name = 'ErrorApi';
     this.estado = estado;   // código HTTP; 0 = sin conexión
     this.campos = campos;   // { campo: 'mensaje' } solo en errores de formulario
+    this.datos = datos;     // cuerpo completo de la respuesta (ej. pacienteId de un repetido)
   }
 }
 
@@ -44,7 +45,7 @@ async function api(ruta, { metodo = 'GET', cuerpo } = {}) {
     location.replace('index.html?ingresar=1&vencida=1');
   }
   if (!respuesta.ok) {
-    throw new ErrorApi(datos.error || 'Ocurrió un error inesperado. Intenta de nuevo.', respuesta.status, datos.campos || null);
+    throw new ErrorApi(datos.error || 'Ocurrió un error inesperado. Intenta de nuevo.', respuesta.status, datos.campos || null, datos);
   }
   return datos;
 }

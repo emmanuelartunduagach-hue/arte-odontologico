@@ -1,16 +1,16 @@
 # Manual de usuario — Arte Odontológico
 
-**Versión del documento:** 0.1 (esqueleto) · 6 de octubre de 2026
+**Versión del documento:** 0.2 (esqueleto) · 9 de octubre de 2026
 
 > **Estado:** solo estructura. Se completa con las capturas de pantalla cuando el frontend esté conectado (responsable de las capturas: Jawer). Cada sección indica qué captura va y qué explicar.
 
 ## 1. Introducción
-- Qué es el sistema y para quién es: personas que quieren una cita, pacientes con usuario y la secretaria.
+- Qué es el sistema y para quién es: personas que quieren una cita (no necesitan cuenta) y la secretaria.
 - Requisitos: un navegador actualizado en computador o celular. Para el WhatsApp, un número de celular con WhatsApp.
 
 ## 2. Para personas que quieren una cita (sin cuenta)
 
-### 2.1 Agendar una cita
+### 2.1 Pedir una cita
 Capturas:
 - página de inicio con el botón "Agendar cita"
 - elegir especialidad
@@ -18,54 +18,50 @@ Capturas:
 - calendario con días resaltados
 - horas del día
 - formulario de datos con la casilla de autorización
-- confirmación
+- "¡Recibimos tu solicitud!"
 
 Explicar:
 - Qué significan los días resaltados y los bloqueados.
-- Datos obligatorios y opcionales.
+- Datos obligatorios: nombre, documento, celular y correo.
 - Por qué se pide la autorización de datos.
-- El enlace "Gestionar mi cita" y que debe guardarlo.
+- Que la cita queda pendiente y la hora apartada hasta que el consultorio la confirme por WhatsApp.
 
-### 2.2 El mensaje de WhatsApp
-Captura de un mensaje de confirmación de ejemplo.
+### 2.2 Los mensajes de WhatsApp
+Capturas de ejemplo de la confirmación (con el enlace "Gestionar mi cita", que conviene guardar), del aviso cuando el consultorio no puede atender esa hora y del recordatorio que llega unas 24 horas antes.
 
 ### 2.3 Reprogramar o cancelar
 Capturas de la página "Gestionar mi cita" con los dos botones, el calendario de reprogramación y el mensaje cuando ya no se puede.
 
 Reglas que hay que explicar:
-- Se puede reprogramar una sola vez.
+- Se puede reprogramar una sola vez, y la nueva hora queda pendiente hasta que el consultorio la confirme.
 - Solo hasta 24 horas antes.
 - Después solo queda cancelar y pedir otra.
 
 ### 2.4 Mensajes de error comunes
 - "Esa hora ya no está disponible".
-- "Ya tienes una cita agendada".
+- "Ya tienes una cita pedida".
 - "Demasiados intentos".
 
-## 3. Para pacientes con usuario
-- **3.1 Cómo se obtiene el usuario:** lo crea la secretaria en el consultorio.
-- **3.2 Primer ingreso y cambio de la clave temporal:** capturas.
-- **3.3 Mis citas:** captura. Tu próxima cita (fecha, hora, especialista, dirección y "Cómo llegar"), otras citas próximas, historial y mis datos.
-- **3.4 Reprogramar o cancelar desde Mis citas:** una sola reprogramación y hasta 24 horas antes, igual que con el enlace del WhatsApp.
-- **3.5 Agendar con los datos ya cargados.**
-- **3.6 Corregir un dato:** botón "Escríbenos por WhatsApp" en Mis datos.
-- **3.7 Cerrar sesión.**
+## 3. Si llegas directo al consultorio
+- La secretaria te registra con tu nombre, documento, celular y correo, y te agenda la cita. Te llega el mismo WhatsApp de confirmación con el enlace para reprogramar o cancelar.
 
 ## 4. Para la secretaria (administración)
-- **4.1 Ingresar al panel.**
-- **4.2 Especialidades:** crear, editar, activar o desactivar.
-- **4.3 Especialistas:** registrar y asignar especialidades.
-- **4.4 Publicar horas de atención:** cuadrícula de horas, copiar a varios días, quitar horas, y qué pasa si una hora tiene cita.
-- **4.5 Agenda del día:** filtros, búsqueda, marcar atendida o no asistió, reprogramar, cancelar.
-- **4.6 Mensajes de WhatsApp pendientes:** botón "Enviar por WhatsApp" y "Marcar como enviado"; recordatorios del día anterior (salen solos y se pueden generar con un botón).
-- **4.7 Crear el usuario de un paciente:** autorización de datos, clave temporal (se muestra una sola vez) y citas vinculadas. Restablecer la clave de un paciente que la olvidó.
-- **4.8 Ficha del paciente e historia clínica:** agregar una entrada y corregir sin borrar.
+- **4.1 Ingresar al panel:** "Acceso del consultorio" en el pie de la página principal. Menú de la cuenta (arriba a la derecha): cambiar contraseña y cerrar sesión. En el celular, el menú de secciones está abajo.
+- **4.2 Inicio y solicitudes por confirmar:** aceptar (se envía la confirmación y se crea la ficha si es la primera vez) o rechazar (se libera la hora y se avisa al paciente).
+- **4.3 Especialidades:** crear, editar, activar o desactivar.
+- **4.4 Especialistas:** registrar y asignar especialidades.
+- **4.5 Horarios de atención:** cuadrícula de horas, copiar a varios días, quitar horas, y qué pasa si una hora tiene cita.
+- **4.6 Agenda del día:** filtros (incluye "Por confirmar"), búsqueda, marcar atendida o no asistió, reprogramar, cancelar.
+- **4.7 Mensajes de WhatsApp pendientes:** botón "Abrir en WhatsApp" y "Ya lo envié"; recordatorios de las próximas 24 horas (salen solos y se pueden generar con un botón).
+- **4.8 Registrar a un paciente que llegó al consultorio:** datos, autorización de datos y qué pasa si el documento ya existe ("Abrir su ficha").
+- **4.9 Ficha del paciente:** datos, citas, agendar una cita desde la ficha, historia clínica (agregar una entrada, "Agregar a la historia" desde una cita atendida y corregir sin borrar).
 
 ## 5. Preguntas frecuentes
 - ¿Qué hago si no me llegó el WhatsApp?
 - ¿Puedo pedir cita para otra persona? (Sí, con los datos de esa persona.)
-- ¿Cómo cambio mi número de teléfono?
-- Olvidé mi contraseña. (Pídela en el consultorio o por WhatsApp: la secretaria te genera una clave temporal y la cambias al ingresar.)
+- ¿Cómo cambio mi número de teléfono? (Escribe al consultorio por WhatsApp.)
+- ¿Necesito crear una cuenta? (No. Solo la secretaria inicia sesión.)
+- ¿Cuánto tarda la confirmación? (Depende del consultorio; la hora queda apartada mientras tanto.)
 
 ## 6. Soporte
 Datos de contacto del consultorio y de los responsables técnicos.

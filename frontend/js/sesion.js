@@ -1,4 +1,4 @@
-/* Sesión del usuario (secretaria o paciente con usuario).
+/* Sesión de la secretaria (los pacientes no tienen cuenta).
 
    Se guarda en sessionStorage, no en localStorage: se borra al cerrar
    la pestaña, lo que conviene en el computador compartido del
@@ -10,7 +10,6 @@ const CLAVE_SESION = 'arte-sesion';
 
 const PANELES = {
   administrador: 'panel-secretaria.html',
-  paciente: 'mis-citas.html',
 };
 
 function guardarSesion({ token, usuario }) {

@@ -15,8 +15,10 @@ USE arte_odontologico;
 
 -- ------------------------------------------------------------
 --  usuarios
---  Pacientes y administradores en una sola tabla, separados
---  por el campo `rol`. En el boceto el rol se elegía desde un
+--  Quienes inician sesión: la secretaria (rol administrador).
+--  Los pacientes NO tienen usuario: están en `pacientes`. El
+--  valor 'paciente' del rol se conserva solo por compatibilidad
+--  con bases anteriores. En el boceto el rol se elegía desde un
 --  menú en el formulario de ingreso, lo que permitía a
 --  cualquiera entrar como administrador. Aquí el rol es un
 --  atributo del registro y no viaja nunca desde el cliente.
@@ -28,7 +30,7 @@ CREATE TABLE usuarios (
   correo              VARCHAR(160)  NOT NULL,
   telefono            VARCHAR(20)   NOT NULL,
   contrasena_hash     VARCHAR(255)  NOT NULL,  -- bcrypt, nunca texto plano
-  rol                 ENUM('paciente','administrador') NOT NULL DEFAULT 'paciente',
+  rol                 ENUM('paciente','administrador') NOT NULL DEFAULT 'administrador',
   activo              BOOLEAN       NOT NULL DEFAULT TRUE,
   -- TRUE mientras el usuario use la contraseña temporal que le dio el
   -- administrador; el frontend lo obliga a cambiarla al ingresar.
@@ -41,7 +43,7 @@ CREATE TABLE usuarios (
   version_politica_datos  VARCHAR(10) NULL,
   autorizacion_registrada_por INT UNSIGNED NULL,  -- administrador que la recogió
 
-  -- Los pacientes no se registran solos: los crea un administrador.
+  -- Administrador que creó este usuario (si aplica).
   creado_por          INT UNSIGNED  NULL,
 
   creado_en           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -54,6 +56,38 @@ CREATE TABLE usuarios (
   CONSTRAINT fk_usuario_autorizador FOREIGN KEY (autorizacion_registrada_por)
     REFERENCES usuarios(id) ON DELETE SET NULL,
   INDEX idx_usuarios_rol (rol)
+) ENGINE=InnoDB;
+
+-- ------------------------------------------------------------
+--  pacientes
+--  Registro de cada paciente con su historia clínica. No tienen
+--  usuario ni contraseña: gestionan su cita con el enlace que les
+--  llega por WhatsApp. Se crean solos cuando la secretaria acepta
+--  su primera cita pedida por la web, o los crea ella si llegan
+--  en persona al consultorio.
+-- ------------------------------------------------------------
+CREATE TABLE pacientes (
+  id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  nombre_completo     VARCHAR(120)  NOT NULL,
+  documento           VARCHAR(20)   NOT NULL,
+  telefono            VARCHAR(20)   NOT NULL,   -- con indicativo, ej. 573001234567
+  correo              VARCHAR(160)  NOT NULL,   -- no es único: una madre puede usar el suyo para sus hijos
+  origen              ENUM('web','consultorio') NOT NULL,
+
+  -- Ley 1581 de 2012: cuándo y bajo qué versión de la política
+  -- autorizó el tratamiento de sus datos.
+  autorizacion_datos      BOOLEAN   NOT NULL DEFAULT TRUE,
+  fecha_autorizacion      DATETIME  NULL,
+  version_politica_datos  VARCHAR(10) NULL,
+
+  creado_por          INT UNSIGNED  NULL,       -- secretaria que lo creó o aceptó su primera cita
+  creado_en           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+  CONSTRAINT uq_pacientes_documento UNIQUE (documento),
+  CONSTRAINT fk_paciente_creador FOREIGN KEY (creado_por)
+    REFERENCES usuarios(id) ON DELETE SET NULL,
+  INDEX idx_pacientes_nombre (nombre_completo)
 ) ENGINE=InnoDB;
 
 -- ------------------------------------------------------------
@@ -148,12 +182,16 @@ CREATE TABLE franjas_horarias (
 
 -- ------------------------------------------------------------
 --  citas
---  Cualquier persona agenda sin cuenta: se guardan aquí su
---  nombre, documento y teléfono. `paciente_id` se llena solo
---  si esa persona ya tiene usuario (lo crea la secretaria).
+--  Cualquier persona pide su cita sin cuenta: se guardan aquí su
+--  nombre, documento, teléfono y correo. La cita queda
+--  'pendiente' hasta que la secretaria la acepta ('confirmada')
+--  o la rechaza ('rechazada'). Al aceptarla se enlaza con el
+--  paciente del mismo documento (`paciente_id`), que se crea si
+--  no existía.
 --
 --  Sin doble reserva: `franja_ocupada` vale franja_id mientras
---  la cita no esté cancelada y NULL cuando se cancela. Su
+--  la cita no esté cancelada ni rechazada, y NULL si lo está.
+--  Una cita pendiente ya aparta la hora. Su
 --  índice único impide, a nivel de motor, que dos citas vivas
 --  ocupen la misma hora aunque lleguen al mismo tiempo; al
 --  cancelar o reprogramar, la hora queda libre sola.
@@ -163,15 +201,15 @@ CREATE TABLE citas (
   paciente_id         INT UNSIGNED NULL,
   servicio_id         INT UNSIGNED NOT NULL,   -- especialidad
   franja_id           INT UNSIGNED NOT NULL,
-  estado              ENUM('pendiente','confirmada','cancelada','atendida','no_asistio')
-                        NOT NULL DEFAULT 'confirmada',
+  estado              ENUM('pendiente','confirmada','rechazada','cancelada','atendida','no_asistio')
+                        NOT NULL DEFAULT 'pendiente',
   notas               VARCHAR(300) NULL,
 
-  -- Datos de quien agenda (con o sin usuario)
+  -- Datos de quien pide la cita
   nombre_paciente     VARCHAR(120) NOT NULL,
   documento_paciente  VARCHAR(20)  NOT NULL,
   telefono_paciente   VARCHAR(20)  NOT NULL,   -- con indicativo, ej. 573001234567
-  correo_paciente     VARCHAR(160) NULL,       -- opcional
+  correo_paciente     VARCHAR(160) NULL,       -- obligatorio al pedir la cita (NULL en citas antiguas)
 
   -- Ley 1581 de 2012: autorización dada al agendar
   autorizacion_datos      BOOLEAN NOT NULL DEFAULT FALSE,
@@ -183,9 +221,10 @@ CREATE TABLE citas (
   codigo_gestion_hash CHAR(64) NULL,
   reprogramaciones    TINYINT UNSIGNED NOT NULL DEFAULT 0,  -- las del paciente (máx. 1)
   cancelada_por       ENUM('paciente','administrador') NULL,
+  confirmada_en       DATETIME NULL,           -- cuándo la aceptó la secretaria
 
   franja_ocupada INT UNSIGNED
-    AS (IF(estado = 'cancelada', NULL, franja_id)) STORED,
+    AS (IF(estado IN ('cancelada','rechazada'), NULL, franja_id)) STORED,
 
   creado_en      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   actualizado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -193,7 +232,7 @@ CREATE TABLE citas (
   CONSTRAINT uq_cita_franja_ocupada UNIQUE (franja_ocupada),
   CONSTRAINT uq_cita_codigo UNIQUE (codigo_gestion_hash),
   CONSTRAINT fk_cita_paciente FOREIGN KEY (paciente_id)
-    REFERENCES usuarios(id)  ON DELETE SET NULL,
+    REFERENCES pacientes(id) ON DELETE SET NULL,
   CONSTRAINT fk_cita_servicio FOREIGN KEY (servicio_id)
     REFERENCES servicios(id) ON DELETE RESTRICT,
   CONSTRAINT fk_cita_franja   FOREIGN KEY (franja_id)
@@ -216,7 +255,7 @@ CREATE TABLE notificaciones (
   id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   cita_id     INT UNSIGNED NOT NULL,
   canal       ENUM('correo','whatsapp') NOT NULL,
-  tipo        ENUM('confirmacion','reprogramacion','recordatorio','cancelacion') NOT NULL,
+  tipo        ENUM('confirmacion','reprogramacion','recordatorio','cancelacion','rechazo') NOT NULL,
   estado      ENUM('pendiente','enviada','fallida') NOT NULL DEFAULT 'pendiente',
   destino     VARCHAR(160) NOT NULL,   -- número usado
   mensaje     TEXT NULL,               -- texto enviado o por enviar
@@ -233,7 +272,7 @@ CREATE TABLE notificaciones (
 
 -- ------------------------------------------------------------
 --  historia_clinica
---  Entradas por paciente (solo pacientes con usuario). No se
+--  Entradas por paciente. No se
 --  borran ni se sobrescriben (Resolución 1995 de 1999): una
 --  corrección es una entrada nueva que apunta a la corregida.
 -- ------------------------------------------------------------
@@ -251,7 +290,7 @@ CREATE TABLE historia_clinica (
   creado_en        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   CONSTRAINT fk_hc_paciente FOREIGN KEY (paciente_id)
-    REFERENCES usuarios(id) ON DELETE RESTRICT,
+    REFERENCES pacientes(id) ON DELETE RESTRICT,
   CONSTRAINT fk_hc_servicio FOREIGN KEY (servicio_id)
     REFERENCES servicios(id) ON DELETE SET NULL,
   CONSTRAINT fk_hc_especialista FOREIGN KEY (especialista_id)

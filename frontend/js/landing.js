@@ -66,9 +66,9 @@ function configurarWhatsApp() {
   }
 }
 
-/* Formulario de ingreso. Un solo acceso para la secretaria (administrador)
-   y para los pacientes que ya tienen usuario; el rol lo decide el servidor
-   (contrato API v2, sección 3). La validación real vive en el backend. */
+/* Formulario de "Acceso del consultorio": solo la secretaria inicia
+   sesión; los pacientes no tienen cuenta (contrato API v2, sección 3).
+   La validación real vive en el backend. */
 function prepararFormularios() {
   const ingreso = document.getElementById('form-ingreso');
   if (!ingreso) return;

@@ -1,6 +1,5 @@
-/* Ingreso y cambio de contraseña.
-   Las cuentas de pacientes NO se crean aquí: las crea el administrador
-   (ver controllers/pacientes.controller.js). */
+/* Ingreso y cambio de contraseña de la secretaria.
+   Los pacientes no tienen cuenta (ver controllers/pacientes.controller.js). */
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const usuarioModelo = require('../models/usuario.model');
@@ -40,8 +39,9 @@ async function ingresar(req, res, next) {
     );
 
     // Mismo mensaje si el correo no existe, la clave es incorrecta o la
-    // cuenta está desactivada.
-    if (!usuario || !coincide || !usuario.activo) {
+    // cuenta está desactivada. Solo la secretaria inicia sesión: los
+    // pacientes no tienen cuenta.
+    if (!usuario || !coincide || !usuario.activo || usuario.rol !== 'administrador') {
       throw new ErrorHttp(401, MENSAJE_CREDENCIALES);
     }
 
@@ -106,8 +106,7 @@ async function cambiarContrasena(req, res, next) {
 }
 
 /* GET /api/auth/perfil   (requiere sesión)
-   Datos propios: para "Mi perfil" y para precargar el formulario de
-   agendar cuando el paciente tiene usuario. */
+   Datos propios de quien tiene la sesión. */
 async function perfil(req, res, next) {
   try {
     const datos = await usuarioModelo.perfil(req.usuario.id);

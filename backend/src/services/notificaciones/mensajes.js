@@ -31,15 +31,18 @@ function datosDelMensaje(cita, codigo) {
 
 const TEXTOS = {
   confirmacion: (d) =>
-    `Hola ${d.nombre}, tu cita en Arte Odontológico quedó agendada para el ${d.fecha} a las ${d.hora} con ${d.especialista}, en ${d.direccion}. Para reprogramar o cancelar: ${d.enlace}`,
+    `Hola ${d.nombre}, tu cita en Arte Odontológico quedó confirmada para el ${d.fecha} a las ${d.hora} con ${d.especialista}, en ${d.direccion}. Para reprogramar o cancelar: ${d.enlace}`,
   reprogramacion: (d) =>
     `Hola ${d.nombre}, tu cita en Arte Odontológico fue reprogramada para el ${d.fecha} a las ${d.hora} con ${d.especialista}, en ${d.direccion}. Si necesitas cancelarla: ${d.enlace}`,
   cancelacion: (d) =>
     `Hola ${d.nombre}, tu cita en Arte Odontológico del ${d.fecha} a las ${d.hora} fue cancelada. Si quieres, agenda una nueva en ${d.enlace}`,
-  // Sin enlace: se envía el día anterior, cuando ya pasó el plazo de
-  // 24 horas para reprogramar o cancelar desde la web.
+  // El consultorio no pudo atender la hora pedida: se invita a pedir otra.
+  rechazo: (d) =>
+    `Hola ${d.nombre}, no pudimos confirmar tu cita en Arte Odontológico del ${d.fecha} a las ${d.hora}; por favor pide otra hora en ${d.enlace} o responde este mensaje y te ayudamos.`,
+  // Sin enlace: se envía unas 24 horas antes, cuando ya pasó el plazo
+  // para reprogramar o cancelar desde la web.
   recordatorio: (d) =>
-    `Hola ${d.nombre}, te recordamos tu cita en Arte Odontológico mañana, ${d.fecha}, a las ${d.hora} con ${d.especialista}, en ${d.direccion}. Si no puedes asistir, avísanos respondiendo este mensaje.`,
+    `Hola ${d.nombre}, te recordamos tu cita en Arte Odontológico el ${d.fecha} a las ${d.hora} con ${d.especialista}, en ${d.direccion}. Si no puedes asistir, avísanos respondiendo este mensaje.`,
 };
 
 /* Tipos cuyo mensaje lleva el enlace "Gestionar mi cita". */

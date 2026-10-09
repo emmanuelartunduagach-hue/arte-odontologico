@@ -11,7 +11,7 @@
 
 Describe cómo está construido el sistema: arquitectura, organización del código, modelo de datos, API, reglas de negocio, seguridad y pruebas. Está dirigido a quien mantenga o amplíe el sistema. Para instalarlo, ver el *Manual de instalación*.
 
-El sistema permite que cualquier persona agende una cita odontológica desde la web sin crear cuenta, eligiendo especialidad, especialista, día y hora. Recibe la confirmación por WhatsApp y puede reprogramar una vez o cancelar desde un enlace. La secretaria, único usuario administrador, gestiona especialidades, especialistas, disponibilidad, agenda, pacientes e historia clínica. Los pacientes que ya asistieron pueden tener usuario, que crea la secretaria.
+El sistema permite que cualquier persona pida una cita odontológica desde la web sin crear cuenta, eligiendo especialidad, especialista, día y hora. La cita queda pendiente hasta que la secretaria la acepta; entonces el paciente recibe la confirmación por WhatsApp con un enlace para reprogramar una vez o cancelar, y unas 24 horas antes, un recordatorio. La secretaria, única persona que inicia sesión, gestiona solicitudes, agenda, horarios, pacientes e historia clínica. Los pacientes no tienen cuenta: son una ficha que se crea al aceptar su primera cita o que la secretaria registra si llegan al consultorio.
 
 ## 2. Arquitectura
 
@@ -57,9 +57,9 @@ No hay más dependencias de producción: las funciones de fecha, aleatoriedad y 
 | `backend/src/services/notificaciones/` | Textos y envío de WhatsApp |
 | `backend/src/utils/` | Validaciones, fechas, códigos, errores, contraseñas |
 | `backend/src/scripts/` | Consola: `crearAdmin.js` (crear la secretaria), `restablecerAdmin.js` (restablecer su clave) y `enviarRecordatorios.js` |
-| `backend/src/services/recordatorios.js` | Recordatorio del día anterior y su ejecución automática |
+| `backend/src/services/recordatorios.js` | Recordatorio 24 horas antes y su ejecución automática |
 | `backend/.env.example` | Plantilla de configuración |
-| `frontend/` | Páginas públicas (`index.html`, `gestionar-cita.html`, `politica-datos.html`) y con sesión (`cambiar-contrasena.html`, `mis-citas.html`, `panel-secretaria.html`); `css/` (tokens → base → pantalla); `js/` (config, `api.js`, `sesion.js` y un módulo por pantalla; el panel de la secretaria es una sola página con secciones por fragmento de URL, `#inicio`, `#agenda`…: `panel-secretaria.js` las monta y tiene Inicio, `panel-comun.js` tiene los diálogos, avisos y el contador de mensajes, y cada sección vive en su archivo: `panel-agenda.js` (agenda por día, búsqueda de pacientes y acciones), `panel-disponibilidad.js` (semana por especialista: publicar horas en varios días a la vez y quitar horas libres) y `panel-mensajes.js` (WhatsApp por enviar, enviados, con error y recordatorios de mañana)); `mis-citas.js` es el panel del paciente (próxima cita, otras próximas, historial, mis datos, y reprogramar o cancelar en un diálogo) |
+| `frontend/` | Páginas públicas (`index.html`, `gestionar-cita.html`, `politica-datos.html`) y con sesión, solo para la secretaria (`cambiar-contrasena.html`, `panel-secretaria.html`); `css/` (tokens → base → pantalla); `js/` (config, `api.js`, `sesion.js` y un módulo por pantalla; el panel de la secretaria es una sola página con secciones por fragmento de URL, `#inicio`, `#agenda`, `#pacientes/12`…: `panel-secretaria.js` las monta y tiene Inicio (solicitudes por confirmar y agenda de hoy), `panel-comun.js` tiene los diálogos, avisos y el contador de mensajes, y cada sección vive en su archivo: `panel-agenda.js` (agenda por día, búsqueda, aceptar o rechazar solicitudes y demás acciones), `panel-pacientes.js` (lista, registro en el consultorio, ficha con citas e historia clínica y agendar desde la ficha), `panel-disponibilidad.js` (semana por especialista: publicar horas en varios días a la vez y quitar horas libres) y `panel-mensajes.js` (WhatsApp por enviar, enviados, con error y recordatorios de las próximas 24 horas)) |
 | `docs/` | Documentación del proyecto |
 
 **Flujo de una petición:** `routes` aplica los middlewares (sesión, rol, límite) → el `controller` valida el cuerpo con `utils/validaciones`, aplica las reglas y llama a los `models` → si algo falla lanza un `ErrorHttp(status, mensaje, campos)` → el manejador central de `app.js` responde `{ error, campos? }` sin exponer detalles internos (la traza completa queda solo en la consola del servidor).
@@ -70,13 +70,14 @@ El detalle de cada tabla y el diagrama entidad-relación están en `docs/03-dise
 
 | Tabla | Propósito |
 |---|---|
-| `usuarios` | Secretaria (rol `administrador`) y pacientes con cuenta (rol `paciente`) |
+| `usuarios` | Quienes inician sesión: la secretaria (rol `administrador`) |
+| `pacientes` | Ficha de cada paciente (sin usuario ni contraseña), con su origen: web o consultorio |
 | `servicios` | Especialidades del consultorio |
 | `especialistas` | Odontólogos; no inician sesión |
 | `especialista_especialidad` | Qué especialidades atiende cada especialista (muchos a muchos) |
 | `sedes` | Sede de atención (hoy solo Rivera) |
 | `franjas_horarias` | Horas publicadas a mano por la secretaria, por especialista y fecha |
-| `citas` | Citas, con los datos de quien agenda aunque no tenga cuenta |
+| `citas` | Citas, con los datos de quien la pidió; pendientes hasta que la secretaria las acepta |
 | `notificaciones` | Bitácora de mensajes de WhatsApp |
 | `historia_clinica` | Entradas por paciente; no se modifican ni se borran |
 | `v_agenda` (vista) | Agenda con paciente, especialidad, especialista y sede |
@@ -90,11 +91,11 @@ Todas las rutas cuelgan de `/api` y responden JSON. El contrato completo con eje
 | Salud | `GET /salud` | Público |
 | Catálogo | `GET /especialidades` · `GET /especialidades/:id/especialistas` | Público |
 | Calendario | `GET /especialistas/:id/calendario?mes=` · `GET /especialistas/:id/horas?fecha=` | Público |
-| Agendar | `POST /citas` | Público (con sesión opcional de paciente) |
+| Pedir cita | `POST /citas` (queda pendiente) | Público |
 | Gestionar cita | `GET /citas/gestion/:codigo` · `POST …/reprogramar` · `POST …/cancelar` | Público con código |
 | Sesión | `POST /auth/ingreso` · `POST /auth/cambiar-contrasena` · `GET /auth/perfil` | Público / sesión |
-| Paciente | `GET /mis-citas` · `POST /mis-citas/:id/reprogramar` · `POST /mis-citas/:id/cancelar` | Rol paciente (solo sus citas) |
-| Pacientes | `POST /pacientes` · `GET /pacientes?q=` · `GET /pacientes/:id` · `POST /pacientes/:id/restablecer-contrasena` | Rol administrador |
+| Solicitudes y agenda | `GET /admin/citas` · `POST /admin/citas` · `POST /admin/citas/:id/aceptar` · `POST /admin/citas/:id/rechazar` · `PATCH /admin/citas/:id/estado` · `POST /admin/citas/:id/reprogramar` | Rol administrador |
+| Pacientes | `POST /pacientes` · `GET /pacientes?q=` · `GET /pacientes/:id` | Rol administrador |
 | Historia clínica | `GET/POST /pacientes/:id/historia` · `POST /admin/historia/:id/correccion` | Rol administrador |
 | Especialidades | `GET/POST /admin/especialidades` · `PATCH /admin/especialidades/:id` | Rol administrador |
 | Especialistas | `GET/POST /admin/especialistas` · `PATCH /admin/especialistas/:id` | Rol administrador |
@@ -116,15 +117,16 @@ Todas las rutas cuelgan de `/api` y responden JSON. El contrato completo con eje
 
 | Regla | Implementación |
 |---|---|
-| Una hora admite una sola cita viva | Columna generada `citas.franja_ocupada = IF(estado='cancelada', NULL, franja_id)` con índice único. Si dos personas confirman a la vez, el motor rechaza la segunda (`ER_DUP_ENTRY` → 409). Al cancelar, la hora se libera sola |
-| La cita queda confirmada al agendar | `estado = 'confirmada'` en `cita.model.crear` |
-| Agendar sin cuenta con nombre, documento y teléfono (correo opcional) | `validarDatosPersona`; el teléfono se normaliza con indicativo 57 |
+| Una hora admite una sola cita viva | Columna generada `citas.franja_ocupada = IF(estado IN ('cancelada','rechazada'), NULL, franja_id)` con índice único. Si dos personas piden la misma hora a la vez, el motor rechaza la segunda (`ER_DUP_ENTRY` → 409). Una pendiente ya aparta la hora; al cancelar o rechazar, se libera sola |
+| La cita pedida por la web queda pendiente | `estado = 'pendiente'` en `citas.controller.crear`; no se envía mensaje hasta aceptarla |
+| Aceptar crea o enlaza la ficha del paciente | `aceptar` → `pacienteDeCita`: busca por documento y, si no existe, crea el paciente con los datos y la autorización de la cita; luego `cita.model.aceptar` y WhatsApp de confirmación con enlace |
+| Rechazar libera la hora | `rechazar`: estado `rechazada` y WhatsApp de tipo `rechazo` |
+| La cita que agenda la secretaria queda confirmada | `crearAdmin` (`POST /admin/citas`) con los datos de la ficha |
+| Pedir cita sin cuenta con nombre, documento, teléfono y correo | `validarDatosPersona` (todos obligatorios); el teléfono se normaliza con indicativo 57 |
 | Autorización de datos obligatoria (Ley 1581 de 2012) | `autorizacionDatos === true`; se guarda la fecha y la versión de la política en la cita |
-| Máximo 1 cita activa por documento sin cuenta | `contarActivasPorDocumento`; configurable con `LIMITE_CITAS_ACTIVAS_SIN_USUARIO` |
-| La cita queda a nombre de un paciente solo si agenda con su sesión | Middleware `sesionOpcional` y comparación del documento con el usuario de la sesión |
-| El paciente reprograma una sola vez | `UPDATE … WHERE reprogramaciones < 1` (la condición va en la misma sentencia para evitar dobles clics) |
+| Máximo 1 cita pendiente o confirmada por documento | `contarActivasPorDocumento`; configurable con `LIMITE_CITAS_ACTIVAS_POR_DOCUMENTO` |
+| El paciente reprograma una sola vez y la nueva hora vuelve a pendiente | `UPDATE … SET estado = 'pendiente' … WHERE reprogramaciones < 1` (la condición va en la misma sentencia para evitar dobles clics) |
 | Reprogramar o cancelar hasta 24 h antes | `reglasGestion` compara la fecha y hora de la cita con la hora de Bogotá + 24 h |
-| Las mismas reglas desde el enlace y desde "Mis citas" | `reprogramarPorPaciente` y `cancelarPorPaciente` las comparten; con sesión, `citaPropia` exige que la cita sea del paciente (si no, 404) |
 | La secretaria reprograma sin límite y puede cambiar de especialista | `reprogramarAdmin` no toca el contador; valida que el especialista atienda la especialidad |
 | No quitar una hora con cita | `quitarFranja` responde 409 si hay cita viva; si no, la desactiva (no la borra) |
 | Marcar asistencia solo cuando llegó la hora | `cambiarEstado` compara con la hora actual |
@@ -132,9 +134,9 @@ Todas las rutas cuelgan de `/api` y responden JSON. El contrato completo con eje
 | Límite de intentos de ingreso | `limitePeticiones` en `POST /auth/ingreso`: 10 por IP cada 15 minutos, configurable con `LIMITE_INGRESOS_POR_IP` |
 | Clave temporal obligatoria de cambiar | El ingreso devuelve `debeCambiarContrasena`; `exigirSesion()` en `frontend/js/sesion.js` lleva a `cambiar-contrasena.html` antes de cualquier panel |
 | Historia clínica inalterable | Solo hay `INSERT`; la corrección es una entrada nueva con `corrige_a` |
-| Pacientes con cuenta solo los crea la secretaria | No hay registro público; `POST /pacientes` exige rol administrador |
-| Recordatorio el día anterior, una sola vez | `services/recordatorios.js`: cada 30 min dentro de `RECORDATORIO_DESDE`–`RECORDATORIO_HASTA`; citas confirmadas de mañana agendadas hace más de 12 h y sin recordatorio posterior a su última confirmación o reprogramación |
-| "Olvidé mi contraseña" | La secretaria genera una clave temporal nueva (`debe_cambiar_contrasena = TRUE`); la de la secretaria se restablece por consola |
+| Solo la secretaria inicia sesión | El ingreso rechaza cualquier usuario que no sea `administrador`; los pacientes están en otra tabla, sin contraseña |
+| Recordatorio 24 horas antes, una sola vez | `services/recordatorios.js`: cada 30 min dentro de `RECORDATORIO_DESDE`–`RECORDATORIO_HASTA`; citas confirmadas que empiezan en las próximas 24 h, aceptadas hace más de 12 h y sin recordatorio posterior a su última confirmación o reprogramación |
+| "Olvidé mi contraseña" (secretaria) | Se restablece por consola con `npm run restablecer-admin` |
 
 **Zona horaria.** Las franjas guardan fecha y hora locales del consultorio. `utils/tiempo.js` calcula la hora actual de Bogotá (UTC-5) con `Intl` y la pasa a las consultas como texto, de modo que el resultado no depende de la zona horaria del servidor donde se publique.
 
@@ -142,11 +144,11 @@ Todas las rutas cuelgan de `/api` y responden JSON. El contrato completo con eje
 
 | Riesgo | Medida |
 |---|---|
-| Robo de contraseñas | bcrypt con 10 rondas; nunca se guardan ni se devuelven en texto plano. La clave temporal del paciente se muestra una sola vez y se exige cambiarla |
+| Robo de contraseñas | bcrypt con 10 rondas; nunca se guardan ni se devuelven en texto plano. Solo la secretaria tiene contraseña |
 | Suplantación de rol | El rol viaja dentro del JWT firmado por el servidor y se verifica en cada ruta con `requiereRol`; el cliente nunca lo envía |
 | Adivinar correos registrados | El ingreso responde el mismo mensaje y tarda lo mismo si el correo no existe (comparación contra un hash de relleno) |
 | Inyección SQL | Todas las consultas usan parámetros; las búsquedas escapan los comodines de `LIKE` |
-| Enlaces de gestión adivinables | Código aleatorio de 32 bytes; en `citas` solo se guarda su hash SHA-256. Cuando la secretaria reprograma, se genera uno nuevo y el anterior deja de servir. Al marcar un mensaje como enviado, el código se borra del texto guardado |
+| Enlaces de gestión adivinables | Código aleatorio de 32 bytes; en `citas` solo se guarda su hash SHA-256. El enlace se genera al aceptar la cita; cuando se acepta un cambio o la secretaria reprograma, se genera uno nuevo y el anterior deja de servir. Al marcar un mensaje como enviado, el código se borra del texto guardado |
 | Bots que llenan la agenda | Límite de peticiones por IP, campo trampa oculto en el formulario y máximo de citas activas por documento |
 | Fuga de datos en mensajes | El WhatsApp solo lleva fecha, hora, especialista y dirección; nada clínico |
 | Errores que revelan detalles internos | Manejador central: mensaje genérico al cliente, traza solo en el servidor |
@@ -161,7 +163,7 @@ Todas las rutas cuelgan de `/api` y responden JSON. El contrato completo con eje
 - **consola:** se imprime en la terminal del backend.
 - **api:** se envía con una plantilla aprobada por la API de WhatsApp Cloud.
 
-El servicio nunca lanza errores hacia el controlador: si el envío falla, la cita sigue confirmada y el mensaje queda como `fallida` para enviarlo a mano. Tipos: `confirmacion`, `reprogramacion`, `cancelacion` y `recordatorio`. Solo los dos primeros llevan el enlace de gestión: el recordatorio sale cuando ya pasó el plazo de 24 horas y la cancelación ya no lo necesita.
+El servicio nunca lanza errores hacia el controlador: si el envío falla, la cita sigue confirmada y el mensaje queda como `fallida` para enviarlo a mano. Tipos: `confirmacion` (al aceptar), `reprogramacion`, `cancelacion`, `rechazo` y `recordatorio`. Solo los dos primeros llevan el enlace de gestión: el recordatorio sale cuando ya pasó el plazo de 24 horas, y la cancelación y el rechazo llevan la dirección de la página para pedir otra cita.
 
 El recordatorio lo genera `services/recordatorios.js`, programado desde `server.js` cada 30 minutos (se desactiva con `RECORDATORIOS_AUTOMATICOS=false`). También se puede lanzar con `POST /api/admin/recordatorios` o `npm run recordatorios`.
 
@@ -169,6 +171,7 @@ El recordatorio lo genera `services/recordatorios.js`, programado desde `server.
 
 - **Integración contra MySQL 8 real:** 117 comprobaciones automatizadas sobre una base limpia. Cubren el catálogo, el calendario, agendar, la carrera por la misma hora, la gestión con código, la regla de 24 horas, el panel de la secretaria, los mensajes, los permisos, el alta de pacientes, la historia clínica, el recordatorio y el restablecimiento de claves. Todas correctas al 7 de octubre de 2026.
 - **Pruebas manuales:** guías paso a paso en PowerShell (`docs/06-pruebas/`).
+- **Flujo de aprobación (9 de octubre):** prueba de punta a punta contra la API sobre una base nueva y sobre una migrada con la 003: pedir cita sin correo (400), pendiente que aparta la hora, límite por documento, aceptar (crea la ficha y envía el enlace), reprogramar desde el enlace (vuelve a pendiente), rechazar (libera la hora), registrar en el consultorio, agendar desde la ficha, historia clínica y recordatorio de 24 horas. Además, recorrido en el navegador en modo demostración y con la API real, en escritorio y a 390 px.
 - **Revisión de código independiente:** encontró tres fallas, corregidas antes de fusionar: suplantación del documento de un paciente registrado, código del enlace guardado en texto y error 500 con fechas inválidas.
 
 Detalle en `docs/06-pruebas/pruebas.md`.

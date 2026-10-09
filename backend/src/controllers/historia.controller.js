@@ -4,7 +4,7 @@
    "editar" es agregar una entrada nueva, y corregir es agregar una
    entrada que apunta a la corregida (`corrigeA`). La original queda
    intacta y el panel muestra ambas, con autor y fecha. */
-const usuarioModelo = require('../models/usuario.model');
+const pacienteModelo = require('../models/paciente.model');
 const citaModelo = require('../models/cita.model');
 const historiaModelo = require('../models/historia.model');
 const servicioModelo = require('../models/servicio.model');
@@ -15,7 +15,7 @@ const { hoyBogota } = require('../utils/tiempo');
 
 async function pacientePorId(idTexto) {
   const id = aId(idTexto);
-  const paciente = id ? await usuarioModelo.fichaPaciente(id) : null;
+  const paciente = id ? await pacienteModelo.buscarPorId(id) : null;
   if (!paciente) throw new ErrorHttp(404, 'Paciente no encontrado.');
   return paciente;
 }
@@ -26,7 +26,7 @@ async function ficha(req, res, next) {
   try {
     const paciente = await pacientePorId(req.params.id);
     const [citas, historia] = await Promise.all([
-      citaModelo.listarDePaciente(paciente.id),
+      citaModelo.listarDePaciente(paciente.id, paciente.documento),
       historiaModelo.listarDePaciente(paciente.id),
     ]);
     res.json({
@@ -34,7 +34,9 @@ async function ficha(req, res, next) {
       citas: citas.map((c) => ({
         id: c.id,
         estado: c.estado,
+        especialidadId: c.especialidadId,
         especialidad: c.especialidad,
+        especialistaId: c.especialistaId,
         especialista: c.especialista,
         fecha: c.fecha,
         hora: c.hora,

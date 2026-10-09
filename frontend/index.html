@@ -31,7 +31,7 @@
     </a>
 
     <div class="encabezado__acciones">
-      <button type="button" class="btn btn--primario" data-abrir="modal-ingreso">Ingresar</button>
+      <a class="btn btn--primario" href="#especialidades" data-ir-especialidades>Agendar cita</a>
     </div>
   </div>
 </header>
@@ -188,7 +188,7 @@
         <ul>
           <li><a href="#especialidades">Especialidades</a></li>
           <li><a href="#contacto">Contacto</a></li>
-          <li><a href="#" data-abrir="modal-ingreso">Ingresar</a></li>
+          <li><a href="#" data-abrir="modal-ingreso">Acceso del consultorio</a></li>
         </ul>
       </div>
       <div>
@@ -212,8 +212,8 @@
   <div class="modal__panel">
     <div class="modal__cabecera">
       <div>
-        <h2 id="titulo-ingreso" style="font-size:var(--txt-lg)">Ingresar</h2>
-        <p>Accede para ver y gestionar tus citas.</p>
+        <h2 id="titulo-ingreso" style="font-size:var(--txt-lg)">Acceso del consultorio</h2>
+        <p>Solo para el personal de Arte Odontológico.</p>
       </div>
       <button type="button" class="modal__cerrar" data-cerrar aria-label="Cerrar">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -240,7 +240,7 @@
            El rol ahora lo determina el backend a partir del usuario. -->
 
       <p class="modal__pie">
-        ¿Aún no tienes usuario? Solicítalo en el consultorio.
+        ¿Eres paciente? No necesitas cuenta: pide tu cita desde esta página y gestiónala con el enlace que te llega por WhatsApp.
       </p>
     </form>
   </div>

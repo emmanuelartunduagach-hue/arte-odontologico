@@ -1,6 +1,5 @@
 /* ============================================================
-   Páginas con sesión: cambiar contraseña, mis citas y panel de
-   la secretaria. Se carga después de landing.css y reutiliza
+   Páginas con sesión: cambiar contraseña y panel de la secretaria. Se carga después de landing.css y reutiliza
    .gestion, .gestion__tarjeta, .resumen, .alerta y .acciones.
    ============================================================ */
 
@@ -10,201 +9,6 @@
 }
 
 .gestion__intro { margin-bottom: var(--e-5); color: var(--ink-600); }
-
-/* ---------- Panel del paciente (mis-citas.html) ----------
-   Tarjetas blancas apiladas sobre el fondo violeta claro de .gestion. */
-
-.paciente__contenido { max-width: 880px; }
-.paciente__cuerpo { display: grid; gap: var(--e-5); }
-.paciente__saludo .gestion__titulo { margin-bottom: var(--e-2); }
-.paciente__saludo .gestion__intro { margin-bottom: 0; }
-
-.tarjeta-panel {
-  padding: var(--e-5) var(--e-6);
-  background: var(--papel);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-lg);
-  box-shadow: var(--sombra-sutil);
-  scroll-margin-top: var(--e-6);
-}
-.tarjeta-panel:focus { outline: none; }
-.tarjeta-panel__titulo {
-  font-family: var(--fuente-ui);
-  font-size: var(--txt-sm);
-  font-weight: var(--peso-semi);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink-600);
-}
-.tarjeta-panel > .tarjeta-panel__titulo { margin-bottom: var(--e-4); }
-
-/* Tu próxima cita */
-.proxima { border-top: 4px solid var(--violeta-600); box-shadow: var(--sombra-flotante); }
-.proxima__cabecera {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--e-2) var(--e-4);
-  margin-bottom: var(--e-4);
-}
-.proxima__faltan {
-  padding: 2px var(--e-3);
-  border-radius: var(--radio-pill);
-  background: var(--violeta-100);
-  color: var(--violeta-600);
-  font-size: var(--txt-xs);
-  font-weight: var(--peso-semi);
-}
-.proxima__cuerpo { display: flex; gap: var(--e-5); align-items: flex-start; }
-.proxima__info { display: grid; gap: var(--e-2); min-width: 0; }
-.proxima__cuando {
-  font-family: var(--fuente-titular);
-  font-size: var(--txt-lg);
-  line-height: var(--alto-apretado);
-  color: var(--ink-900);
-}
-.proxima__que { font-weight: var(--peso-semi); color: var(--ink-900); }
-.proxima__donde {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--e-1) var(--e-2);
-  font-size: var(--txt-sm);
-  color: var(--ink-600);
-}
-.proxima__donde svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--violeta-600); }
-.proxima__donde a { font-weight: var(--peso-semi); color: var(--violeta-600); }
-.proxima__regla {
-  max-width: none;
-  margin-top: var(--e-4);
-  padding-top: var(--e-4);
-  border-top: 1px solid var(--borde);
-  font-size: var(--txt-sm);
-  color: var(--ink-600);
-}
-.proxima__acciones { margin-top: var(--e-4); }
-.proxima--vacia { border-top-color: var(--borde-fuerte); box-shadow: var(--sombra-sutil); }
-.proxima--vacia .acciones { margin-top: var(--e-4); }
-
-/* Bloque de fecha tipo calendario de escritorio */
-.bloque-fecha {
-  flex-shrink: 0;
-  display: grid;
-  justify-items: center;
-  width: 84px;
-  padding: var(--e-2) var(--e-1) var(--e-3);
-  border-radius: var(--radio-md);
-  background: var(--violeta-600);
-  color: var(--papel);
-  text-align: center;
-  line-height: 1.1;
-}
-.bloque-fecha__mes { font-size: var(--txt-xs); font-weight: var(--peso-semi); text-transform: uppercase; letter-spacing: 0.08em; }
-.bloque-fecha__dia { font-family: var(--fuente-titular); font-size: var(--txt-xl); font-weight: var(--peso-titular); }
-.bloque-fecha__semana { font-size: var(--txt-xs); }
-.bloque-fecha--pequeno {
-  width: 52px;
-  padding: var(--e-1);
-  background: var(--violeta-100);
-  color: var(--violeta-600);
-}
-.bloque-fecha--pequeno .bloque-fecha__dia { font-size: var(--txt-lg); }
-
-/* Atajos */
-.atajos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--e-3); }
-.atajo {
-  display: flex;
-  align-items: center;
-  gap: var(--e-3);
-  padding: var(--e-4);
-  background: var(--papel);
-  border: 1px solid var(--borde);
-  border-radius: var(--radio-md);
-  color: var(--ink-900);
-  transition: border-color var(--transicion), background var(--transicion);
-}
-.atajo:hover { text-decoration: none; border-color: var(--violeta-300); background: var(--violeta-50); }
-.atajo__icono {
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radio-sm);
-  background: var(--violeta-100);
-  color: var(--violeta-600);
-}
-.atajo__icono svg { width: 20px; height: 20px; }
-.atajo__titulo { display: block; font-weight: var(--peso-semi); }
-.atajo__detalle { display: block; font-size: var(--txt-xs); color: var(--ink-600); }
-
-/* Listas de citas (otras próximas e historial) */
-.lista-paciente { list-style: none; margin: 0; padding: 0; }
-.fila-paciente {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--e-3) var(--e-4);
-  padding-block: var(--e-3);
-  border-top: 1px solid var(--borde);
-}
-.fila-paciente:first-child { border-top: 0; padding-top: 0; }
-.fila-paciente__info { flex: 1 1 220px; min-width: 0; }
-.fila-paciente__cuando { font-weight: var(--peso-semi); color: var(--ink-900); }
-.fila-paciente__detalle { font-size: var(--txt-sm); color: var(--ink-600); }
-.fila-paciente__acciones { display: flex; flex-wrap: wrap; gap: var(--e-2); }
-.btn--compacto { padding: var(--e-2) var(--e-3); font-size: var(--txt-sm); }
-
-/* Historial plegable */
-.historial__resumen {
-  display: flex;
-  align-items: center;
-  gap: var(--e-3);
-  cursor: pointer;
-  list-style: none;
-}
-.historial__resumen::-webkit-details-marker { display: none; }
-.historial__resumen::after {
-  content: '';
-  width: 8px;
-  height: 8px;
-  margin-left: auto;
-  border-right: 2px solid var(--ink-600);
-  border-bottom: 2px solid var(--ink-600);
-  transform: rotate(45deg);
-  transition: transform var(--transicion);
-}
-.historial[open] .historial__resumen::after { transform: rotate(-135deg); }
-.historial[open] .historial__resumen { margin-bottom: var(--e-4); }
-.historial__cantidad { font-size: var(--txt-sm); color: var(--ink-600); }
-
-/* Mis datos */
-.datos__correccion {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--e-3);
-  margin-top: var(--e-4);
-  padding-top: var(--e-4);
-  border-top: 1px solid var(--borde);
-  color: var(--ink-600);
-}
-#mis-datos .resumen { margin: 0; }
-
-@media (max-width: 640px) {
-  .tarjeta-panel { padding: var(--e-4); }
-  .atajos { grid-template-columns: minmax(0, 1fr); gap: var(--e-2); }
-  .atajo { padding: var(--e-3); }
-  .proxima__cuerpo { gap: var(--e-4); }
-  .bloque-fecha { width: 68px; }
-  .bloque-fecha__dia { font-size: 2rem; }
-  .proxima__cuando { font-size: var(--txt-md); }
-  .fila-paciente__acciones { flex: 1 1 100%; }
-  .fila-paciente__acciones .btn { flex: 1 1 0; }
-  .datos__correccion .btn { width: 100%; }
-}
 
 /* Estado de la cita: el texto siempre acompaña al color. */
 .estado {
@@ -219,6 +23,7 @@
 .estado--cancelada  { background: var(--rosa-100);  color: var(--rosa-700); }
 .estado--atendida   { background: var(--violeta-100); color: var(--violeta-600); }
 .estado--no_asistio { background: var(--borde); color: var(--ink-600); }
+.estado--rechazada  { background: var(--rosa-100);  color: var(--rosa-700); }
 
 /* ---------- Cambiar contraseña ---------- */
 
@@ -227,9 +32,74 @@
 
 /* ---------- Panel de la secretaria ----------
    Menú lateral + contenido a todo el ancho. En celular el menú pasa
-   a ser una barra horizontal debajo del encabezado. */
+   a ser una barra fija abajo, al alcance del pulgar. Detrás, la misma
+   textura de arcos de la página principal. */
 
-.pagina-panel { background: var(--violeta-50); }
+.pagina-panel {
+  background-color: var(--violeta-50);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='76' height='76' viewBox='0 0 76 76'%3E%3Cpath d='M14 62V34a24 24 0 0 1 48 0v28' fill='none' stroke='%234a1f60' stroke-opacity='.06' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-attachment: fixed;
+}
+
+/* Menú de la cuenta (encabezado) */
+.menu-cuenta { position: relative; }
+.menu-cuenta__boton {
+  display: flex;
+  align-items: center;
+  gap: var(--e-2);
+  padding: var(--e-1) var(--e-3) var(--e-1) var(--e-1);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-pill);
+  background: var(--papel);
+  cursor: pointer;
+  list-style: none;
+  font-size: var(--txt-sm);
+  font-weight: var(--peso-semi);
+  color: var(--ink-900);
+}
+.menu-cuenta__boton::-webkit-details-marker { display: none; }
+.menu-cuenta__boton:hover { border-color: var(--violeta-300); }
+.menu-cuenta__boton svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.menu-cuenta__inicial {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--violeta-600);
+  color: var(--papel);
+  font-family: var(--fuente-titular);
+  font-size: var(--txt-md);
+}
+.menu-cuenta__lista {
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--e-2));
+  z-index: 30;
+  min-width: 210px;
+  padding: var(--e-2);
+  background: var(--papel);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-md);
+  box-shadow: var(--sombra-flotante);
+  display: grid;
+}
+.menu-cuenta__lista a,
+.menu-cuenta__lista button {
+  display: block;
+  width: 100%;
+  padding: var(--e-2) var(--e-3);
+  border: 0;
+  border-radius: var(--radio-sm);
+  background: none;
+  text-align: left;
+  font: inherit;
+  font-size: var(--txt-sm);
+  color: var(--ink-900);
+  cursor: pointer;
+}
+.menu-cuenta__lista a:hover,
+.menu-cuenta__lista button:hover { text-decoration: none; background: var(--violeta-100); }
 
 .sr-only {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
@@ -344,6 +214,100 @@
 .bloque-panel__cabecera { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--e-3); }
 .bloque-panel__titulo { font-size: var(--txt-md); margin-bottom: var(--e-3); }
 .bloque-panel__enlace { font-size: var(--txt-sm); font-weight: var(--peso-semi); }
+.bloque-panel__ayuda { margin: calc(-1 * var(--e-2)) 0 var(--e-3); font-size: var(--txt-sm); color: var(--ink-600); }
+
+/* ---------- Pacientes ---------- */
+
+.pacientes__busqueda { margin-bottom: var(--e-4); max-width: 560px; }
+.lista-pacientes { list-style: none; margin: var(--e-3) 0 0; padding: 0; }
+.lista-pacientes li + li { border-top: 1px solid var(--borde); }
+.fila-paciente-panel {
+  display: flex;
+  align-items: center;
+  gap: var(--e-3);
+  padding: var(--e-3) var(--e-4);
+  color: var(--ink-900);
+}
+.fila-paciente-panel:hover { text-decoration: none; background: var(--violeta-50); }
+.fila-paciente-panel__inicial {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--violeta-100);
+  color: var(--violeta-600);
+  font-family: var(--fuente-titular);
+  font-size: var(--txt-md);
+}
+.fila-paciente-panel__datos { display: grid; min-width: 0; flex: 1; }
+.fila-paciente-panel__origen {
+  padding: 2px var(--e-3);
+  border-radius: var(--radio-pill);
+  background: var(--violeta-50);
+  border: 1px solid var(--borde);
+  font-size: var(--txt-xs);
+  color: var(--ink-600);
+}
+
+.ficha__rejilla {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+  gap: var(--e-5);
+  align-items: start;
+}
+.ficha__bloque {
+  padding: var(--e-4) var(--e-5);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  background: var(--papel);
+}
+.ficha__bloque .resumen { margin: 0 0 var(--e-4); }
+.ficha__bloque .resumen dt { min-width: 6.5em; }
+.lista-citas-ficha { list-style: none; margin: 0; padding: 0; }
+.fila-cita-ficha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-2) var(--e-3);
+  padding: var(--e-3) var(--e-4);
+  border-top: 1px solid var(--borde);
+}
+.fila-cita-ficha:first-child { border-top: 0; }
+.fila-cita-ficha__lado { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2); }
+
+/* Historia clínica: línea de tiempo */
+.historia { list-style: none; margin: 0; padding: 0 0 0 var(--e-5); border-left: 2px solid var(--violeta-100); display: grid; gap: var(--e-4); }
+.nota-hc {
+  position: relative;
+  padding: var(--e-4) var(--e-5);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-md);
+  background: var(--papel);
+}
+.nota-hc::before {
+  content: '';
+  position: absolute;
+  left: calc(-1 * var(--e-5) - 7px);
+  top: var(--e-5);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--violeta-600);
+  box-shadow: 0 0 0 3px var(--violeta-50);
+}
+.nota-hc--corregida { background: var(--lienzo); }
+.nota-hc--corregida .nota-hc__procedimiento,
+.nota-hc--corregida .nota-hc__notas { text-decoration: line-through; color: var(--ink-600); }
+.nota-hc--corregida::before { background: var(--borde-fuerte); }
+.nota-hc__cabecera { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2); }
+.nota-hc__fecha { font-weight: var(--peso-semi); color: var(--ink-900); }
+.nota-hc__procedimiento { margin-top: var(--e-1); font-family: var(--fuente-titular); font-size: var(--txt-md); color: var(--ink-900); }
+.nota-hc__notas { margin-top: var(--e-2); white-space: pre-line; font-size: var(--txt-sm); }
+.nota-hc__pie { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--e-2); margin-top: var(--e-3); }
+textarea.campo__control { resize: vertical; min-height: 96px; font: inherit; }
 
 /* Filas de citas */
 .lista-filas {
@@ -362,6 +326,9 @@
 }
 .fila-cita:first-child { border-top: 0; }
 .fila-cita--cerrada { background: var(--lienzo); }
+.fila-cita--pendiente { box-shadow: inset 4px 0 0 var(--ambar-700); background: var(--ambar-50); }
+a.fila-cita__nombre { display: block; color: var(--ink-900); }
+a.fila-cita__nombre:hover { color: var(--violeta-600); }
 .fila-cita--cerrada .fila-cita__nombre,
 .fila-cita--cerrada .fila-cita__reloj { color: var(--ink-600); }
 
@@ -544,16 +511,44 @@
   .fila-cita__especialista, .fila-cita__estado, .fila-cita__acciones { grid-column: 2; }
 }
 
+@media (max-width: 1000px) {
+  .ficha__rejilla { grid-template-columns: minmax(0, 1fr); }
+}
+
 @media (max-width: 760px) {
-  .encabezado__usuario { display: none; }
-  .panel-app { grid-template-columns: minmax(0, 1fr); gap: var(--e-4); padding-top: var(--e-4); }
+  .menu-cuenta__nombre { display: none; }
+  .menu-cuenta__boton { padding-right: var(--e-2); }
+  .panel-app { grid-template-columns: minmax(0, 1fr); gap: var(--e-4); padding-top: var(--e-4); padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+
+  /* Menú fijo abajo: ícono sobre el nombre, como una app. */
   .panel-nav {
-    position: static;
-    display: flex;
-    overflow-x: auto;
-    gap: var(--e-2);
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    z-index: 40;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0;
+    padding: var(--e-1) var(--e-1) calc(var(--e-1) + env(safe-area-inset-bottom));
+    background: var(--papel);
+    border-top: 1px solid var(--borde);
+    box-shadow: 0 -6px 20px -12px rgba(31, 18, 51, 0.25);
   }
-  .panel-nav a { padding: var(--e-2) var(--e-3); font-size: var(--txt-sm); background: var(--papel); border: 1px solid var(--borde); white-space: nowrap; }
+  .panel-nav a {
+    position: relative;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--e-2) 0;
+    font-size: 0.6875rem;
+    border-radius: var(--radio-md);
+    text-align: center;
+  }
+  .panel-nav a[aria-current="page"] { background: var(--violeta-100); color: var(--violeta-600); }
+  .panel-nav svg { width: 22px; height: 22px; }
+  .panel-nav__contador { position: absolute; top: 2px; left: 55%; margin: 0; min-width: 18px; padding: 0 5px; }
+
   .panel-contenido { padding: var(--e-4); }
   .datos-panel { grid-template-columns: minmax(0, 1fr); gap: var(--e-2); }
   .dato-panel { grid-template-columns: auto 1fr; align-items: center; gap: var(--e-3); padding: var(--e-3) var(--e-4); }
@@ -565,4 +560,8 @@
   .agenda__filtros { display: grid; grid-template-columns: minmax(0, 1fr); }
   .agenda__filtros .campo__control { width: 100%; min-width: 0; }
   .fila-cita { padding: var(--e-3); }
+  .ficha__bloque { padding: var(--e-4); }
+  .historia { padding-left: var(--e-4); }
+  .nota-hc { padding: var(--e-3) var(--e-4); }
+  .nota-hc::before { left: calc(-1 * var(--e-4) - 7px); }
 }

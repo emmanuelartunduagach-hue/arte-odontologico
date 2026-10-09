@@ -1,6 +1,6 @@
 # Modelo de datos — Arte Odontológico
 
-Versión del 6 de octubre de 2026 · MySQL 8.0 · motor InnoDB · codificación `utf8mb4`.\
+Versión del 9 de octubre de 2026 · MySQL 8.0 · motor InnoDB · codificación `utf8mb4`.\
 Fuente de verdad: `backend/database/schema.sql`. Cambios para bases existentes: `backend/database/migraciones/`.
 
 ## Diagrama entidad-relación
@@ -11,13 +11,13 @@ El diagrama se genera desde `diagrama-er.mmd` (Mermaid).
 
 **Cómo leerlo:**
 - Una cita pertenece a una hora publicada (franja), y cada franja es de un especialista en la sede.
-- La cita puede o no estar ligada a un usuario: quien agenda sin cuenta queda registrado con sus datos dentro de la cita.
-- La historia clínica solo existe para pacientes con usuario.
+- La cita guarda los datos que la persona escribió al pedirla. Cuando la secretaria la acepta, queda ligada al paciente del mismo documento (que se crea si no existía).
+- Cada paciente tiene su historia clínica. Los pacientes no inician sesión: en `usuarios` solo está la secretaria.
 
 ## Tablas
 
 ### `usuarios`
-Secretaria (rol `administrador`) y pacientes con cuenta (rol `paciente`) en una sola tabla. El rol lo fija el servidor; nunca viene del cliente.
+Quienes inician sesión: la secretaria (rol `administrador`). El valor `paciente` del rol solo se conserva por compatibilidad con bases anteriores; esas cuentas no pueden ingresar.
 
 | Columna | Tipo | Notas |
 |---|---|---|
@@ -27,12 +27,23 @@ Secretaria (rol `administrador`) y pacientes con cuenta (rol `paciente`) en una 
 | `correo` | VARCHAR(160) UNIQUE | Usuario de ingreso |
 | `telefono` | VARCHAR(20) | Con indicativo (57…) |
 | `contrasena_hash` | VARCHAR(255) | bcrypt |
-| `rol` | ENUM('paciente','administrador') | |
+| `rol` | ENUM('paciente','administrador') | Por defecto `administrador` |
 | `activo` | BOOLEAN | Cuenta desactivada = no puede ingresar |
-| `debe_cambiar_contrasena` | BOOLEAN | TRUE mientras use la clave temporal |
+| `debe_cambiar_contrasena` | BOOLEAN | TRUE mientras use una clave temporal |
+
+### `pacientes`
+Ficha de cada paciente, sin usuario ni contraseña. Se crea sola al aceptar su primera cita pedida por la web (`origen = 'web'`) o la crea la secretaria si llega al consultorio (`origen = 'consultorio'`).
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `id` | INT UNSIGNED PK | |
+| `nombre_completo` | VARCHAR(120) | |
+| `documento` | VARCHAR(20) UNIQUE | Así se reconoce al paciente cuando vuelve a pedir cita |
+| `telefono` | VARCHAR(20) | Con indicativo (57…) |
+| `correo` | VARCHAR(160) | No es único: una madre puede usar el suyo para sus hijos |
+| `origen` | ENUM('web','consultorio') | |
 | `autorizacion_datos`, `fecha_autorizacion`, `version_politica_datos` | | Prueba de la autorización (Ley 1581 de 2012) |
-| `autorizacion_registrada_por` | FK → usuarios | Secretaria que recogió la autorización |
-| `creado_por` | FK → usuarios | Secretaria que creó la cuenta |
+| `creado_por` | FK → usuarios | Secretaria que lo registró o aceptó su primera cita |
 
 ### `servicios` (especialidades)
 | Columna | Tipo | Notas |
@@ -64,23 +75,24 @@ Una franja está **libre** si está activa, todavía no pasó y no tiene una cit
 ### `citas`
 | Columna | Notas |
 |---|---|
-| `paciente_id` | FK opcional: solo si agendó un paciente con su sesión, o se vinculó al crearle la cuenta |
+| `paciente_id` | FK → pacientes. NULL mientras la cita pedida por la web está pendiente; se llena al aceptarla |
 | `servicio_id`, `franja_id` | Especialidad y hora |
-| `estado` | `confirmada`, `cancelada`, `atendida`, `no_asistio` (y `pendiente`, reservado) |
-| `nombre_paciente`, `documento_paciente`, `telefono_paciente`, `correo_paciente` | Datos de quien agenda; el correo es opcional |
+| `estado` | `pendiente` (pedida por la web), `confirmada`, `rechazada`, `cancelada`, `atendida`, `no_asistio` |
+| `nombre_paciente`, `documento_paciente`, `telefono_paciente`, `correo_paciente` | Datos de quien pide la cita; todos obligatorios (el correo es NULL en citas anteriores al 9 de octubre) |
 | `autorizacion_datos`, `fecha_autorizacion`, `version_politica_datos` | Autorización dada al agendar |
 | `codigo_gestion_hash` | SHA-256 del código del enlace "Gestionar mi cita" (UNIQUE) |
 | `reprogramaciones` | Las que hizo el paciente (máximo 1) |
 | `cancelada_por` | `paciente` o `administrador` |
-| `franja_ocupada` | **Columna generada**: `franja_id` si la cita no está cancelada, NULL si lo está. Su índice único garantiza que una hora tenga una sola cita viva, aun con peticiones simultáneas |
+| `confirmada_en` | Cuándo la aceptó la secretaria (el recordatorio no se envía a citas aceptadas hace muy poco) |
+| `franja_ocupada` | **Columna generada**: `franja_id` si la cita no está cancelada ni rechazada, NULL si lo está. Su índice único garantiza que una hora tenga una sola cita viva, aun con peticiones simultáneas. Una cita pendiente ya aparta la hora |
 
 ### `notificaciones`
-Bitácora de mensajes de WhatsApp: `tipo` (`confirmacion`, `reprogramacion`, `cancelacion`, `recordatorio`), `estado` (`pendiente`, `enviada`, `fallida`), `destino`, `mensaje` (texto enviado o por enviar) y `detalle` (id del proveedor o error).
+Bitácora de mensajes de WhatsApp: `tipo` (`confirmacion`, `reprogramacion`, `cancelacion`, `rechazo`, `recordatorio`), `estado` (`pendiente`, `enviada`, `fallida`), `destino`, `mensaje` (texto enviado o por enviar) y `detalle` (id del proveedor o error).
 
 ### `historia_clinica`
 | Columna | Notas |
 |---|---|
-| `paciente_id` | FK → usuarios (solo pacientes con cuenta) |
+| `paciente_id` | FK → pacientes |
 | `fecha_atencion` | No puede ser futura |
 | `servicio_id`, `especialista_id`, `cita_id` | Opcionales |
 | `procedimiento`, `notas` | |
@@ -93,7 +105,8 @@ No se actualiza ni se borra (Resolución 1995 de 1999). Las llaves foráneas usa
 Une citas, especialidad, especialista y sede para consultas de la agenda.
 
 ## Decisiones de diseño
-- **Datos de quien agenda dentro de la cita** (y no en `usuarios`): permite agendar sin cuenta sin llenar `usuarios` de registros de personas que quizá nunca asistan.
+- **Datos de quien pide la cita dentro de la cita**: permite pedirla sin cuenta. La ficha en `pacientes` solo se crea cuando la secretaria acepta, así no se llena de registros de solicitudes falsas o rechazadas.
+- **Pacientes separados de `usuarios`**: los pacientes no inician sesión, y separar las tablas evita que una ficha se pueda usar para ingresar.
 - **Columna generada para la doble reserva**: la regla queda en el motor y no depende de que el código la recuerde.
 - **Desactivar en vez de borrar** franjas, especialistas y especialidades: conserva la integridad de las citas antiguas.
 - **Normalización:** tercera forma normal. La excepción deliberada son los datos de contacto copiados en la cita, que son la "foto" de lo que la persona escribió al agendar.

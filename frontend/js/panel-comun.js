@@ -1,12 +1,13 @@
 /* Utilidades del panel de la secretaria, compartidas por sus secciones
-   (panel-agenda.js, panel-mensajes.js). Se carga después de comun.js y
+   (panel-agenda.js, panel-disponibilidad.js, panel-pacientes.js, panel-mensajes.js). Se carga después de comun.js y
    modales.js, y antes de las secciones y de panel-secretaria.js.
 
    Todo el texto de la API se inserta con textContent (vía `el()`). */
 
 const NOMBRE_ESTADO = {
-  pendiente: 'Pendiente',
+  pendiente: 'Por confirmar',
   confirmada: 'Confirmada',
+  rechazada: 'Rechazada',
   cancelada: 'Cancelada',
   atendida: 'Atendida',
   no_asistio: 'No asistió',
@@ -184,13 +185,13 @@ function confirmarAccion({ titulo, texto, si, no = 'Volver', accion }) {
 /* Menús "Más" de las filas (<details class="menu-acciones">): se cierran
    al hacer clic fuera, al elegir una opción o con Escape. */
 document.addEventListener('click', (e) => {
-  document.querySelectorAll('details.menu-acciones[open]').forEach((menu) => {
+  document.querySelectorAll('details.menu-acciones[open], details.menu-cuenta[open]').forEach((menu) => {
     if (!menu.contains(e.target) || e.target.closest('.menu-acciones__lista button')) menu.open = false;
   });
 });
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
-  const abierto = document.querySelector('details.menu-acciones[open]');
+  const abierto = document.querySelector('details.menu-acciones[open], details.menu-cuenta[open]');
   if (abierto) {
     abierto.open = false;
     abierto.querySelector('summary').focus();

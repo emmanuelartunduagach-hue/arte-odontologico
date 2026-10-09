@@ -1,6 +1,7 @@
 erDiagram
-    usuarios ||--o{ citas : "tiene (si tiene cuenta)"
-    usuarios ||--o{ historia_clinica : "paciente de"
+    pacientes |o--o{ citas : "tiene (al aceptarla)"
+    pacientes ||--o{ historia_clinica : "paciente de"
+    usuarios |o--o{ pacientes : "registra"
     servicios ||--o{ citas : "especialidad de"
     servicios ||--o{ especialista_especialidad : ""
     especialistas ||--o{ especialista_especialidad : "atiende"
@@ -18,9 +19,17 @@ erDiagram
         varchar correo UK
         varchar telefono
         varchar contrasena_hash
-        enum rol "paciente | administrador"
+        enum rol "administrador"
         bool activo
         bool debe_cambiar_contrasena
+    }
+    pacientes {
+        int id PK
+        varchar nombre_completo
+        varchar documento UK
+        varchar telefono
+        varchar correo
+        enum origen "web | consultorio"
         bool autorizacion_datos
         datetime fecha_autorizacion
         int creado_por FK
@@ -57,17 +66,18 @@ erDiagram
     }
     citas {
         int id PK
-        int paciente_id FK "opcional"
+        int paciente_id FK "al aceptarla"
         int servicio_id FK
         int franja_id FK
-        enum estado "confirmada | cancelada | atendida | no_asistio"
+        enum estado "pendiente | confirmada | rechazada | cancelada | atendida | no_asistio"
         varchar nombre_paciente
         varchar documento_paciente
         varchar telefono_paciente
-        varchar correo_paciente "opcional"
+        varchar correo_paciente
         bool autorizacion_datos
         char codigo_gestion_hash UK
         tinyint reprogramaciones
+        datetime confirmada_en
         int franja_ocupada UK "generada"
     }
     notificaciones {
