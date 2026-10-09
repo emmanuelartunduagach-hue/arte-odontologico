@@ -422,3 +422,32 @@ derechos, área que atiende las solicitudes, procedimiento y vigencia.
 Quedan marcados en ámbar los datos que solo puede dar el consultorio: nombre
 legal y NIT o cédula del responsable, correo para solicitudes, quién las
 atiende, proveedor de alojamiento y fecha de vigencia.
+
+## 27. Las citas de la web se confirman solas (9 de octubre; reemplaza parte de la 24)
+
+El consultorio decidió que la secretaria no apruebe las citas pedidas por la
+web. Al pedirla:
+
+- La cita queda **confirmada**, se crea la ficha del paciente (o se enlaza a
+  la existente) y le llega el WhatsApp con los datos y el enlace.
+- **Enlace a una ficha existente solo si coincide el celular o el correo.**
+  Antes la secretaria revisaba cada solicitud; ahora nadie la revisa, y
+  alguien podría escribir el documento de otra persona. Si no coincide
+  ninguno, la cita no se enlaza (sigue apareciendo en la ficha por
+  documento, para que la secretaria la revise).
+- **El paciente reprograma sin aprobación** y el aviso lleva el mismo
+  enlace, que sigue sirviendo (antes se generaba uno nuevo al aceptar).
+- **"Novedades de la web"** reemplaza a "Solicitudes por confirmar" en
+  Inicio: citas pedidas por la web en las últimas 48 horas y los cambios de
+  hora y cancelaciones del paciente, con cuándo pasaron. Para distinguirlas,
+  `citas.origen` (`web` o `consultorio`, migración 005).
+- Las citas `pendiente` que existan de antes se siguen aceptando o
+  rechazando; aparecen en Inicio como "Citas anteriores sin confirmar" solo
+  si hay alguna. Las rutas de aceptar y rechazar se conservan para ellas.
+- **Hora de Colombia en la base:** cada conexión fija `time_zone = '-05:00'`,
+  porque "Novedades" muestra cuándo se pidió cada cita y en un servidor en
+  UTC se vería corrida 5 horas.
+
+Se pierde el filtro humano de solicitudes falsas o duplicadas; lo compensan
+el límite de una cita activa por documento, el límite de peticiones por IP y
+el campo trampa contra bots.

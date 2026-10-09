@@ -77,7 +77,7 @@ El detalle de cada tabla y el diagrama entidad-relación están en `docs/03-dise
 | `especialista_especialidad` | Qué especialidades atiende cada especialista (muchos a muchos) |
 | `sedes` | Sede de atención (hoy solo Rivera) |
 | `franjas_horarias` | Horas publicadas a mano por la secretaria, por especialista y fecha |
-| `citas` | Citas, con los datos de quien la pidió; pendientes hasta que la secretaria las acepta |
+| `citas` | Citas, con los datos de quien la pidió y su origen (web o consultorio); nacen confirmadas |
 | `notificaciones` | Bitácora de mensajes de WhatsApp |
 | `historia_clinica` | Entradas por paciente; no se modifican ni se borran |
 | `v_agenda` (vista) | Agenda con paciente, especialidad, especialista y sede |
@@ -91,10 +91,10 @@ Todas las rutas cuelgan de `/api` y responden JSON. El contrato completo con eje
 | Salud | `GET /salud` | Público |
 | Catálogo | `GET /especialidades` · `GET /especialidades/:id/especialistas` | Público |
 | Calendario | `GET /especialistas/:id/calendario?mes=` · `GET /especialistas/:id/horas?fecha=` | Público |
-| Pedir cita | `POST /citas` (queda pendiente) | Público |
+| Pedir cita | `POST /citas` (queda confirmada) | Público |
 | Gestionar cita | `GET /citas/gestion/:codigo` · `POST …/reprogramar` · `POST …/cancelar` | Público con código |
 | Sesión | `POST /auth/ingreso` · `POST /auth/cambiar-contrasena` · `GET /auth/perfil` | Público / sesión |
-| Solicitudes y agenda | `GET /admin/citas` · `POST /admin/citas` · `POST /admin/citas/:id/aceptar` · `POST /admin/citas/:id/rechazar` · `PATCH /admin/citas/:id/estado` · `POST /admin/citas/:id/reprogramar` | Rol administrador |
+| Novedades y agenda | `GET /admin/citas` · `GET /admin/citas/novedades` · `POST /admin/citas` · `POST /admin/citas/:id/aceptar` · `POST /admin/citas/:id/rechazar` · `PATCH /admin/citas/:id/estado` · `POST /admin/citas/:id/reprogramar` | Rol administrador |
 | Pacientes | `POST /pacientes` · `GET /pacientes?q=` · `GET /pacientes/:id` | Rol administrador |
 | Historia clínica | `GET/POST /pacientes/:id/historia` · `POST /admin/historia/:id/correccion` | Rol administrador |
 | Especialidades | `GET/POST /admin/especialidades` · `PATCH /admin/especialidades/:id` | Rol administrador |
@@ -118,14 +118,14 @@ Todas las rutas cuelgan de `/api` y responden JSON. El contrato completo con eje
 | Regla | Implementación |
 |---|---|
 | Una hora admite una sola cita viva | Columna generada `citas.franja_ocupada = IF(estado IN ('cancelada','rechazada'), NULL, franja_id)` con índice único. Si dos personas piden la misma hora a la vez, el motor rechaza la segunda (`ER_DUP_ENTRY` → 409). Una pendiente ya aparta la hora; al cancelar o rechazar, se libera sola |
-| La cita pedida por la web queda pendiente | `estado = 'pendiente'` en `citas.controller.crear`; no se envía mensaje hasta aceptarla |
-| Aceptar crea o enlaza la ficha del paciente | `aceptar` → `pacienteDeCita`: busca por documento y, si no existe, crea el paciente con los datos y la autorización de la cita; luego `cita.model.aceptar` y WhatsApp de confirmación con enlace |
-| Rechazar libera la hora | `rechazar`: estado `rechazada` y WhatsApp de tipo `rechazo` |
+| La cita pedida por la web queda confirmada (decisión 27) | `citas.controller.crear`: crea la cita confirmada con `origen = 'web'`, crea o enlaza la ficha (`pacienteParaCitaWeb`: solo enlaza si coincide el celular o el correo) y envía la confirmación con el enlace |
+| Aceptar (citas pendientes antiguas) crea o enlaza la ficha | `aceptar` → `pacienteDeCita`: busca por documento y, si no existe, crea el paciente con los datos y la autorización de la cita; luego `cita.model.aceptar` y WhatsApp de confirmación con enlace |
+| Rechazar (citas pendientes antiguas) libera la hora | `rechazar`: estado `rechazada` y WhatsApp de tipo `rechazo` |
 | La cita que agenda la secretaria queda confirmada | `crearAdmin` (`POST /admin/citas`) con los datos de la ficha |
 | Pedir cita sin cuenta con nombres, apellidos, tipo y número de documento, celular y correo (teléfono fijo opcional) | `validarDatosPersona`; el celular se normaliza con indicativo 57; el pasaporte admite letras. `nombre_completo` y `nombre_paciente` son columnas generadas (nombres + apellidos) |
 | Autorización de datos obligatoria (Ley 1581 de 2012) | `autorizacionDatos === true`; se guarda la fecha y la versión de la política en la cita |
 | Máximo 1 cita pendiente o confirmada por documento | `contarActivasPorDocumento`; configurable con `LIMITE_CITAS_ACTIVAS_POR_DOCUMENTO` |
-| El paciente reprograma una sola vez y la nueva hora vuelve a pendiente | `UPDATE … SET estado = 'pendiente' … WHERE reprogramaciones < 1` (la condición va en la misma sentencia para evitar dobles clics) |
+| El paciente reprograma una sola vez y el cambio queda confirmado | `UPDATE … SET franja_anterior_id = franja_id, … WHERE estado = 'confirmada' AND reprogramaciones < 1`; el aviso lleva el mismo enlace (la condición va en la misma sentencia para evitar dobles clics) |
 | Reprogramar o cancelar hasta 24 h antes | `reglasGestion` compara la fecha y hora de la cita con la hora de Bogotá + 24 h |
 | La secretaria reprograma sin límite y puede cambiar de especialista | `reprogramarAdmin` no toca el contador; valida que el especialista atienda la especialidad |
 | No quitar una hora con cita | `quitarFranja` responde 409 si hay cita viva; si no, la desactiva (no la borra) |
@@ -183,6 +183,7 @@ Detalle en `docs/06-pruebas/pruebas.md`.
 - **Base de datos:** todo cambio de esquema va en `schema.sql` (instalación nueva) **y** en una migración numerada (bases existentes). Se verifica que ambos caminos produzcan el mismo esquema.
 - **Estilos:** solo valores de `tokens.css`; sin colores sueltos.
 - **Código:** nombres en español, comentarios que explican el porqué, SQL con parámetros.
+- **Hora de las conexiones:** `config/db.js` pone `SET time_zone = '-05:00'` en cada conexión, para que `NOW()` y los `DEFAULT CURRENT_TIMESTAMP` guarden la hora de Colombia aunque el servidor esté en UTC.
 - **Modo oscuro del panel:** `js/tema.js` se carga en el `<head>` de las páginas con sesión y pone `data-tema="oscuro"` en `<html>`. Los colores oscuros son las mismas variables de `css/tokens.css` redefinidas bajo `:root[data-tema="oscuro"]`. Para el morado usado como texto se usa `--acento-texto` y para el texto sobre botones morados, `--sobre-marca`; no usar `--violeta-600` ni `--papel` como color de texto.
 
 ## 12. Cómo extender el sistema

@@ -32,7 +32,7 @@ Quienes inician sesión: la secretaria (rol `administrador`). El valor `paciente
 | `debe_cambiar_contrasena` | BOOLEAN | TRUE mientras use una clave temporal |
 
 ### `pacientes`
-Ficha de cada paciente, sin usuario ni contraseña. Se crea sola al aceptar su primera cita pedida por la web (`origen = 'web'`) o la crea la secretaria si llega al consultorio (`origen = 'consultorio'`).
+Ficha de cada paciente, sin usuario ni contraseña. Se crea sola cuando pide su primera cita por la web (`origen = 'web'`) o la crea la secretaria si llega al consultorio (`origen = 'consultorio'`).
 
 | Columna | Tipo | Notas |
 |---|---|---|
@@ -79,10 +79,11 @@ Una franja está **libre** si está activa, todavía no pasó y no tiene una cit
 ### `citas`
 | Columna | Notas |
 |---|---|
-| `paciente_id` | FK → pacientes. NULL mientras la cita pedida por la web está pendiente; se llena al aceptarla |
+| `paciente_id` | FK → pacientes. Se llena al pedir la cita (ficha nueva o existente con el mismo celular o correo). Queda NULL si el documento ya tenía ficha pero no coincide ni el celular ni el correo |
 | `servicio_id`, `franja_id` | Especialidad y hora |
-| `franja_anterior_id` | FK → franjas_horarias (NULL). La hora que tenía antes de que el paciente la reprogramara desde su enlace; el panel la muestra en la solicitud como "Cambio de hora" |
-| `estado` | `pendiente` (pedida por la web), `confirmada`, `rechazada`, `cancelada`, `atendida`, `no_asistio` |
+| `franja_anterior_id` | FK → franjas_horarias (NULL). La hora que tenía antes de que el paciente la reprogramara desde su enlace; el panel la muestra en Novedades de la web y en la agenda; antes la mostraba en la solicitud como "Cambio de hora" |
+| `estado` | `confirmada` (por defecto: toda cita nace confirmada), `cancelada`, `atendida`, `no_asistio`. `pendiente` y `rechazada` quedan de antes de la migración 005, cuando la secretaria aprobaba las citas de la web |
+| `origen` | `web` (la pidió el paciente) o `consultorio` (la agendó la secretaria). "Novedades de la web" usa las de origen `web` |
 | `nombres_paciente`, `apellidos_paciente`, `tipo_documento_paciente`, `documento_paciente`, `telefono_paciente`, `correo_paciente` | Datos de quien pide la cita; todos obligatorios (el correo es NULL en citas anteriores al 9 de octubre) |
 | `telefono_fijo_paciente` | Opcional |
 | `nombre_paciente` | **Columna generada**: nombres + apellidos (la usan la agenda, los mensajes y la vista `v_agenda`) |
@@ -112,7 +113,7 @@ No se actualiza ni se borra (Resolución 1995 de 1999). Las llaves foráneas usa
 Une citas, especialidad, especialista y sede para consultas de la agenda.
 
 ## Decisiones de diseño
-- **Datos de quien pide la cita dentro de la cita**: permite pedirla sin cuenta. La ficha en `pacientes` solo se crea cuando la secretaria acepta, así no se llena de registros de solicitudes falsas o rechazadas.
+- **Datos de quien pide la cita dentro de la cita**: permite pedirla sin cuenta. La ficha en `pacientes` se crea al pedir la primera cita; los datos de la cita se conservan tal como se escribieron aunque la ficha cambie, así no se llena de registros de solicitudes falsas o rechazadas.
 - **Pacientes separados de `usuarios`**: los pacientes no inician sesión, y separar las tablas evita que una ficha se pueda usar para ingresar.
 - **Columna generada para la doble reserva**: la regla queda en el motor y no depende de que el código la recuerde.
 - **Desactivar en vez de borrar** franjas, especialistas y especialidades: conserva la integridad de las citas antiguas.

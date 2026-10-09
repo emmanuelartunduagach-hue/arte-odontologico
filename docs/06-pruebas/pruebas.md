@@ -258,6 +258,13 @@ Hechas contra la API real con MySQL 8.0.46 (base nueva con `schema.sql` y base m
 | 131 | el menú del panel ya no tiene Mensajes (4 secciones) e Inicio muestra 2 datos | Correcta |
 | 132 | un WhatsApp fallido aparece en Inicio como "WhatsApp sin enviar"; "Ya lo envié" lo quita | Correcta |
 | 133 | modo demostración: al aceptar, "Se avisó al paciente por WhatsApp" | Correcta |
+| 134 | migración 005 sobre la base de la 004: estructura igual a una base nueva | Correcta |
+| 135 | pedir cita por la web: queda confirmada, se crea la ficha y sale el WhatsApp con el enlace | Correcta |
+| 136 | documento con ficha pero otro celular y otro correo: la cita no se enlaza a esa ficha | Correcta |
+| 137 | el paciente reprograma: queda confirmada, llega el aviso y el mismo enlace sigue sirviendo | Correcta |
+| 138 | Inicio: "Novedades de la web" con cita nueva, cambio de hora (con la hora anterior) y cancelación | Correcta |
+| 139 | una cita pendiente antigua aparece solo en "Citas anteriores sin confirmar" | Correcta |
+| 140 | `creado_en` se guarda en hora de Colombia aunque MySQL esté en UTC | Correcta |
 
 ## 4. Guías de prueba manual
 
