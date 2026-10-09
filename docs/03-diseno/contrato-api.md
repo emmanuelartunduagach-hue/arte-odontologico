@@ -22,7 +22,7 @@ Base: `CONFIG.API` (en local `http://localhost:3000/api`). Todo es JSON.
 ## Flujo de una cita
 
 1. La persona pide la cita en la web y queda **confirmada** de una vez (decisión 27): se crea su ficha de paciente, o se enlaza si ya existía, y le llega el WhatsApp con los datos y el enlace para reprogramar o cancelar.
-2. La secretaria **no aprueba** nada: ve las citas nuevas, los cambios de hora y las cancelaciones del paciente en "Novedades de la web" (Inicio).
+2. La secretaria **no aprueba** nada: ve las citas nuevas, los cambios de hora y las cancelaciones del paciente en "Novedades de la web" (Inicio). La fila de la agenda solo muestra el nombre; el documento y el teléfono se ven en la ficha, aunque la API los sigue devolviendo (decisión 28).
 3. Unas 24 horas antes le llega el recordatorio.
 
 Las citas `pendiente` que quedaron de antes de este cambio se siguen aceptando o rechazando desde el panel.

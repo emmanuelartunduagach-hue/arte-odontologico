@@ -451,3 +451,17 @@ web. Al pedirla:
 Se pierde el filtro humano de solicitudes falsas o duplicadas; lo compensan
 el límite de una cita activa por documento, el límite de peticiones por IP y
 el campo trampa contra bots.
+
+## 28. Filas del panel más simples (9 de octubre)
+
+Como las citas de la web ya llegan confirmadas, la secretaria no necesita
+decidir nada al verlas, y se quitó lo que sobraba en la agenda y en Inicio:
+
+- **La fila de cada cita ya no muestra documento ni teléfono.** Siguen en la
+  ficha del paciente y la búsqueda por nombre, documento o celular funciona
+  igual. Es un cambio solo de la pantalla: la API sigue devolviendo esos datos.
+- **En "Novedades de la web" la cita nueva ya no lleva la etiqueta "Pedida
+  por la web" ni la hora en que se pidió.** Se conservan las de "El paciente
+  cambió la hora" y "El paciente la canceló", con cuándo pasó, porque ahí sí
+  hay algo que la secretaria debe saber.
+- El texto del modo demostración dejó de decir que la cita queda pendiente.
