@@ -485,7 +485,6 @@ async function agendarParaPaciente(paciente) {
       panel.aviso = avisoAccion(`Cita de ${paciente.nombreCompleto} agendada para el ${fechaLarga(r.cita.fecha)} a las ${horaLarga(r.cita.hora)}`, r.notificacion);
       dialogo.cerrar();
       panel.refrescar();
-      actualizarContadorMensajes();
     } catch (err) {
       paso.enviando = false;
       paso.hora = null;

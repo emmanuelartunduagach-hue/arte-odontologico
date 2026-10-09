@@ -243,7 +243,6 @@ async function aceptarCita(cita) {
     panel.aviso = el('p', { class: 'alerta', role: 'alert', texto: err.message });
   }
   panel.refrescar();
-  actualizarContadorMensajes();
 }
 
 function rechazarCita(cita) {
@@ -258,7 +257,6 @@ function rechazarCita(cita) {
       const r = await api(`/admin/citas/${cita.id}/rechazar`, { metodo: 'POST' });
       panel.aviso = avisoAccion(`Solicitud de ${cita.paciente} rechazada.`, r.notificacion);
       panel.refrescar();
-      actualizarContadorMensajes();
     },
   });
 }
@@ -273,7 +271,6 @@ function cancelarCita(cita) {
       const r = await api(`/admin/citas/${cita.id}/estado`, { metodo: 'PATCH', cuerpo: { estado: 'cancelada' } });
       panel.aviso = avisoAccion(`Cita de ${cita.paciente} cancelada.`, r.notificacion);
       panel.refrescar();
-      actualizarContadorMensajes();
     },
   });
 }
@@ -341,7 +338,6 @@ async function reprogramarCita(cita) {
       panel.aviso = avisoAccion(`Cita de ${cita.paciente} movida al ${fechaLarga(r.cita.fecha)} a las ${horaLarga(r.cita.hora)} con ${r.cita.especialista}.`, r.notificacion);
       dialogo.cerrar();
       panel.refrescar();
-      actualizarContadorMensajes();
     } catch (err) {
       estado.enviando = false;
       // La hora pudo tomarse mientras tanto: se vuelven a pedir las del día.

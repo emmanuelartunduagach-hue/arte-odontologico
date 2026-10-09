@@ -142,17 +142,6 @@
   width: 20px; height: 20px; flex-shrink: 0;
   fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
 }
-.panel-nav__contador {
-  margin-left: auto;
-  min-width: 22px;
-  padding: 1px 7px;
-  border-radius: var(--radio-pill);
-  background: var(--rosa-700);
-  color: var(--sobre-marca);
-  font-size: var(--txt-xs);
-  text-align: center;
-}
-.panel-nav__contador[hidden] { display: none; }
 
 .panel-contenido {
   padding: var(--e-6);
@@ -193,10 +182,10 @@
   gap: var(--e-3);
 }
 
-/* Inicio: tres datos grandes */
+/* Inicio: dos datos grandes */
 .datos-panel {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--e-4);
   margin-bottom: var(--e-5);
 }
@@ -538,7 +527,7 @@ a.fila-cita__nombre:hover { color: var(--acento-texto); }
     top: auto;
     z-index: 40;
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0;
     padding: var(--e-1) var(--e-1) calc(var(--e-1) + env(safe-area-inset-bottom));
     background: var(--papel);
@@ -556,7 +545,6 @@ a.fila-cita__nombre:hover { color: var(--acento-texto); }
   }
   .panel-nav a[aria-current="page"] { background: var(--violeta-100); color: var(--acento-texto); }
   .panel-nav svg { width: 22px; height: 22px; }
-  .panel-nav__contador { position: absolute; top: 2px; left: 55%; margin: 0; min-width: 18px; padding: 0 5px; }
 
   .panel-contenido { padding: var(--e-4); }
   .datos-panel { grid-template-columns: minmax(0, 1fr); gap: var(--e-2); }

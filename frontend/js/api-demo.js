@@ -240,10 +240,11 @@
     rechazo: 'no se pudo confirmar; pide otra hora en la página',
   };
   const NOTIFICACIONES = [];
+  // Como en producción (WHATSAPP_MODO=api), el mensaje se da por enviado.
   function notificacionDemo(cita, tipo) {
     const mensaje = `Hola ${cita.paciente.split(' ')[0]}, tu cita en Arte Odontológico del ${cita.fecha} a las ${cita.hora} con ${cita.especialista} ${TEXTOS_TIPO[tipo]}.`;
     const n = {
-      id: NOTIFICACIONES.length + 1, citaId: cita.id, tipo, estado: 'pendiente', destino: cita.telefono, mensaje, detalle: null,
+      id: NOTIFICACIONES.length + 1, citaId: cita.id, tipo, estado: 'enviada', destino: cita.telefono, mensaje, detalle: null,
       creadoEn: ahoraTexto(), paciente: cita.paciente,
       enlaceWhatsApp: `https://wa.me/${cita.telefono}?text=${encodeURIComponent(mensaje)}`,
     };
