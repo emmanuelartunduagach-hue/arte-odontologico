@@ -48,11 +48,11 @@ Reglas que hay que explicar:
 
 ## 4. Para la secretaria (administración)
 - **4.1 Ingresar al panel:** el candado junto a "Agendar cita", arriba en la página principal (también está "Acceso del consultorio" en el pie). Menú de la cuenta (arriba a la derecha): modo oscuro o claro, cambiar contraseña y cerrar sesión. En el celular, el menú de secciones está abajo.
-- **4.2 Inicio:** citas por atender hoy, siguiente paciente, agenda del día y **Novedades de la web** (últimas 48 horas): citas pedidas por la web, que ya llegan confirmadas, y cambios de hora o cancelaciones que hizo el paciente, con la hora anterior. Si quedan citas antiguas sin confirmar, aparecen arriba con Aceptar y Rechazar.
+- **4.2 Inicio:** citas por atender hoy, siguiente paciente, agenda del día y **Novedades de la web** (últimas 48 horas): citas pedidas por la web, que ya llegan confirmadas (sin etiqueta ni hora de solicitud), y cambios de hora o cancelaciones que hizo el paciente, con la hora anterior. Si quedan citas antiguas sin confirmar, aparecen arriba con Aceptar y Rechazar.
 - **4.3 Especialidades:** crear, editar, activar o desactivar.
 - **4.4 Especialistas:** registrar y asignar especialidades.
 - **4.5 Horarios de atención:** cuadrícula de horas, copiar a varios días, quitar horas, y qué pasa si una hora tiene cita.
-- **4.6 Agenda del día:** filtros por especialista y estado, búsqueda, marcar atendida o no asistió, reprogramar, cancelar.
+- **4.6 Agenda del día:** cada fila muestra hora, nombre, especialista y estado (el documento y el teléfono se ven en la ficha del paciente). Filtros por especialista y estado, búsqueda por nombre, documento o celular, marcar atendida o no asistió, reprogramar, cancelar.
 - **4.7 Mensajes de WhatsApp:** se envían solos (confirmación, cambios, cancelación y recordatorio 24 horas antes); no hay que hacer nada. Si alguno no se pudo enviar, aparece en Inicio como "WhatsApp sin enviar", con "Abrir en WhatsApp" y "Ya lo envié" para enviarlo a mano.
 - **4.8 Registrar a un paciente que llegó al consultorio:** nombres, apellidos, tipo y número de documento, correo, celular, teléfono fijo (opcional), motivo de consulta (opcional), autorización de datos y qué pasa si el documento ya existe ("Abrir su ficha").
 - **4.9 Ficha del paciente:** datos, citas, agendar una cita desde la ficha, historia clínica (agregar una entrada, "Agregar a la historia" desde una cita atendida y corregir sin borrar).

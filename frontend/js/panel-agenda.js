@@ -42,7 +42,7 @@ function accionesDe(cita) {
     : [['Reprogramar', () => reprogramarCita(cita)], ['Cancelar cita', () => cancelarCita(cita)]];
 }
 
-const TEXTO_NOVEDAD = { nueva: 'Pedida por la web', cambio: 'El paciente cambió la hora', cancelada: 'El paciente la canceló' };
+const TEXTO_NOVEDAD = { cambio: 'El paciente cambió la hora', cancelada: 'El paciente la canceló' };
 
 /** '2026-10-09 15:05:00' → 'hoy, 3:05 p. m.' / 'ayer, …' / '7 de octubre, …' */
 function cuandoPaso(fechaHora) {
@@ -68,22 +68,23 @@ function filaCita(cita, { conFecha = false, conNovedad = false } = {}) {
       conFecha && el('span', { class: 'fila-cita__fecha', texto: capitalizar(fechaLarga(cita.fecha)) }),
       el('span', { class: 'fila-cita__reloj', texto: `${h % 12 || 12}:${String(m).padStart(2, '0')}` }),
       el('span', { class: 'fila-cita__meridiano', texto: h >= 12 ? 'p. m.' : 'a. m.' })),
+    // Solo el nombre: el documento y el teléfono ya no se muestran en la fila
+    // (están en la ficha) y la búsqueda por documento o celular sigue funcionando.
     el('div', { class: 'fila-cita__paciente' },
       cita.pacienteId
         ? el('a', { class: 'fila-cita__nombre', href: `#pacientes/${cita.pacienteId}`, title: 'Ver ficha del paciente', texto: cita.paciente })
-        : el('p', { class: 'fila-cita__nombre', texto: cita.paciente }),
-      el('p', { class: 'fila-cita__detalle' },
-        el('span', { texto: `Doc. ${cita.documento}` }),
-        el('span', { texto: `Tel. ${telefonoLegible(cita.telefono)}` }))),
+        : el('p', { class: 'fila-cita__nombre', texto: cita.paciente })),
     el('div', { class: 'fila-cita__especialista' },
       el('p', { texto: cita.especialista }),
       el('p', { class: 'fila-cita__detalle', texto: cita.especialidad })),
     el('div', { class: 'fila-cita__estado' },
       chipEstado(cita.estado),
-      // Novedades de la web (Inicio): qué pasó y cuándo.
-      conNovedad && cita.novedad && el('span', { class: `fila-cita__novedad fila-cita__novedad--${cita.novedad}` },
+      // Novedades de la web (Inicio): cambios y cancelaciones del paciente.
+      // La cita nueva no lleva etiqueta ("Pedida por la web" ni la hora en
+      // que se pidió): ya queda confirmada sola y no hay nada que decidir.
+      conNovedad && cita.novedad && cita.novedad !== 'nueva' && el('span', { class: `fila-cita__novedad fila-cita__novedad--${cita.novedad}` },
         el('strong', { texto: TEXTO_NOVEDAD[cita.novedad] }),
-        ` · ${cuandoPaso(cita.novedad === 'nueva' ? cita.creadoEn : cita.actualizadoEn)}`),
+        ` · ${cuandoPaso(cita.actualizadoEn)}`),
       // El paciente reprogramó desde su enlace: se muestra qué hora tenía.
       cambioDeHora && el('span', { class: 'fila-cita__cambio' },
         el('strong', { texto: conNovedad ? 'Antes' : 'Cambió la hora' }),

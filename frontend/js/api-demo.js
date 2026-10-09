@@ -544,8 +544,8 @@
       return horasDe(fecha).map((hora) => ({ franjaId: `${partes[1]}|${fecha}|${hora}`, hora }));
     }
 
-    // Pedir cita desde la web: queda pendiente y aparece en el panel de
-    // la secretaria (en esta misma pestaña del navegador) para aceptarla o rechazarla.
+    // Pedir cita desde la web: queda confirmada de una vez y aparece en el
+    // panel de la secretaria (en esta misma pestaña del navegador).
     if (metodo === 'POST' && url.pathname === '/citas') {
       if (cuerpo.documento === '999999999') {
         throw new ErrorApi('Ya tienes una cita confirmada. Para pedir otra, primero asiste a esa cita o cancélala desde el enlace que te llegó por WhatsApp.', 409);
