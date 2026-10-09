@@ -211,8 +211,11 @@ CREATE TABLE citas (
   servicio_id         INT UNSIGNED NOT NULL,   -- especialidad
   franja_id           INT UNSIGNED NOT NULL,
   franja_anterior_id  INT UNSIGNED NULL,       -- hora que tenía antes de que el paciente la reprogramara
+  -- 'pendiente' y 'rechazada' quedan de cuando la secretaria aprobaba las
+  -- citas de la web (hasta la migración 005); hoy nacen confirmadas.
   estado              ENUM('pendiente','confirmada','rechazada','cancelada','atendida','no_asistio')
-                        NOT NULL DEFAULT 'pendiente',
+                        NOT NULL DEFAULT 'confirmada',
+  origen              ENUM('web','consultorio') NOT NULL DEFAULT 'web',  -- quién la agendó
   notas               VARCHAR(300) NULL,
 
   -- Datos de quien pide la cita

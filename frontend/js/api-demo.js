@@ -179,8 +179,8 @@
       [0, '09:30', 'Carlos Gómez', 'confirmada', 32], [0, '11:00', 'Luisa Rojas', 'cancelada', 31],
       [0, '17:30', 'Pedro Díaz', 'confirmada', 31], [1, '08:30', 'Sofía Ramírez', 'confirmada', 32],
       [3, '15:00', 'Jorge Castro', 'confirmada', 31], [6, '09:00', 'Marta Ruiz', 'confirmada', 32],
-      // Solicitudes de la web por aceptar (aún sin ficha de paciente).
-      [1, '10:30', 'Valentina Torres', 'pendiente', 31], [4, '14:00', 'Andrés Mejía', 'pendiente', 32],
+      // Pedidas por la web en las últimas horas (salen en "Novedades de la web").
+      [1, '10:30', 'Valentina Torres', 'confirmada', 31], [4, '14:00', 'Andrés Mejía', 'confirmada', 32],
     ].map(([dias, hora, paciente, estado, especialistaId], i) => {
       const ficha = PACIENTES.find((x) => x.nombreCompleto === paciente);
       return {
@@ -191,11 +191,17 @@
         correo: ficha ? ficha.correo : `${paciente.split(' ')[0].toLowerCase()}@ejemplo.co`,
         pacienteId: ficha ? ficha.id : null, canceladaPor: estado === 'cancelada' ? 'paciente' : null,
         tipoDocumento: 'CC', telefonoFijo: null, fechaAnterior: null, horaAnterior: null,
+        origen: ficha?.origen === 'consultorio' ? 'consultorio' : 'web',
+        creadoEn: `${sumarDias(hoy, -10)} 09:00:00`, actualizadoEn: `${sumarDias(hoy, -10)} 09:00:00`,
       };
     });
-    // Andrés Mejía cambió la hora desde su enlace: se ve "Cambio de hora".
+    // Novedades de la web: Valentina pidió hoy, Andrés cambió la hora desde
+    // su enlace y Luisa canceló.
+    Object.assign(AGENDA.find((c) => c.paciente === 'Valentina Torres'),
+      { creadoEn: `${hoy} 08:15:00`, actualizadoEn: `${hoy} 08:15:00` });
     Object.assign(AGENDA.find((c) => c.paciente === 'Andrés Mejía'),
-      { reprogramaciones: 1, fechaAnterior: sumarDias(hoy, 1), horaAnterior: '09:00' });
+      { reprogramaciones: 1, fechaAnterior: sumarDias(hoy, 1), horaAnterior: '09:00', actualizadoEn: `${sumarDias(hoy, -1)} 18:40:00` });
+    Object.assign(AGENDA.find((c) => c.paciente === 'Luisa Rojas'), { actualizadoEn: `${hoy} 07:30:00` });
     try {
       AGENDA.push(...JSON.parse(sessionStorage.getItem('arte-demo-solicitudes') || '[]'));
     } catch { /* nada guardado */ }
@@ -287,14 +293,16 @@
       fecha, hora, sede: 'Rivera', direccion: 'Carrera 7 No. 3-61, Rivera', reprogramaciones: 0,
       nombres: persona.nombres, apellidos: persona.apellidos, tipoDocumento: persona.tipoDocumento || 'CC',
       documento: persona.documento, telefono: persona.telefono, telefonoFijo: persona.telefonoFijo || null, correo: persona.correo,
-      pacienteId: estado === 'confirmada' ? persona.id : null, canceladaPor: null, fechaAnterior: null, horaAnterior: null,
+      pacienteId: persona.id || null, canceladaPor: null, fechaAnterior: null, horaAnterior: null,
+      origen: cuerpo.pacienteId ? 'consultorio' : 'web', creadoEn: ahoraTexto(), actualizadoEn: ahoraTexto(),
     };
     agendaDemo().push(cita);
-    if (estado === 'pendiente') {
+    if (cita.origen === 'web') {
       // Se recuerda en la pestaña para verla al pasar al panel de la secretaria.
       try {
         const guardadas = JSON.parse(sessionStorage.getItem('arte-demo-solicitudes') || '[]');
-        sessionStorage.setItem('arte-demo-solicitudes', JSON.stringify([...guardadas, cita]));
+        // Sin pacienteId: la ficha creada aquí no existe en la otra página.
+        sessionStorage.setItem('arte-demo-solicitudes', JSON.stringify([...guardadas, { ...cita, pacienteId: null }]));
       } catch { /* sin almacenamiento: solo dura en esta página */ }
     }
     return cita;
@@ -329,6 +337,20 @@
     if (metodo === 'GET' && url.pathname === '/auth/perfil') {
       exigir();
       return { ...PERFILES[usuario.id] };
+    }
+
+    // Novedades de la web (Inicio): pedidas, cambiadas o canceladas por el paciente.
+    if (metodo === 'GET' && url.pathname === '/admin/citas/novedades') {
+      exigir('administrador');
+      const limite = new Date(Date.now() - 5 * 3600 * 1000 - Number(url.searchParams.get('horas') || 48) * 3600 * 1000)
+        .toISOString().slice(0, 19).replace('T', ' ');
+      return agendaDemo()
+        .filter((c) => c.origen === 'web' && (c.creadoEn >= limite
+          || (c.reprogramaciones > 0 && c.actualizadoEn >= limite)
+          || (c.canceladaPor === 'paciente' && c.actualizadoEn >= limite)))
+        .map((c) => ({ ...c, novedad: c.estado === 'cancelada' && c.canceladaPor === 'paciente' ? 'cancelada'
+          : c.reprogramaciones > 0 && c.fechaAnterior ? 'cambio' : 'nueva' }))
+        .sort((a, b) => b.actualizadoEn.localeCompare(a.actualizadoEn));
     }
 
     if (metodo === 'GET' && url.pathname === '/admin/citas') {
@@ -526,12 +548,21 @@
     // la secretaria (en esta misma pestaña del navegador) para aceptarla o rechazarla.
     if (metodo === 'POST' && url.pathname === '/citas') {
       if (cuerpo.documento === '999999999') {
-        throw new ErrorApi('Ya tienes una solicitud de cita en revisión. Te avisaremos por WhatsApp cuando el consultorio la confirme; si necesitas cambiarla antes, escríbenos.', 409);
+        throw new ErrorApi('Ya tienes una cita confirmada. Para pedir otra, primero asiste a esa cita o cancélala desde el enlace que te llegó por WhatsApp.', 409);
       }
       const errores = erroresPersona(cuerpo);
       if (Object.keys(errores).length) throw new ErrorApi('Revisa los datos del formulario.', 400, errores);
-      const cita = nuevaCita(cuerpo, personaDe(cuerpo), 'pendiente');
-      return { mensaje: 'Recibimos tu solicitud. Te confirmaremos por WhatsApp.', cita: { ...cita } };
+      // Queda confirmada y con ficha, como en el servidor (decisión 27).
+      const persona = personaDe(cuerpo);
+      let paciente = PACIENTES.find((x) => x.documento === persona.documento);
+      if (!paciente) {
+        paciente = { id: PACIENTES.length + 1, ...persona, origen: 'web', motivoConsulta: null,
+          fechaAutorizacion: ahoraTexto(), creadoEn: ahoraTexto() };
+        PACIENTES.push(paciente);
+      }
+      const cita = nuevaCita(cuerpo, { ...persona, id: paciente.id }, 'confirmada');
+      notificacionDemo(cita, 'confirmacion');
+      return { mensaje: 'Tu cita quedó confirmada. Te enviamos los datos por WhatsApp.', cita: { ...cita } };
     }
 
     // ---- Gestionar cita (gestionar-cita.html?codigo=…) ----
@@ -549,8 +580,8 @@
         if (!reglasDemo(cita).puedeReprogramar) throw new ErrorApi('Esta cita ya no se puede reprogramar.', 409);
         const [, fecha, hora] = String(cuerpo.franjaId).split('|');
         if (hora === '10:00' ) throw new ErrorApi('Esa hora acaba de ser tomada. Elige otra.', 409);
-        Object.assign(cita, { fechaAnterior: cita.fecha, horaAnterior: cita.hora, fecha, hora, estado: 'pendiente', reprogramaciones: cita.reprogramaciones + 1 });
-        return { mensaje: 'Recibimos tu cambio. Te confirmaremos la nueva hora por WhatsApp.', cita: { ...cita }, ...reglasDemo(cita) };
+        Object.assign(cita, { fechaAnterior: cita.fecha, horaAnterior: cita.hora, fecha, hora, reprogramaciones: cita.reprogramaciones + 1 });
+        return { mensaje: 'Tu cita quedó reprogramada. Te enviamos la nueva hora por WhatsApp.', cita: { ...cita }, ...reglasDemo(cita) };
       }
 
       if (metodo === 'POST' && partes[3] === 'cancelar') {

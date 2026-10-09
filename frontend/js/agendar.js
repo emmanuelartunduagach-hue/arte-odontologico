@@ -2,9 +2,9 @@
 
    Flujo (contrato API v2):
      tarjeta de especialidad → especialista → día (calendario) →
-     hora → datos del paciente → solicitud recibida.
-   La cita queda pendiente hasta que el consultorio la acepta; entonces
-   llega el WhatsApp con los datos y el enlace para gestionarla.
+     hora → datos del paciente → cita confirmada.
+   La cita queda confirmada de una vez y al celular escrito le llega el
+   WhatsApp con los datos y el enlace para reprogramarla o cancelarla.
 
    Las utilidades (el, calendario, fechas…) están en js/comun.js. */
 
@@ -174,7 +174,7 @@ function pintar() {
 }
 
 function subtitulo() {
-  if (estado.paso === 'listo') return 'Tu solicitud quedó registrada.';
+  if (estado.paso === 'listo') return 'Tu cita quedó confirmada.';
   if (estado.especialidad) return estado.especialidad.nombre;
   return 'Agenda tu cita en pocos pasos.';
 }
@@ -390,22 +390,22 @@ async function enviar(e) {
 /* ---------- Confirmación ---------- */
 
 function pintarListo() {
-  // La cita queda pendiente: el WhatsApp con los datos y el enlace para
-  // reprogramar o cancelar llega cuando el consultorio la acepta, al
-  // número que se escribió (así solo lo tiene el dueño de ese teléfono).
+  // La cita queda confirmada. El enlace para reprogramar o cancelar llega
+  // por WhatsApp al número que se escribió (así solo lo tiene el dueño de
+  // ese teléfono); no se muestra aquí.
   const { cita } = estado.cita;
 
   return [
     el('div', { class: 'exito' },
       icono('<circle cx="12" cy="12" r="10"/><path d="m8 12.5 2.8 2.8L16 9.5"/>'),
-      titulo('¡Recibimos tu solicitud!')),
+      titulo('¡Tu cita quedó confirmada!')),
     el('dl', { class: 'resumen' },
       cita.paciente && dato('Paciente', cita.paciente),
       cita.especialidad && dato('Especialidad', cita.especialidad),
       cita.especialista && dato('Especialista', cita.especialista),
       dato('Fecha y hora', `${fechaLarga(cita.fecha)}, ${horaLarga(cita.hora)}`),
       cita.direccion && dato('Dónde', cita.direccion)),
-    el('p', { class: 'agendar__nota', texto: 'Te apartamos esta hora. El consultorio revisará tu solicitud y te confirmará por WhatsApp, con un enlace para reprogramar o cancelar tu cita.' }),
+    el('p', { class: 'agendar__nota', texto: 'Te enviamos por WhatsApp los datos de tu cita y un enlace para reprogramarla o cancelarla. Guarda ese mensaje. Unas 24 horas antes te llegará un recordatorio.' }),
     el('button', { type: 'button', class: 'btn btn--primario btn--bloque', onclick: () => cerrarModal(document.getElementById('modal-agendar')), texto: 'Listo' }),
   ];
 }

@@ -70,6 +70,7 @@ Si la base se creó con una versión anterior del proyecto, ejecutar **una sola 
 | `002_especialistas_y_citas_sin_usuario.sql` | Especialistas, franjas por especialista, citas sin cuenta, historia clínica. **Borra franjas y citas existentes** (pensado para datos de prueba) |
 | `003_pacientes_sin_login_y_aprobacion.sql` | Tabla `pacientes` (sin login), citas pendientes y rechazadas, `confirmada_en` y mensaje de rechazo. Conserva los datos: copia los pacientes que había en `usuarios` |
 | `004_datos_paciente_y_hora_anterior.sql` | Nombres y apellidos por separado, tipo de documento, teléfono fijo y motivo de consulta; hora anterior de las citas que el paciente reprograma. Conserva los datos: parte el nombre que ya existía y deja el tipo de documento en CC |
+| `005_citas_confirmadas_al_pedir.sql` | Las citas de la web nacen confirmadas: columna `origen` (web o consultorio) y estado por defecto `confirmada`. Las pendientes que existan se mantienen para aceptarlas o rechazarlas |
 
 Antes de una migración, saca un respaldo. En PowerShell de Windows (ajusta la versión de la carpeta si no es 8.0):
 
@@ -198,7 +199,7 @@ Para el modo `api`:
 1. Crear una app con el caso de uso WhatsApp en <https://developers.facebook.com>.
 2. Copiar el **Phone number ID** a `WHATSAPP_PHONE_ID` y un token permanente de usuario del sistema a `WHATSAPP_TOKEN`.
 3. Crear y aprobar en el administrador de WhatsApp las plantillas de categoría "utilidad". Sus parámetros van en este orden: `{{1}}` nombre, `{{2}}` fecha, `{{3}}` hora, `{{4}}` especialista, `{{5}}` dirección y `{{6}}` enlace.
-4. Escribir sus nombres en `WHATSAPP_PLANTILLA_CONFIRMACION`, `_REPROGRAMACION`, `_CANCELACION`, `_RECHAZO` y `_RECORDATORIO`.
+4. Escribir sus nombres en `WHATSAPP_PLANTILLA_CONFIRMACION`, `_REPROGRAMACION`, `_CANCELACION`, `_RECHAZO` y `_RECORDATORIO` (la de rechazo solo se usa con citas pendientes de antes de la migración 005).
 
 Si el envío falla, la cita igual queda registrada y el mensaje aparece como "fallida" en el panel para enviarlo a mano.
 

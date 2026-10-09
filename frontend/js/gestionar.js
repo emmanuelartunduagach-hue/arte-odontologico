@@ -7,8 +7,8 @@
 
    Los botones se muestran según puedeReprogramar / puedeCancelar y, si
    alguno es false, se explica el `motivo`. Al reprogramar, la nueva hora
-   queda pendiente hasta que el consultorio la acepte. Las utilidades están en
-   js/comun.js. */
+   queda confirmada de una vez y llega el aviso por WhatsApp; este mismo
+   enlace sigue sirviendo. Las utilidades están en js/comun.js. */
 
 const codigo = new URLSearchParams(location.search).get('codigo') || '';
 const cuerpo = document.getElementById('gestion-cuerpo');
@@ -49,9 +49,9 @@ function pintarError() {
   return [
     titulo(estado.error.estado === 404 ? 'No encontramos tu cita' : 'No pudimos cargar tu cita'),
     el('p', { class: 'alerta', role: 'alert', texto: estado.error.message }),
-    // Cada vez que el consultorio confirma un cambio de hora llega un enlace
-    // nuevo y el anterior deja de servir.
-    estado.error.estado === 404 && el('p', { class: 'agendar__nota', texto: 'Si cambiaste la hora de tu cita, usa el enlace del último WhatsApp que te enviamos: el anterior ya no funciona. Si no lo encuentras, escríbenos y te ayudamos.' }),
+    // Si el consultorio cambia la hora, llega un enlace nuevo y el
+    // anterior deja de servir.
+    estado.error.estado === 404 && el('p', { class: 'agendar__nota', texto: 'Si el consultorio cambió la hora de tu cita, usa el enlace del último WhatsApp que te enviamos: el anterior ya no funciona. Si no lo encuentras, escríbenos y te ayudamos.' }),
     el('div', { class: 'acciones' },
       estado.error.estado === 404
         ? el('a', { class: 'btn btn--primario', href: URL_AGENDAR, texto: 'Agendar una cita nueva' })
@@ -179,9 +179,9 @@ function pintarConfirmar() {
     el('dl', { class: 'resumen' },
       dato('Cita actual', `${fechaLarga(cita.fecha)}, ${horaLarga(cita.hora)}`),
       dato('Nueva fecha y hora', `${fechaLarga(estado.fecha)}, ${horaLarga(estado.franja.hora)}`, () => { estado.paso = 'reprogramar'; estado.error = null; pintar(); })),
-    el('p', { class: 'agendar__nota', texto: 'La nueva hora queda pendiente hasta que el consultorio la confirme. Después de este cambio no podrás reprogramar de nuevo; solo cancelar y pedir una cita nueva.' }),
+    el('p', { class: 'agendar__nota', texto: 'La nueva hora queda confirmada de una vez y te llega el aviso por WhatsApp. Después de este cambio no podrás reprogramar de nuevo; solo cancelar y pedir una cita nueva.' }),
     el('div', { class: 'acciones' },
-      el('button', { type: 'button', class: 'btn btn--primario', id: 'btn-confirmar-cambio', onclick: reprogramar, texto: 'Solicitar el cambio' }),
+      el('button', { type: 'button', class: 'btn btn--primario', id: 'btn-confirmar-cambio', onclick: reprogramar, texto: 'Confirmar el cambio' }),
       el('button', { type: 'button', class: 'btn btn--fantasma', onclick: volverAVer, texto: 'Volver sin cambios' })),
   ];
 }
@@ -192,7 +192,7 @@ async function reprogramar() {
   try {
     const r = await api(rutaGestion('/reprogramar'), { metodo: 'POST', cuerpo: { franjaId: estado.franja.franjaId } });
     estado.gestion = { cita: r.cita, puedeReprogramar: r.puedeReprogramar, puedeCancelar: r.puedeCancelar, motivo: null };
-    estado.aviso = 'Recibimos tu cambio. Te apartamos la nueva hora y te avisaremos por WhatsApp cuando el consultorio la confirme.';
+    estado.aviso = 'Listo: tu cita quedó en la nueva hora. Te enviamos la confirmación por WhatsApp.';
     estado.paso = 'ver';
     pintar();
   } catch (error) {

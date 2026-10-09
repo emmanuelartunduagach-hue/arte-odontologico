@@ -339,6 +339,12 @@ a.fila-cita__nombre:hover { color: var(--acento-texto); }
 /* Solicitud de cambio de hora hecha por el paciente: qué hora tenía. */
 .fila-cita__cambio { font-size: var(--txt-xs); color: var(--ambar-700); line-height: var(--alto-normal); }
 .fila-cita__cambio strong { font-weight: var(--peso-semi); }
+/* Novedades de la web (Inicio): qué pasó y cuándo. */
+.fila-cita__novedad { font-size: var(--txt-xs); line-height: var(--alto-normal); color: var(--ink-600); }
+.fila-cita__novedad strong { font-weight: var(--peso-semi); }
+.fila-cita__novedad--nueva strong { color: var(--menta-600); }
+.fila-cita__novedad--cambio strong { color: var(--ambar-700); }
+.fila-cita__novedad--cancelada strong { color: var(--rosa-700); }
 .fila-cita__acciones { display: flex; flex-wrap: wrap; gap: var(--e-2); justify-content: flex-end; align-items: center; }
 
 /* Menú "Más" */
@@ -500,7 +506,9 @@ a.fila-cita__nombre:hover { color: var(--acento-texto); }
 @media (max-width: 1100px) {
   .fila-cita { grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1fr); }
   .fila-cita__especialista { grid-column: 3; }
-  .fila-cita__estado { grid-column: 2; grid-auto-flow: column; justify-content: start; align-items: center; gap: var(--e-2); }
+  .fila-cita__estado { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--e-2); }
+  /* Qué pasó y la hora anterior van en su propia línea, debajo del estado. */
+  .fila-cita__novedad, .fila-cita__cambio { flex-basis: 100%; }
   .fila-cita__acciones { grid-column: 3; justify-content: flex-start; }
 }
 

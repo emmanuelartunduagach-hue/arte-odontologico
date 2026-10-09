@@ -21,11 +21,11 @@ Base: `CONFIG.API` (en local `http://localhost:3000/api`). Todo es JSON.
 
 ## Flujo de una cita
 
-1. La persona pide la cita en la web: queda **pendiente** y la hora queda apartada.
-2. La secretaria la ve en el panel y la **acepta** o la **rechaza**.
-3. Al aceptarla, la cita queda **confirmada**, se crea la ficha del paciente (si no existía, por documento) y le llega el WhatsApp con los datos y el enlace para reprogramar o cancelar.
-4. Al rechazarla, la hora se libera y le llega un WhatsApp invitándolo a pedir otra.
-5. Unas 24 horas antes le llega el recordatorio.
+1. La persona pide la cita en la web y queda **confirmada** de una vez (decisión 27): se crea su ficha de paciente, o se enlaza si ya existía, y le llega el WhatsApp con los datos y el enlace para reprogramar o cancelar.
+2. La secretaria **no aprueba** nada: ve las citas nuevas, los cambios de hora y las cancelaciones del paciente en "Novedades de la web" (Inicio).
+3. Unas 24 horas antes le llega el recordatorio.
+
+Las citas `pendiente` que quedaron de antes de este cambio se siguen aceptando o rechazando desde el panel.
 
 Quien llega al consultorio sin pasar por la web: la secretaria lo registra (`POST /pacientes`) y le agenda la cita (`POST /admin/citas`), que queda confirmada de una vez. Los pacientes **no tienen usuario ni contraseña**; solo la secretaria inicia sesión.
 
@@ -33,7 +33,7 @@ Estados de una cita: `pendiente`, `confirmada`, `rechazada`, `cancelada`, `atend
 
 ## 1. Público: pedir una cita sin cuenta
 
-Flujo de pantallas: especialidad → especialista → calendario → hora → datos → solicitud recibida.
+Flujo de pantallas: especialidad → especialista → calendario → hora → datos → cita confirmada.
 
 | Paso | Petición | Respuesta |
 |---|---|---|
@@ -55,9 +55,10 @@ Flujo de pantallas: especialidad → especialista → calendario → hora → da
 - `nombres` y `apellidos`: 2 a 60 caracteres cada uno, sin números. En las respuestas, `paciente` sigue siendo el nombre completo.
 - `autorizacionDatos`: casilla **sin marcar por defecto** con enlace a `politica-datos.html`. Sin ella → 400 con `campos.autorizacionDatos`.
 - `sitioWeb`: **campo trampa contra bots**. Inclúyelo en el formulario oculto con CSS (no con `type="hidden"`), con `tabindex="-1"` y `autocomplete="off"`, y envíalo vacío.
-- **201:** `{ mensaje, cita: { id, estado: "pendiente", paciente, especialidad, especialista, fecha, hora, sede, direccion, reprogramaciones } }`
-  - Muestra "¡Recibimos tu solicitud!" con el resumen: la hora queda apartada y el consultorio la confirmará por WhatsApp.
-  - El enlace para reprogramar o cancelar **no** viene en la respuesta: llega por WhatsApp al teléfono escrito cuando la secretaria acepta la cita, para que únicamente lo tenga el dueño de ese número.
+- **201:** `{ mensaje, cita: { id, estado: "confirmada", paciente, especialidad, especialista, fecha, hora, sede, direccion, reprogramaciones } }`
+  - Muestra "¡Tu cita quedó confirmada!" con el resumen.
+  - El servidor crea la ficha del paciente si su documento es nuevo, o enlaza la cita a la ficha existente si coincide el celular o el correo (si no coincide ninguno, no la enlaza: alguien pudo escribir un documento ajeno; la cita igual aparece en esa ficha para revisarla).
+  - El enlace para reprogramar o cancelar **no** viene en la respuesta: llega por WhatsApp al teléfono escrito, para que únicamente lo tenga el dueño de ese número.
 - **409** posibles:
   - La hora se tomó o ya no está → volver a pedir las horas del día.
   - Esa persona (por documento) ya tiene una cita pendiente o confirmada (límite `LIMITE_CITAS_ACTIVAS_POR_DOCUMENTO`, por defecto 1). El mensaje distingue los dos casos: si la que tiene está **pendiente**, explica que se le avisará por WhatsApp cuando la confirmen (todavía no tiene enlace); si está **confirmada**, que la cancele desde el enlace del WhatsApp.
@@ -73,11 +74,10 @@ La página lee `codigo` de la URL.
 | Cancelar | `POST /citas/gestion/:codigo/cancelar` | `{ mensaje }` |
 
 - **Botones:** muéstralos según `puedeReprogramar` y `puedeCancelar`. Si alguno es `false`, muestra `motivo`: menos de 24 horas, ya reprogramó una vez, cambio pendiente de confirmación, cita cancelada, rechazada o ya pasó.
-- **Reprogramar** usa el mismo calendario y las mismas horas de `cita.especialistaId`; solo se permite **una vez**. La cita **vuelve a quedar pendiente** hasta que la secretaria acepte la nueva hora; entonces llega el WhatsApp de confirmación con un enlace nuevo (el anterior deja de servir).
-- Mientras está pendiente, el paciente aún puede cancelarla.
+- **Reprogramar** usa el mismo calendario y las mismas horas de `cita.especialistaId`; solo se permite **una vez**. El cambio queda **confirmado de una vez** y llega el WhatsApp de reprogramación con **el mismo enlace**, que sigue sirviendo.
 - **Después de reprogramar una vez** solo queda "Cancelar y pedir una cita nueva": cancela y lleva al flujo de agendar.
 - **Confirmación:** pide confirmar antes de cancelar con un diálogo propio de la página, no con `confirm()`.
-- **404:** "El enlace no es válido o ya no está vigente". Ocurre cuando llega un mensaje con un enlace nuevo (la secretaria aceptó un cambio o reprogramó la cita).
+- **404:** "El enlace no es válido o ya no está vigente". Ocurre cuando llega un mensaje con un enlace nuevo (la secretaria reprogramó la cita).
 
 ## 3. Sesión (solo la secretaria)
 
@@ -106,12 +106,13 @@ Los pacientes no tienen cuenta. El acceso está en el pie de la página principa
 - **Publicar:** `POST /admin/especialistas/:id/franjas` `{ fechas: ["2026-10-15", "2026-10-16"], horas: ["08:00", "08:30"] }` → 201 `{ total }`. Publica cada hora en cada fecha; varias fechas sirven de "copiar a varios días". Sugerencia de UI: cuadrícula de 7:00 a 18:00 cada 30 minutos con casillas.
 - **Quitar:** `DELETE /admin/franjas/:id`. Si la hora tiene cita → **409** con el nombre del paciente; hay que reprogramar o cancelar primero.
 
-**Solicitudes y agenda**
-- **Solicitudes por confirmar:** `GET /admin/citas?estado=pendiente&desde=&hasta=`.
-- **Aceptar:** `POST /admin/citas/:id/aceptar` → `{ mensaje, cita, pacienteId, pacienteNuevo, notificacion }`. Enlaza la cita con el paciente del mismo documento o crea su ficha (`pacienteNuevo: true`) y envía el WhatsApp de confirmación con el enlace. Si la hora ya pasó → **409**.
-- **Rechazar:** `POST /admin/citas/:id/rechazar` → `{ mensaje, notificacion }`. Libera la hora y envía un WhatsApp invitando a pedir otra.
+**Novedades de la web y agenda**
+- **Novedades de la web:** `GET /admin/citas/novedades?horas=48` → citas con origen web de las últimas horas (1 a 720; por defecto 48): las pedidas en ese lapso y las que el paciente reprogramó o canceló desde su enlace. Cada una trae `novedad`: `nueva` | `cambio` | `cancelada`, más `creadoEn`, `actualizadoEn`, `fechaAnterior` y `horaAnterior`. Las pendientes antiguas no se incluyen.
+- **Citas antiguas sin confirmar:** `GET /admin/citas?estado=pendiente&desde=&hasta=` (solo existen si se pidieron antes de la decisión 27).
+- **Aceptar** (solo citas pendientes antiguas): `POST /admin/citas/:id/aceptar` → `{ mensaje, cita, pacienteId, pacienteNuevo, notificacion }`. Enlaza la cita con el paciente del mismo documento o crea su ficha (`pacienteNuevo: true`) y envía el WhatsApp de confirmación con el enlace. Si la hora ya pasó → **409**.
+- **Rechazar** (solo citas pendientes antiguas): `POST /admin/citas/:id/rechazar` → `{ mensaje, notificacion }`. Libera la hora y envía un WhatsApp invitando a pedir otra.
 - **Agendar a un paciente** (llegó al consultorio o llamó): `POST /admin/citas` `{ pacienteId, especialidadId, franjaId }` → 201 `{ mensaje, cita, notificacion }`. Queda confirmada de una vez.
-- **Ver:** `GET /admin/citas?fecha=` o `?desde=&hasta=`, más `&especialistaId=&estado=&q=` (`q` busca por nombre, documento o teléfono) → citas con `especialidadId`, `tipoDocumento`, `documento`, `telefono`, `telefonoFijo`, `correo`, `pacienteId`, `canceladaPor`, `creadoEn`, `fechaAnterior` y `horaAnterior`. Las dos últimas traen la hora que tenía la cita antes de que **el paciente** la reprogramara (o `null`): el panel muestra "Cambio de hora · antes: …" en las solicitudes pendientes, para que la secretaria sepa qué cambio está aprobando.
+- **Ver:** `GET /admin/citas?fecha=` o `?desde=&hasta=`, más `&especialistaId=&estado=&q=` (`q` busca por nombre, documento o teléfono) → citas con `especialidadId`, `tipoDocumento`, `documento`, `telefono`, `telefonoFijo`, `correo`, `pacienteId`, `origen` (`web` | `consultorio`), `canceladaPor`, `creadoEn`, `fechaAnterior` y `horaAnterior`. Las dos últimas traen la hora que tenía la cita antes de que **el paciente** la reprogramara (o `null`): el panel muestra "Cambio de hora · antes: …" en las solicitudes pendientes, para que la secretaria sepa qué cambio está aprobando.
 - **Cambiar estado:** `PATCH /admin/citas/:id/estado` `{ estado: "atendida" | "no_asistio" | "cancelada" }`. Solo para citas confirmadas (una pendiente se acepta o se rechaza). Atendida o no asistió solo se permite cuando ya llegó la hora.
 - **Reprogramar:** `POST /admin/citas/:id/reprogramar` `{ franjaId }`. Para citas pendientes o confirmadas; no tiene límite y puede pasar la cita a otro especialista de la misma especialidad. Respuesta: `{ mensaje, cita, notificacion }`; `notificacion` es `null` si la cita estaba pendiente (el paciente se entera al aceptarla).
 - **Cancelar** (`PATCH …/estado` con `cancelada`) responde `{ mensaje, notificacion }`. `notificacion` es `{ id, estado, enlaceWhatsApp }`: si `estado` es `pendiente`, el panel ofrece "Enviar por WhatsApp" y "Marcar como enviado" ahí mismo.
@@ -124,7 +125,6 @@ Los pacientes no tienen cuenta. El acceso está en el pie de la página principa
 - Luego, botón **"Marcar como enviado"**: `PATCH /admin/notificaciones/:id` `{ estado: "enviada" }`.
 - **Tipos de mensaje:** `confirmacion`, `reprogramacion`, `cancelacion`, `rechazo` y `recordatorio`.
 - **Recordatorio 24 horas antes:** el servidor revisa cada 30 minutos, dentro del horario configurado, las citas confirmadas que empiezan en las próximas 24 horas; aparecen como mensajes de tipo `recordatorio` (sin enlace). Para generarlos ya: `POST /admin/recordatorios` → `{ fecha, revisadas, resultados: [{ citaId, estado }] }`.
-- Conviene un contador de pendientes visible en el menú del panel.
 
 **Pacientes** (registro sin usuario ni contraseña)
 - `POST /pacientes` `{ nombres, apellidos, tipoDocumento, documento, telefono, telefonoFijo?, correo, motivoConsulta?, autorizacionDatos: true }` → 201 `{ mensaje, paciente, citasVinculadas }`. Mismas reglas de los datos que en `POST /citas`; `motivoConsulta` (a qué vino, hasta 500 caracteres) es opcional. Para quien llega al consultorio. `citasVinculadas`: citas que pidió antes por la web con el mismo documento y celular. Documento repetido → **409** con `pacienteId` del existente, para ofrecer "Abrir su ficha".
