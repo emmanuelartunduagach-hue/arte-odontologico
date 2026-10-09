@@ -2,13 +2,14 @@
 
    Flujo (contrato API v2):
      tarjeta de especialidad → especialista → día (calendario) →
-     hora → datos del paciente → confirmación.
+     hora → datos del paciente → solicitud recibida.
+   La cita queda pendiente hasta que el consultorio la acepta; entonces
+   llega el WhatsApp con los datos y el enlace para gestionarla.
 
    Las utilidades (el, calendario, fechas…) están en js/comun.js. */
 
 let especialidades = null;  // lista que devuelve GET /especialidades
 let turno = 0;              // descarta respuestas de un flujo ya abandonado
-let datosPaciente = null;   // con sesión de paciente: sus datos para precargar el formulario
 const estado = {};
 
 /* ---------- Tarjetas de especialidades ---------- */
@@ -55,29 +56,12 @@ function reiniciar() {
   });
 }
 
-/** Paciente con sesión: trae sus datos (GET /auth/perfil) para no
-    tener que escribirlos. Si falla, el formulario queda vacío. */
-async function cargarDatosPaciente() {
-  if (datosPaciente || obtenerSesion()?.usuario.rol !== 'paciente') return;
-  try {
-    const p = await api('/auth/perfil');
-    datosPaciente = {
-      nombreCompleto: p.nombreCompleto,
-      documento: p.documento,
-      telefono: String(p.telefono || '').replace(/^57(?=\d{10}$)/, ''),
-      correo: p.correo || '',
-    };
-  } catch { /* se llenan a mano */ }
-}
-
 async function comenzar(codigo) {
   const mio = ++turno;
   reiniciar();
   estado.mensaje = 'Cargando especialistas…';
   pintar();
   try {
-    await cargarDatosPaciente();
-    if (datosPaciente) estado.datos = { ...datosPaciente };
     const lista = await cargarEspecialidades();
     const esp = lista.find((e) => e.codigo === codigo);
     if (!esp) throw new ErrorApi('Esa especialidad no está disponible por ahora.', 404);
@@ -255,7 +239,7 @@ function pintarDatos() {
     el('div', { class: 'rejilla-2' },
       campo('documento', 'Documento de identidad', 'text', { inputmode: 'numeric', autocomplete: 'off', 'aria-required': 'true' }),
       campo('telefono', 'Celular', 'tel', { autocomplete: 'tel', placeholder: '300 123 4567', 'aria-required': 'true' })),
-    campo('correo', 'Correo electrónico (opcional)', 'email', { autocomplete: 'email' }),
+    campo('correo', 'Correo electrónico', 'email', { autocomplete: 'email', 'aria-required': 'true' }),
 
     // Campo trampa contra bots: oculto con CSS (no con type="hidden"), fuera del
     // orden de tabulación y de los lectores de pantalla. Debe viajar vacío.
@@ -271,7 +255,7 @@ function pintarDatos() {
       el('p', { class: 'campo__error', id: 'error-autorizacionDatos', hidden: true })),
 
     el('div', { class: 'alerta', role: 'alert', hidden: true, 'data-alerta': true }),
-    el('button', { type: 'submit', class: 'btn btn--primario btn--bloque btn--grande', texto: 'Confirmar cita' }));
+    el('button', { type: 'submit', class: 'btn btn--primario btn--bloque btn--grande', texto: 'Pedir cita' }));
 
   return [titulo('Tus datos'), resumen(true), form];
 }
@@ -289,7 +273,7 @@ function validar(d) {
   if (d.nombreCompleto.trim().length < 3) errores.nombreCompleto = 'Escribe tu nombre completo.';
   if (!/^\d{5,20}$/.test(d.documento.trim())) errores.documento = 'Escribe tu documento solo con números (de 5 a 20 dígitos).';
   if (!/^\d{7,15}$/.test(d.telefono.replace(/[\s\-+]/g, ''))) errores.telefono = 'Escribe un celular válido, por ejemplo 300 123 4567.';
-  if (d.correo.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.correo.trim())) errores.correo = 'Escribe un correo válido o déjalo vacío.';
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.correo.trim())) errores.correo = 'Escribe un correo válido, por ejemplo nombre@correo.com.';
   if (!d.autorizacionDatos) errores.autorizacionDatos = 'Debes autorizar el tratamiento de tus datos para agendar.';
   return errores;
 }
@@ -340,7 +324,7 @@ async function enviar(e) {
 
   estado.enviando = true;
   boton.disabled = true;
-  boton.textContent = 'Agendando…';
+  boton.textContent = 'Enviando…';
   try {
     estado.cita = await api('/citas', {
       metodo: 'POST',
@@ -367,33 +351,30 @@ async function enviar(e) {
   } finally {
     estado.enviando = false;
     boton.disabled = false;
-    boton.textContent = 'Confirmar cita';
+    boton.textContent = 'Pedir cita';
   }
 }
 
 /* ---------- Confirmación ---------- */
 
 function pintarListo() {
-  // El enlace para reprogramar o cancelar solo llega por WhatsApp, al
-  // número que se escribió: así solo lo tiene el dueño de ese teléfono.
-  const { cita, whatsapp } = estado.cita;
+  // La cita queda pendiente: el WhatsApp con los datos y el enlace para
+  // reprogramar o cancelar llega cuando el consultorio la acepta, al
+  // número que se escribió (así solo lo tiene el dueño de ese teléfono).
+  const { cita } = estado.cita;
 
   return [
     el('div', { class: 'exito' },
       icono('<circle cx="12" cy="12" r="10"/><path d="m8 12.5 2.8 2.8L16 9.5"/>'),
-      titulo('¡Tu cita quedó confirmada!')),
+      titulo('¡Recibimos tu solicitud!')),
     el('dl', { class: 'resumen' },
       cita.paciente && dato('Paciente', cita.paciente),
       cita.especialidad && dato('Especialidad', cita.especialidad),
       cita.especialista && dato('Especialista', cita.especialista),
       dato('Fecha y hora', `${fechaLarga(cita.fecha)}, ${horaLarga(cita.hora)}`),
       cita.direccion && dato('Dónde', cita.direccion)),
-    el('p', { class: 'agendar__nota', texto: whatsapp === 'enviado'
-      ? 'Te enviamos la confirmación por WhatsApp, con un enlace para reprogramar o cancelar tu cita.'
-      : 'Te enviaremos la confirmación por WhatsApp, con un enlace para reprogramar o cancelar tu cita.' }),
-    obtenerSesion()?.usuario.rol === 'paciente'
-      ? el('a', { class: 'btn btn--primario btn--bloque', href: 'mis-citas.html', texto: 'Ver mis citas' })
-      : el('button', { type: 'button', class: 'btn btn--primario btn--bloque', onclick: () => cerrarModal(document.getElementById('modal-agendar')), texto: 'Listo' }),
+    el('p', { class: 'agendar__nota', texto: 'Te apartamos esta hora. El consultorio revisará tu solicitud y te confirmará por WhatsApp, con un enlace para reprogramar o cancelar tu cita.' }),
+    el('button', { type: 'button', class: 'btn btn--primario btn--bloque', onclick: () => cerrarModal(document.getElementById('modal-agendar')), texto: 'Listo' }),
   ];
 }
 

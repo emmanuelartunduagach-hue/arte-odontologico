@@ -2,6 +2,8 @@
 
    Contrato API v2, sección 4 ("Agenda"):
      GET   /admin/citas?desde=&hasta=&especialistaId=&estado=&q=
+     POST  /admin/citas/:id/aceptar      pendiente → confirmada (+ WhatsApp)
+     POST  /admin/citas/:id/rechazar     pendiente → rechazada (+ WhatsApp)
      PATCH /admin/citas/:id/estado       { estado: atendida | no_asistio | cancelada }
      POST  /admin/citas/:id/reprogramar  { franjaId }  (sin límite; puede cambiar de especialista)
    Para reprogramar se usan el calendario y las horas públicas del especialista:
@@ -24,25 +26,36 @@ const DIAS_BUSQUEDA = 90;
 
 /* ---------- Fila de cita (también la usa Inicio) ---------- */
 
-function filaCita(cita, { conFecha = false } = {}) {
+/** Acciones de una cita: la primera va a la vista y el resto, en "Más". */
+function accionesDe(cita) {
   const llegoLaHora = `${cita.fecha}T${cita.hora}` <= ahoraColombia();
-  const viva = cita.estado === 'confirmada';
-  const [h, m] = cita.hora.split(':').map(Number);
-
-  // La acción más probable va a la vista; el resto, en "Más".
-  const acciones = !viva ? [] : llegoLaHora
+  if (cita.estado === 'pendiente') {
+    return llegoLaHora
+      ? [['Rechazar', () => rechazarCita(cita)]]
+      : [['Aceptar', () => aceptarCita(cita)], ['Rechazar', () => rechazarCita(cita)], ['Cambiar hora', () => reprogramarCita(cita)]];
+  }
+  if (cita.estado !== 'confirmada') return [];
+  return llegoLaHora
     ? [['Atendida', () => marcarCita(cita, 'atendida')], ['No asistió', () => marcarCita(cita, 'no_asistio')],
       ['Reprogramar', () => reprogramarCita(cita)], ['Cancelar cita', () => cancelarCita(cita)]]
     : [['Reprogramar', () => reprogramarCita(cita)], ['Cancelar cita', () => cancelarCita(cita)]];
-  const [principal, ...resto] = acciones;
+}
 
-  return el('article', { class: 'fila-cita' + (viva ? '' : ' fila-cita--cerrada'), 'aria-label': `${horaLarga(cita.hora)}, ${cita.paciente}` },
+function filaCita(cita, { conFecha = false } = {}) {
+  const viva = ['pendiente', 'confirmada'].includes(cita.estado);
+  const [h, m] = cita.hora.split(':').map(Number);
+  const [principal, ...resto] = accionesDe(cita);
+  const clases = 'fila-cita' + (viva ? '' : ' fila-cita--cerrada') + (cita.estado === 'pendiente' ? ' fila-cita--pendiente' : '');
+
+  return el('article', { class: clases, 'aria-label': `${horaLarga(cita.hora)}, ${cita.paciente}` },
     el('div', { class: 'fila-cita__hora' },
       conFecha && el('span', { class: 'fila-cita__fecha', texto: fechaLarga(cita.fecha) }),
       el('span', { class: 'fila-cita__reloj', texto: `${h % 12 || 12}:${String(m).padStart(2, '0')}` }),
       el('span', { class: 'fila-cita__meridiano', texto: h >= 12 ? 'p. m.' : 'a. m.' })),
     el('div', { class: 'fila-cita__paciente' },
-      el('p', { class: 'fila-cita__nombre', texto: cita.paciente }),
+      cita.pacienteId
+        ? el('a', { class: 'fila-cita__nombre', href: `#pacientes/${cita.pacienteId}`, title: 'Ver ficha del paciente', texto: cita.paciente })
+        : el('p', { class: 'fila-cita__nombre', texto: cita.paciente }),
       el('p', { class: 'fila-cita__detalle' },
         el('span', { texto: `Doc. ${cita.documento}` }),
         el('span', { texto: `Tel. ${telefonoLegible(cita.telefono)}` }))),
@@ -55,7 +68,7 @@ function filaCita(cita, { conFecha = false } = {}) {
         && el('span', { class: 'fila-cita__detalle', texto: cita.canceladaPor === 'paciente' ? 'por el paciente' : 'por el consultorio' })),
     el('div', { class: 'fila-cita__acciones' },
       principal && el('button', {
-        type: 'button', class: `btn ${principal[0] === 'Atendida' ? 'btn--primario' : 'btn--secundario'} btn--compacto`,
+        type: 'button', class: `btn ${['Atendida', 'Aceptar'].includes(principal[0]) ? 'btn--primario' : 'btn--secundario'} btn--compacto`,
         onclick: principal[1], texto: principal[0],
       }),
       resto.length > 0 && el('details', { class: 'menu-acciones' },
@@ -115,7 +128,8 @@ function barraAgenda() {
   especialista.addEventListener('change', () => { agenda.especialistaId = especialista.value; panel.refrescar(); });
 
   const estado = el('select', { class: 'campo__control', name: 'estado', 'aria-label': 'Estado' },
-    [['', 'Todos los estados'], ['confirmada', 'Confirmadas'], ['atendida', 'Atendidas'], ['no_asistio', 'No asistió'], ['cancelada', 'Canceladas']]
+    [['', 'Todos los estados'], ['pendiente', 'Por confirmar'], ['confirmada', 'Confirmadas'], ['atendida', 'Atendidas'],
+      ['no_asistio', 'No asistió'], ['cancelada', 'Canceladas'], ['rechazada', 'Rechazadas']]
       .map(([valor, texto]) => el('option', { value: valor, selected: valor === agenda.estado, texto })));
   estado.addEventListener('change', () => { agenda.estado = estado.value; panel.refrescar(); });
 
@@ -163,8 +177,11 @@ async function cargarAgenda(resultados) {
   if (turno !== agenda.turno) return;
 
   const confirmadas = citas.filter((c) => c.estado === 'confirmada').length;
+  const porConfirmar = citas.filter((c) => c.estado === 'pendiente').length;
   const resumen = citas.length === 0 ? null
-    : `${citas.length === 1 ? '1 cita' : `${citas.length} citas`} · ${confirmadas === 1 ? '1 confirmada' : `${confirmadas} confirmadas`}`;
+    : [citas.length === 1 ? '1 cita' : `${citas.length} citas`,
+      confirmadas === 1 ? '1 confirmada' : `${confirmadas} confirmadas`,
+      porConfirmar > 0 && `${porConfirmar} por confirmar`].filter(Boolean).join(' · ');
 
   pintarEn(resultados,
     el('div', { class: 'agenda__titulo-lista' },
@@ -195,6 +212,37 @@ function marcarCita(cita, estado) {
       const r = await api(`/admin/citas/${cita.id}/estado`, { metodo: 'PATCH', cuerpo: { estado } });
       panel.aviso = avisoAccion(r.mensaje);
       panel.refrescar();
+    },
+  });
+}
+
+/* Aceptar: un clic. La cita queda confirmada, se crea la ficha del
+   paciente si no existía y se prepara el WhatsApp con el enlace. */
+async function aceptarCita(cita) {
+  const boton = document.activeElement?.tagName === 'BUTTON' ? document.activeElement : null;
+  if (boton) { boton.disabled = true; boton.textContent = 'Aceptando…'; }
+  try {
+    const r = await api(`/admin/citas/${cita.id}/aceptar`, { metodo: 'POST' });
+    panel.aviso = avisoAccion(`Cita de ${cita.paciente} aceptada para el ${fechaLarga(cita.fecha)} a las ${horaLarga(cita.hora)}`
+      + (r.pacienteNuevo ? ' Se creó su ficha de paciente.' : ''), r.notificacion);
+  } catch (err) {
+    panel.aviso = el('p', { class: 'alerta', role: 'alert', texto: err.message });
+  }
+  panel.refrescar();
+  actualizarContadorMensajes();
+}
+
+function rechazarCita(cita) {
+  confirmarAccion({
+    titulo: '¿Rechazar la solicitud?',
+    texto: `${nombreCita(cita)}. La hora queda libre y se le avisa por WhatsApp que pida otra hora.`,
+    si: 'Sí, rechazar',
+    no: 'Volver',
+    accion: async () => {
+      const r = await api(`/admin/citas/${cita.id}/rechazar`, { metodo: 'POST' });
+      panel.aviso = avisoAccion(`Solicitud de ${cita.paciente} rechazada.`, r.notificacion);
+      panel.refrescar();
+      actualizarContadorMensajes();
     },
   });
 }

@@ -1,13 +1,15 @@
 /* Panel de la secretaria (panel-secretaria.html), solo rol administrador.
 
-   Una sola página con secciones; el menú lateral cambia la sección por
-   el fragmento de la URL (#inicio, #agenda, #disponibilidad, #mensajes) para que Atrás
-   funcione y cada sección se pueda enlazar. Cada sección vive en su
-   archivo (panel-agenda.js, panel-disponibilidad.js, panel-mensajes.js) y expone `montar(cuerpo)`.
+   Una sola página con secciones; el menú cambia la sección por el
+   fragmento de la URL (#inicio, #agenda, #pacientes, #pacientes/12,
+   #disponibilidad, #mensajes) para que Atrás funcione y cada sección se
+   pueda enlazar. Cada sección vive en su archivo (panel-agenda.js,
+   panel-pacientes.js, panel-disponibilidad.js, panel-mensajes.js) y
+   expone `montar(cuerpo, parametro)`.
 
    Inicio (contrato API v2, sección 4):
-     GET /admin/citas?fecha=hoy               agenda de hoy
-     GET /admin/citas?desde=mañana&hasta=+7   próximas citas
+     GET /admin/citas?estado=pendiente&desde=hoy&hasta=+180   solicitudes por confirmar
+     GET /admin/citas?fecha=hoy                               agenda de hoy
      GET /admin/notificaciones?estado=pendiente */
 
 const sesion = exigirSesion('administrador');
@@ -16,17 +18,23 @@ const cuerpo = document.getElementById('panel-cuerpo');
 const SECCIONES = {
   inicio: { titulo: 'Inicio', montar: montarInicio },
   agenda: { titulo: 'Agenda', montar: montarAgenda },
-  disponibilidad: { titulo: 'Disponibilidad', montar: montarDisponibilidad },
+  pacientes: { titulo: 'Pacientes', montar: montarPacientes },
+  disponibilidad: { titulo: 'Horarios', montar: montarDisponibilidad },
   mensajes: { titulo: 'Mensajes', montar: montarMensajes },
 };
 
+/** '#pacientes/12' → { nombre: 'pacientes', parametro: '12' }. */
+function rutaActual() {
+  const [nombre, parametro = null] = location.hash.slice(1).split('/');
+  return SECCIONES[nombre] ? { nombre, parametro } : { nombre: 'inicio', parametro: null };
+}
+
 function seccionActual() {
-  const nombre = location.hash.slice(1);
-  return SECCIONES[nombre] ? nombre : 'inicio';
+  return rutaActual().nombre;
 }
 
 function mostrarSeccion({ enfocar = false } = {}) {
-  const nombre = seccionActual();
+  const { nombre, parametro } = rutaActual();
   dialogo.cerrar();
   document.querySelectorAll('[data-seccion]').forEach((enlace) => {
     if (enlace.dataset.seccion === nombre) {
@@ -37,7 +45,7 @@ function mostrarSeccion({ enfocar = false } = {}) {
     else enlace.removeAttribute('aria-current');
   });
   document.title = `${SECCIONES[nombre].titulo} · Panel de la secretaria — Arte Odontológico`;
-  SECCIONES[nombre].montar(cuerpo);
+  SECCIONES[nombre].montar(cuerpo, parametro);
   if (enfocar) {
     cuerpo.querySelector('[data-foco-seccion]')?.focus();
     window.scrollTo({ top: 0 });
@@ -53,26 +61,30 @@ function saludo() {
   return hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
 }
 
+/** `enlace` es otra sección (#agenda) o un bloque de esta página (id sin #). */
 function tarjetaDato(cantidad, etiqueta, enlace, destacada) {
-  return el('a', { class: 'dato-panel' + (destacada ? ' dato-panel--alerta' : ''), href: enlace },
+  const enPagina = !enlace.startsWith('#');
+  return el('a', {
+    class: 'dato-panel' + (destacada ? ' dato-panel--alerta' : ''),
+    href: enPagina ? `#inicio` : enlace,
+    onclick: enPagina ? (e) => { e.preventDefault(); document.getElementById(enlace)?.scrollIntoView({ behavior: 'smooth' }); } : null,
+  },
     el('span', { class: 'dato-panel__numero', texto: String(cantidad) }),
     el('span', { class: 'dato-panel__etiqueta', texto: etiqueta }));
 }
 
 async function montarInicio(destino) {
   const hoy = hoyColombia();
-  const encabezado = encabezadoSeccion(`${saludo()}, ${sesion.usuario.nombre.split(' ')[0]}`,
-    `Hoy es ${fechaLarga(hoy)}.`,
-    el('a', { class: 'btn btn--secundario btn--compacto', href: 'cambiar-contrasena.html', texto: 'Cambiar contraseña' }));
+  const encabezado = encabezadoSeccion(`${saludo()}, ${sesion.usuario.nombre.split(' ')[0]}`, `Hoy es ${fechaLarga(hoy)}.`);
   const aviso = tomarAviso();
 
   pintarEn(destino, avisoDemo(), encabezado, aviso, estadoCarga('Cargando el resumen del día…'));
 
-  let deHoy, proximas, pendientes;
+  let solicitudes, deHoy, mensajes;
   try {
-    [deHoy, proximas, pendientes] = await Promise.all([
+    [solicitudes, deHoy, mensajes] = await Promise.all([
+      api(`/admin/citas?estado=pendiente&desde=${hoy}&hasta=${sumarDiasA(hoy, 180)}`),
       api(`/admin/citas?fecha=${hoy}`),
-      api(`/admin/citas?desde=${sumarDiasA(hoy, 1)}&hasta=${sumarDiasA(hoy, 7)}&estado=confirmada`),
       api('/admin/notificaciones?estado=pendiente'),
     ]);
   } catch (err) {
@@ -80,24 +92,33 @@ async function montarInicio(destino) {
     return;
   }
   if (seccionActual() !== 'inicio') return;
-  mostrarContadorMensajes(pendientes.length);
+  mostrarContadorMensajes(mensajes.length);
 
   const ahora = ahoraColombia();
   const ordenadas = ordenarPorHora(deHoy);
   const porAtender = ordenadas.filter((c) => c.estado === 'confirmada');
   const siguiente = porAtender.find((c) => `${c.fecha}T${c.hora}` > ahora);
   const sinMarcar = porAtender.filter((c) => `${c.fecha}T${c.hora}` <= ahora);
+  const porConfirmar = ordenarPorHora(solicitudes);
 
   pintarEn(destino,
     avisoDemo(),
     encabezado,
     aviso,
     el('div', { class: 'datos-panel' },
+      tarjetaDato(porConfirmar.length, porConfirmar.length === 1 ? 'solicitud por confirmar' : 'solicitudes por confirmar', 'titulo-solicitudes', porConfirmar.length > 0),
       tarjetaDato(porAtender.length, porAtender.length === 1 ? 'cita por atender hoy' : 'citas por atender hoy', '#agenda'),
-      tarjetaDato(proximas.length, 'citas en los próximos 7 días', '#agenda'),
-      tarjetaDato(pendientes.length, pendientes.length === 1 ? 'mensaje por enviar' : 'mensajes por enviar', '#mensajes', pendientes.length > 0)),
+      tarjetaDato(mensajes.length, mensajes.length === 1 ? 'mensaje por enviar' : 'mensajes por enviar', '#mensajes', mensajes.length > 0)),
 
-    sinMarcar.length > 0 && el('p', { class: 'alerta alerta--info', texto: sinMarcar.length === 1
+    // Lo primero que hay que hacer: responder a quienes pidieron cita.
+    el('section', { class: 'bloque-panel', 'aria-labelledby': 'titulo-solicitudes' },
+      el('h2', { id: 'titulo-solicitudes', class: 'bloque-panel__titulo', texto: 'Solicitudes por confirmar' }),
+      porConfirmar.length
+        ? [el('p', { class: 'bloque-panel__ayuda', texto: 'Al aceptar, al paciente le llega el WhatsApp con los datos de su cita y el enlace para reprogramar o cancelar.' }),
+          listaCitas(porConfirmar, { conFecha: true })]
+        : el('div', { class: 'vacio' }, el('p', { texto: 'No hay solicitudes nuevas. Todo al día.' }))),
+
+    sinMarcar.length > 0 && el('p', { class: 'alerta alerta--info bloque-panel', texto: sinMarcar.length === 1
       ? 'Hay 1 cita de hoy que ya pasó y falta marcar si el paciente asistió.'
       : `Hay ${sinMarcar.length} citas de hoy que ya pasaron y falta marcar si los pacientes asistieron.` }),
 
@@ -115,7 +136,8 @@ async function montarInicio(destino) {
 }
 
 if (sesion) {
-  document.querySelector('[data-nombre-usuario]').textContent = sesion.usuario.nombre;
+  document.querySelectorAll('[data-nombre-usuario]').forEach((nodo) => { nodo.textContent = sesion.usuario.nombre; });
+  document.querySelectorAll('[data-inicial-usuario]').forEach((nodo) => { nodo.textContent = sesion.usuario.nombre.charAt(0).toUpperCase(); });
   window.addEventListener('hashchange', () => mostrarSeccion({ enfocar: true }));
   mostrarSeccion();
   // Inicio y Mensajes ya traen los pendientes; las demás secciones no.

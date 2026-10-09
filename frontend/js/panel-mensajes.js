@@ -3,7 +3,7 @@
    Contrato API v2, sección 4 ("Mensajes de WhatsApp"):
      GET   /admin/notificaciones?estado=pendiente|enviada|fallida
      PATCH /admin/notificaciones/:id   { estado: 'enviada' }
-     POST  /admin/recordatorios        genera ya los recordatorios de mañana
+     POST  /admin/recordatorios        genera ya los recordatorios de las próximas 24 horas
 
    En modo manual cada mensaje queda "por enviar": la secretaria lo abre
    en su WhatsApp (enlaceWhatsApp trae el texto listo), lo envía y lo
@@ -22,11 +22,12 @@ const TIPO_MENSAJE = {
   reprogramacion: 'Cita reprogramada',
   cancelacion: 'Cita cancelada',
   recordatorio: 'Recordatorio',
+  rechazo: 'Solicitud rechazada',
 };
 
 async function montarMensajes(cuerpo) {
   const lista = el('div', { class: 'mensajes__lista' });
-  const generar = el('button', { type: 'button', class: 'btn btn--secundario', texto: 'Generar recordatorios de mañana' });
+  const generar = el('button', { type: 'button', class: 'btn btn--secundario', texto: 'Generar recordatorios (próximas 24 h)' });
   generar.addEventListener('click', () => generarRecordatorios(generar));
 
   pintarEn(cuerpo,
@@ -107,13 +108,13 @@ async function generarRecordatorios(boton) {
     const n = r.resultados.length;
     panel.aviso = el('p', { class: 'alerta alerta--exito', role: 'status',
       texto: n === 0
-        ? `No hay recordatorios nuevos para el ${fechaLarga(r.fecha)}. Las citas que ya tienen su recordatorio, o que se agendaron hace menos de 12 horas, no reciben otro.`
-        : `${n === 1 ? 'Se generó 1 recordatorio' : `Se generaron ${n} recordatorios`} para las citas del ${fechaLarga(r.fecha)}.` });
+        ? 'No hay recordatorios nuevos para las próximas 24 horas. Las citas que ya tienen su recordatorio, o que se confirmaron hace menos de 12 horas, no reciben otro.'
+        : `${n === 1 ? 'Se generó 1 recordatorio' : `Se generaron ${n} recordatorios`} para las citas de las próximas 24 horas.` });
     mensajes.estado = 'pendiente';
     panel.refrescar();
   } catch (err) {
     boton.disabled = false;
-    boton.textContent = 'Generar recordatorios de mañana';
+    boton.textContent = 'Generar recordatorios (próximas 24 h)';
     boton.after(el('p', { class: 'campo__error', texto: err.message }));
   }
 }
