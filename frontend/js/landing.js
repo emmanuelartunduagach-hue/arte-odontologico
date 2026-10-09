@@ -80,7 +80,13 @@ function prepararFormularios() {
   if (sesion) {
     document.querySelectorAll('[data-abrir="modal-ingreso"]').forEach((enlace) => {
       enlace.removeAttribute('data-abrir');
-      enlace.textContent = 'Mi panel';
+      // El candado del encabezado conserva su icono; solo cambia lo que anuncia.
+      if (enlace.hasAttribute('data-acceso-icono')) {
+        enlace.setAttribute('aria-label', 'Ir a mi panel');
+        enlace.title = 'Ir a mi panel';
+      } else {
+        enlace.textContent = 'Mi panel';
+      }
       if (enlace.tagName === 'A') enlace.href = destinoDe(sesion.usuario);
       else enlace.addEventListener('click', () => location.assign(destinoDe(sesion.usuario)));
     });

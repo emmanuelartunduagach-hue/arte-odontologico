@@ -26,7 +26,8 @@ const DIAS_BUSQUEDA = 90;
 
 /* ---------- Fila de cita (también la usa Inicio) ---------- */
 
-/** Acciones de una cita: la primera va a la vista y el resto, en "Más". */
+/** Acciones de una cita: las primeras van a la vista y el resto, en "Más".
+    Una solicitud por confirmar muestra Aceptar y Rechazar juntos. */
 function accionesDe(cita) {
   const llegoLaHora = `${cita.fecha}T${cita.hora}` <= ahoraColombia();
   if (cita.estado === 'pendiente') {
@@ -44,12 +45,16 @@ function accionesDe(cita) {
 function filaCita(cita, { conFecha = false } = {}) {
   const viva = ['pendiente', 'confirmada'].includes(cita.estado);
   const [h, m] = cita.hora.split(':').map(Number);
-  const [principal, ...resto] = accionesDe(cita);
+  const acciones = accionesDe(cita);
+  const visibles = cita.estado === 'pendiente' && acciones[0]?.[0] === 'Aceptar' ? 2 : 1;
+  const principales = acciones.slice(0, visibles);
+  const resto = acciones.slice(visibles);
+  const cambioDeHora = cita.estado === 'pendiente' && cita.fechaAnterior && cita.horaAnterior;
   const clases = 'fila-cita' + (viva ? '' : ' fila-cita--cerrada') + (cita.estado === 'pendiente' ? ' fila-cita--pendiente' : '');
 
   return el('article', { class: clases, 'aria-label': `${horaLarga(cita.hora)}, ${cita.paciente}` },
     el('div', { class: 'fila-cita__hora' },
-      conFecha && el('span', { class: 'fila-cita__fecha', texto: fechaLarga(cita.fecha) }),
+      conFecha && el('span', { class: 'fila-cita__fecha', texto: capitalizar(fechaLarga(cita.fecha)) }),
       el('span', { class: 'fila-cita__reloj', texto: `${h % 12 || 12}:${String(m).padStart(2, '0')}` }),
       el('span', { class: 'fila-cita__meridiano', texto: h >= 12 ? 'p. m.' : 'a. m.' })),
     el('div', { class: 'fila-cita__paciente' },
@@ -64,13 +69,17 @@ function filaCita(cita, { conFecha = false } = {}) {
       el('p', { class: 'fila-cita__detalle', texto: cita.especialidad })),
     el('div', { class: 'fila-cita__estado' },
       chipEstado(cita.estado),
+      // El paciente reprogramó desde su enlace: se muestra qué hora tenía.
+      cambioDeHora && el('span', { class: 'fila-cita__cambio' },
+        el('strong', { texto: 'Cambio de hora' }),
+        ` · antes: ${fechaLarga(cita.fechaAnterior)}, ${horaLarga(cita.horaAnterior)}`),
       cita.estado === 'cancelada' && cita.canceladaPor
         && el('span', { class: 'fila-cita__detalle', texto: cita.canceladaPor === 'paciente' ? 'por el paciente' : 'por el consultorio' })),
     el('div', { class: 'fila-cita__acciones' },
-      principal && el('button', {
-        type: 'button', class: `btn ${['Atendida', 'Aceptar'].includes(principal[0]) ? 'btn--primario' : 'btn--secundario'} btn--compacto`,
-        onclick: principal[1], texto: principal[0],
-      }),
+      principales.map(([texto, accion]) => el('button', {
+        type: 'button', class: `btn ${['Atendida', 'Aceptar'].includes(texto) ? 'btn--primario' : 'btn--secundario'} btn--compacto`,
+        onclick: accion, texto,
+      })),
       resto.length > 0 && el('details', { class: 'menu-acciones' },
         el('summary', { class: 'btn btn--fantasma btn--compacto', 'aria-label': `Más acciones para ${cita.paciente}`, texto: 'Más' }),
         el('div', { class: 'menu-acciones__lista' },
@@ -135,7 +144,7 @@ function barraAgenda() {
 
   const busqueda = el('form', { class: 'agenda__busqueda', role: 'search' },
     el('input', { class: 'campo__control', type: 'search', name: 'q', value: agenda.q, 'aria-label': 'Buscar paciente',
-      placeholder: 'Buscar paciente: nombre, documento o teléfono', autocomplete: 'off' }),
+      placeholder: 'Nombre, documento o celular', autocomplete: 'off' }),
     el('button', { type: 'submit', class: 'btn btn--primario btn--compacto', texto: 'Buscar' }));
   busqueda.addEventListener('submit', (e) => {
     e.preventDefault();
@@ -202,6 +211,11 @@ function nombreCita(cita) {
   return `${cita.paciente}, ${fechaLarga(cita.fecha)} a las ${horaLarga(cita.hora)}`;
 }
 
+/** Cierra una frase con punto sin duplicarlo ("9:00 a. m." ya termina en punto). */
+function conPunto(texto) {
+  return texto.endsWith('.') ? texto : `${texto}.`;
+}
+
 function marcarCita(cita, estado) {
   const atendida = estado === 'atendida';
   confirmarAccion({
@@ -235,7 +249,9 @@ async function aceptarCita(cita) {
 function rechazarCita(cita) {
   confirmarAccion({
     titulo: '¿Rechazar la solicitud?',
-    texto: `${nombreCita(cita)}. La hora queda libre y se le avisa por WhatsApp que pida otra hora.`,
+    texto: cita.fechaAnterior
+      ? `${conPunto(nombreCita(cita))} Es un cambio de hora que pidió el paciente (antes: ${fechaLarga(cita.fechaAnterior)}, ${horaLarga(cita.horaAnterior)}); al rechazarlo la cita queda rechazada, la hora se libera y se le avisa por WhatsApp que pida otra.`
+      : `${conPunto(nombreCita(cita))} La hora queda libre y se le avisa por WhatsApp que pida otra hora.`,
     si: 'Sí, rechazar',
     no: 'Volver',
     accion: async () => {
@@ -250,7 +266,7 @@ function rechazarCita(cita) {
 function cancelarCita(cita) {
   confirmarAccion({
     titulo: '¿Cancelar la cita?',
-    texto: `${nombreCita(cita)}. La hora vuelve a quedar libre y se le avisa al paciente por WhatsApp.`,
+    texto: `${conPunto(nombreCita(cita))} La hora vuelve a quedar libre y se le avisa al paciente por WhatsApp.`,
     si: 'Sí, cancelar la cita',
     no: 'No, conservarla',
     accion: async () => {

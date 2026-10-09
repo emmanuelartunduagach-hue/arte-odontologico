@@ -193,7 +193,7 @@
   place-items: center;
   background: var(--papel);
   border-radius: var(--radio-md);
-  color: var(--violeta-600);
+  color: var(--acento-texto);
   transition: background var(--transicion), color var(--transicion);
 }
 .servicio__icono svg { width: 22px; height: 22px; }
@@ -201,7 +201,7 @@
 /* El icono se rellena al interactuar. Un solo cambio de estado,
    sobre el elemento que identifica la tarjeta.               */
 .servicio:hover .servicio__icono,
-.servicio:focus-visible .servicio__icono { background: var(--violeta-600); color: var(--papel); }
+.servicio:focus-visible .servicio__icono { background: var(--violeta-600); color: var(--sobre-marca); }
 
 .servicio__nombre { display: block; font-size: var(--txt-base); font-weight: var(--peso-semi); margin-bottom: var(--e-1); }
 .servicio__desc { display: block; font-size: var(--txt-sm); color: var(--ink-900); line-height: var(--alto-normal); }
@@ -273,7 +273,7 @@
   font-size: var(--txt-sm);
 }
 .contacto__lista li:last-child { border-bottom: 0; }
-.contacto__lista svg { width: 18px; height: 18px; color: var(--violeta-600); flex-shrink: 0; margin-top: 3px; }
+.contacto__lista svg { width: 18px; height: 18px; color: var(--acento-texto); flex-shrink: 0; margin-top: 3px; }
 
 .aviso-wa { padding: var(--e-5); background: var(--violeta-50); border-radius: var(--radio-md); }
 .aviso-wa h3 { font-family: var(--fuente-ui); font-size: var(--txt-base); font-weight: var(--peso-semi); margin-bottom: var(--e-2); }
@@ -398,7 +398,7 @@
   padding: 0;
   background: none;
   border: 0;
-  color: var(--violeta-600);
+  color: var(--acento-texto);
   font-size: var(--txt-xs);
   font-weight: var(--peso-semi);
   text-decoration: underline;
@@ -433,7 +433,7 @@
   width: 40px;
   height: 40px;
   background: var(--papel);
-  color: var(--violeta-600);
+  color: var(--acento-texto);
   border: 1px solid var(--borde-fuerte);
   border-radius: var(--radio-pill);
   cursor: pointer;
@@ -455,8 +455,8 @@
   cursor: default;
 }
 .dia--libre { background: var(--lavanda-500); color: var(--ink-900); font-weight: var(--peso-semi); cursor: pointer; }
-.dia--libre:hover { background: var(--violeta-600); color: var(--papel); }
-.dia[aria-pressed="true"] { background: var(--violeta-600); color: var(--papel); }
+.dia--libre:hover { background: var(--violeta-600); color: var(--sobre-marca); }
+.dia[aria-pressed="true"] { background: var(--violeta-600); color: var(--sobre-marca); }
 .calendario__ayuda { margin-top: var(--e-3); font-size: var(--txt-xs); color: var(--ink-600); }
 
 /* Horas */
@@ -464,7 +464,7 @@
 .hora {
   padding: var(--e-2) var(--e-4);
   background: var(--papel);
-  color: var(--violeta-600);
+  color: var(--acento-texto);
   border: 1px solid var(--violeta-600);
   border-radius: var(--radio-pill);
   font-size: var(--txt-sm);
@@ -473,7 +473,7 @@
   transition: background var(--transicion), color var(--transicion);
 }
 .hora:hover,
-.hora:focus-visible { background: var(--violeta-600); color: var(--papel); }
+.hora:focus-visible { background: var(--violeta-600); color: var(--sobre-marca); }
 
 /* Avisos */
 .alerta {
@@ -544,7 +544,9 @@
 
 /* ---------- Gestionar mi cita (gestionar-cita.html) ---------- */
 
-.gestion { padding-block: var(--e-8); min-height: 70vh; background: var(--violeta-50); }
+/* El fondo lila cubre toda la pantalla, también en celulares altos. */
+.pagina-gestion { background: var(--violeta-50); }
+.gestion { padding-block: var(--e-8); min-height: calc(100vh - 72px); min-height: calc(100dvh - 72px); background: var(--violeta-50); }
 .gestion__tarjeta {
   max-width: 640px;
   margin-inline: auto;

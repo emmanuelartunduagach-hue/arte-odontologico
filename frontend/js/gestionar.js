@@ -49,6 +49,9 @@ function pintarError() {
   return [
     titulo(estado.error.estado === 404 ? 'No encontramos tu cita' : 'No pudimos cargar tu cita'),
     el('p', { class: 'alerta', role: 'alert', texto: estado.error.message }),
+    // Cada vez que el consultorio confirma un cambio de hora llega un enlace
+    // nuevo y el anterior deja de servir.
+    estado.error.estado === 404 && el('p', { class: 'agendar__nota', texto: 'Si cambiaste la hora de tu cita, usa el enlace del último WhatsApp que te enviamos: el anterior ya no funciona. Si no lo encuentras, escríbenos y te ayudamos.' }),
     el('div', { class: 'acciones' },
       estado.error.estado === 404
         ? el('a', { class: 'btn btn--primario', href: URL_AGENDAR, texto: 'Agendar una cita nueva' })

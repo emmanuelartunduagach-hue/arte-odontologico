@@ -140,8 +140,10 @@
     ['Laura Méndez', 'web'], ['Ana Pérez', 'web'], ['Carlos Gómez', 'consultorio'], ['Luisa Rojas', 'web'],
     ['Pedro Díaz', 'consultorio'], ['Sofía Ramírez', 'web'], ['Jorge Castro', 'web'], ['Marta Ruiz', 'consultorio'],
   ].map(([nombreCompleto, origen], i) => ({
-    id: i + 1, nombreCompleto, documento: `10751234${i}`, telefono: `57300123456${i}`,
+    id: i + 1, nombres: nombreCompleto.split(' ')[0], apellidos: nombreCompleto.split(' ').slice(1).join(' '), nombreCompleto,
+    tipoDocumento: 'CC', documento: `10751234${i}`, telefono: `57300123456${i}`, telefonoFijo: i === 2 ? '6088370000' : null,
     correo: `${nombreCompleto.split(' ')[0].toLowerCase()}@ejemplo.co`, origen,
+    motivoConsulta: origen === 'consultorio' ? 'Valoración general y limpieza.' : null,
     fechaAutorizacion: '2026-09-15 10:00:00', creadoEn: '2026-09-15 10:00:00',
   }));
   const HISTORIA = [];
@@ -188,8 +190,12 @@
         documento: ficha ? ficha.documento : `10759876${i}`, telefono: ficha ? ficha.telefono : `57310987654${i}`,
         correo: ficha ? ficha.correo : `${paciente.split(' ')[0].toLowerCase()}@ejemplo.co`,
         pacienteId: ficha ? ficha.id : null, canceladaPor: estado === 'cancelada' ? 'paciente' : null,
+        tipoDocumento: 'CC', telefonoFijo: null, fechaAnterior: null, horaAnterior: null,
       };
     });
+    // Andrés Mejía cambió la hora desde su enlace: se ve "Cambio de hora".
+    Object.assign(AGENDA.find((c) => c.paciente === 'Andrés Mejía'),
+      { reprogramaciones: 1, fechaAnterior: sumarDias(hoy, 1), horaAnterior: '09:00' });
     try {
       AGENDA.push(...JSON.parse(sessionStorage.getItem('arte-demo-solicitudes') || '[]'));
     } catch { /* nada guardado */ }
@@ -246,6 +252,28 @@
   }
   let RECORDATORIOS_HECHOS = false;
 
+  /** Datos de una persona (pedir cita o registrar paciente), normalizados. */
+  function personaDe(c) {
+    const nombres = String(c.nombres || '').trim().replace(/\s+/g, ' ');
+    const apellidos = String(c.apellidos || '').trim().replace(/\s+/g, ' ');
+    return {
+      nombres, apellidos, nombreCompleto: `${nombres} ${apellidos}`.trim(),
+      tipoDocumento: c.tipoDocumento || 'CC', documento: String(c.documento || '').replace(/[.\s-]/g, '').toUpperCase(),
+      telefono: `57${String(c.telefono).replace(/\D/g, '').slice(-10)}`,
+      telefonoFijo: String(c.telefonoFijo || '').replace(/\D/g, '') || null,
+      correo: String(c.correo || '').trim().toLowerCase(),
+    };
+  }
+  function erroresPersona(c) {
+    const p = personaDe(c);
+    const errores = {};
+    if (p.nombres.length < 2) errores.nombres = 'Escribe los nombres (entre 2 y 60 caracteres).';
+    if (p.apellidos.length < 2) errores.apellidos = 'Escribe los apellidos (entre 2 y 60 caracteres).';
+    if (!/^[A-Z0-9]{5,20}$/.test(p.documento)) errores.documento = 'Revisa el número de documento.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(p.correo)) errores.correo = 'Escribe un correo electrónico válido.';
+    return errores;
+  }
+
   /** Cita nueva en la agenda en memoria a partir de un franjaId "esp|fecha|hora". */
   function nuevaCita(cuerpo, persona, estado) {
     const [especialistaId, fecha, hora] = String(cuerpo.franjaId).split('|');
@@ -256,8 +284,9 @@
       id: 300 + agendaDemo().length, estado, paciente: persona.nombreCompleto, especialidadId: esp?.id, especialidad: esp?.nombre,
       especialistaId: Number(especialistaId), especialista: especialista?.nombre || 'Especialista de demostración',
       fecha, hora, sede: 'Rivera', direccion: 'Carrera 7 No. 3-61, Rivera', reprogramaciones: 0,
-      documento: persona.documento, telefono: persona.telefono, correo: persona.correo,
-      pacienteId: estado === 'confirmada' ? persona.id : null, canceladaPor: null,
+      nombres: persona.nombres, apellidos: persona.apellidos, tipoDocumento: persona.tipoDocumento || 'CC',
+      documento: persona.documento, telefono: persona.telefono, telefonoFijo: persona.telefonoFijo || null, correo: persona.correo,
+      pacienteId: estado === 'confirmada' ? persona.id : null, canceladaPor: null, fechaAnterior: null, horaAnterior: null,
     };
     agendaDemo().push(cita);
     if (estado === 'pendiente') {
@@ -364,8 +393,11 @@
         let paciente = PACIENTES.find((x) => x.documento === cita.documento);
         const nuevo = !paciente;
         if (nuevo) {
-          paciente = { id: PACIENTES.length + 1, nombreCompleto: cita.paciente, documento: cita.documento, telefono: cita.telefono,
-            correo: cita.correo, origen: 'web', fechaAutorizacion: ahoraTexto(), creadoEn: ahoraTexto() };
+          paciente = { id: PACIENTES.length + 1, nombres: cita.nombres || cita.paciente.split(' ')[0],
+            apellidos: cita.apellidos ?? cita.paciente.split(' ').slice(1).join(' '), nombreCompleto: cita.paciente,
+            tipoDocumento: cita.tipoDocumento || 'CC', documento: cita.documento, telefono: cita.telefono,
+            telefonoFijo: cita.telefonoFijo || null, correo: cita.correo, origen: 'web', motivoConsulta: null,
+            fechaAutorizacion: ahoraTexto(), creadoEn: ahoraTexto() };
           PACIENTES.push(paciente);
         }
         Object.assign(cita, { estado: 'confirmada', pacienteId: paciente.id });
@@ -415,9 +447,11 @@
           const mensaje = `Ya existe un paciente con este documento: ${existente.nombreCompleto}.`;
           throw new ErrorApi(mensaje, 409, { documento: mensaje }, { pacienteId: existente.id });
         }
-        const paciente = { id: PACIENTES.length + 1, nombreCompleto: cuerpo.nombreCompleto.trim(), documento: doc,
-          telefono: `57${String(cuerpo.telefono).replace(/\D/g, '').slice(-10)}`, correo: cuerpo.correo.trim().toLowerCase(),
-          origen: 'consultorio', fechaAutorizacion: ahoraTexto(), creadoEn: ahoraTexto() };
+        const errores = erroresPersona(cuerpo);
+        if (Object.keys(errores).length) throw new ErrorApi('Revisa los datos del formulario.', 400, errores);
+        const paciente = { id: PACIENTES.length + 1, ...personaDe(cuerpo), origen: 'consultorio',
+          motivoConsulta: String(cuerpo.motivoConsulta || '').trim() || null,
+          fechaAutorizacion: ahoraTexto(), creadoEn: ahoraTexto() };
         PACIENTES.push(paciente);
         return { mensaje: 'Paciente creado correctamente.', paciente: { ...paciente }, citasVinculadas: 0 };
       }
@@ -491,12 +525,11 @@
     // la secretaria (en esta misma pestaña del navegador) para aceptarla o rechazarla.
     if (metodo === 'POST' && url.pathname === '/citas') {
       if (cuerpo.documento === '999999999') {
-        throw new ErrorApi('Ya tienes una cita pedida. Para pedir otra, primero asiste a esa cita o cancélala desde el enlace que te llegó por WhatsApp.', 409);
+        throw new ErrorApi('Ya tienes una solicitud de cita en revisión. Te avisaremos por WhatsApp cuando el consultorio la confirme; si necesitas cambiarla antes, escríbenos.', 409);
       }
-      const cita = nuevaCita(cuerpo, {
-        nombreCompleto: cuerpo.nombreCompleto.trim(), documento: cuerpo.documento.trim(),
-        telefono: `57${String(cuerpo.telefono).replace(/\D/g, '').slice(-10)}`, correo: cuerpo.correo.trim(),
-      }, 'pendiente');
+      const errores = erroresPersona(cuerpo);
+      if (Object.keys(errores).length) throw new ErrorApi('Revisa los datos del formulario.', 400, errores);
+      const cita = nuevaCita(cuerpo, personaDe(cuerpo), 'pendiente');
       return { mensaje: 'Recibimos tu solicitud. Te confirmaremos por WhatsApp.', cita: { ...cita } };
     }
 
@@ -515,7 +548,7 @@
         if (!reglasDemo(cita).puedeReprogramar) throw new ErrorApi('Esta cita ya no se puede reprogramar.', 409);
         const [, fecha, hora] = String(cuerpo.franjaId).split('|');
         if (hora === '10:00' ) throw new ErrorApi('Esa hora acaba de ser tomada. Elige otra.', 409);
-        Object.assign(cita, { fecha, hora, estado: 'pendiente', reprogramaciones: cita.reprogramaciones + 1 });
+        Object.assign(cita, { fechaAnterior: cita.fecha, horaAnterior: cita.hora, fecha, hora, estado: 'pendiente', reprogramaciones: cita.reprogramaciones + 1 });
         return { mensaje: 'Recibimos tu cambio. Te confirmaremos la nueva hora por WhatsApp.', cita: { ...cita }, ...reglasDemo(cita) };
       }
 
