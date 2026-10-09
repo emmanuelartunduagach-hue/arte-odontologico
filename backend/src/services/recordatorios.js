@@ -1,9 +1,14 @@
-/* Recordatorio por WhatsApp el día anterior a la cita.
+/* Recordatorio por WhatsApp 24 horas antes de la cita.
 
-   `enviarRecordatorios()` busca las citas confirmadas de mañana que aún
-   no tienen recordatorio y llama a notificarCita(tipo 'recordatorio')
-   para cada una. Es seguro ejecutarla muchas veces: una cita recibe un
-   solo recordatorio (y uno nuevo si se reprograma).
+   `enviarRecordatorios()` busca las citas confirmadas que empiezan en
+   las próximas 24 horas y aún no tienen recordatorio, y llama a
+   notificarCita(tipo 'recordatorio') para cada una. Es seguro
+   ejecutarla muchas veces: una cita recibe un solo recordatorio (y uno
+   nuevo si se reprograma).
+
+   Como revisa cada 30 minutos y solo entre RECORDATORIO_DESDE y
+   RECORDATORIO_HASTA, el mensaje sale unas 24 horas antes; una cita de
+   las 7:00 lo recibe a las 8:00 del día anterior.
 
    Se ejecuta:
    - sola, cada 30 minutos mientras el servidor esté encendido
@@ -15,7 +20,7 @@
    pendiente en el panel para que la secretaria lo envíe. */
 const citaModelo = require('../models/cita.model');
 const { notificarCita } = require('./notificaciones/NotificacionService');
-const { ahoraBogota, hoyBogota, sumarDias } = require('../utils/tiempo');
+const { ahoraBogota } = require('../utils/tiempo');
 
 const entero = (valor, porDefecto) => {
   const n = Number(valor);
@@ -37,7 +42,9 @@ function dentroDelHorario() {
  * @returns {Promise<{ fecha: string, revisadas: number, resultados: Array<{citaId:number, estado:string}>, omitido?: string }>}
  */
 async function enviarRecordatorios({ ignorarHorario = false } = {}) {
-  const fecha = sumarDias(hoyBogota(), 1);
+  const ahora = ahoraBogota();
+  const limite = ahoraBogota(24);
+  const fecha = limite.slice(0, 10);  // hasta qué día se revisó (para mostrarlo)
   if (!ignorarHorario && !dentroDelHorario()) {
     return { fecha, revisadas: 0, resultados: [], omitido: 'Fuera del horario de envío' };
   }
@@ -45,7 +52,7 @@ async function enviarRecordatorios({ ignorarHorario = false } = {}) {
 
   enCurso = true;
   try {
-    const ids = await citaModelo.pendientesDeRecordatorio(fecha, ahoraBogota(), HORAS_MINIMAS());
+    const ids = await citaModelo.pendientesDeRecordatorio(ahora, limite, HORAS_MINIMAS());
     const resultados = [];
     for (const citaId of ids) {
       const r = await notificarCita({ citaId, tipo: 'recordatorio' });
@@ -63,7 +70,7 @@ function iniciarProgramacion() {
   const ejecutar = () =>
     enviarRecordatorios()
       .then((r) => {
-        if (r.revisadas > 0) console.log(`Recordatorios para ${r.fecha}: ${r.revisadas}`);
+        if (r.revisadas > 0) console.log(`Recordatorios de las próximas 24 horas: ${r.revisadas}`);
       })
       .catch((e) => console.error('Fallo al enviar recordatorios:', e.message));
   setTimeout(ejecutar, 10 * 1000);

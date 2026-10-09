@@ -1,9 +1,8 @@
-/* Agendar y gestionar citas sin iniciar sesión.
+/* Pedir y gestionar citas sin iniciar sesión.
    Tienen límite de peticiones por IP para frenar bots. */
 const { Router } = require('express');
 const controlador = require('../controllers/citas.controller');
 const { limitePeticiones } = require('../middleware/limitePeticiones');
-const { sesionOpcional } = require('../middleware/autenticacion');
 
 const router = Router();
 
@@ -17,7 +16,7 @@ const limiteLectura = limitePeticiones({
   ventanaMinutos: 15,
 });
 
-router.post('/', limiteEscritura, sesionOpcional, controlador.crear);
+router.post('/', limiteEscritura, controlador.crear);
 router.get('/gestion/:codigo', limiteLectura, controlador.verGestion);
 router.post('/gestion/:codigo/reprogramar', limiteEscritura, controlador.reprogramarGestion);
 router.post('/gestion/:codigo/cancelar', limiteEscritura, controlador.cancelarGestion);

@@ -97,19 +97,19 @@ function validarUsuario(datos = {}, { exigirContrasena = true } = {}) {
   };
 }
 
-/* Datos que se piden al agendar sin cuenta: nombre, documento y
-   teléfono obligatorios; correo opcional (vacío = null). */
+/* Datos de una persona al pedir su cita o al registrarla en el
+   consultorio: nombre, documento, celular y correo, todos obligatorios. */
 function validarDatosPersona(datos = {}) {
   const errores = {};
   const nombreCompleto = normalizarNombre(datos.nombreCompleto);
   const documento = normalizarDocumento(datos.documento);
   const telefono = normalizarTelefono(datos.telefono);
-  const correo = limpiar(datos.correo).toLowerCase() || null;
+  const correo = limpiar(datos.correo).toLowerCase();
 
   agregar(errores, 'nombreCompleto', errorNombre(nombreCompleto));
   agregar(errores, 'documento', errorDocumento(documento));
   agregar(errores, 'telefono', errorTelefono(telefono));
-  if (correo) agregar(errores, 'correo', errorCorreo(correo));
+  agregar(errores, 'correo', correo ? errorCorreo(correo) : 'Escribe tu correo electrónico.');
 
   return { valores: { nombreCompleto, documento, telefono, correo }, errores };
 }

@@ -1,38 +1,44 @@
 /* Citas.
 
    Público (sin iniciar sesión):
-     POST /api/citas                              agendar con 3 datos
+     POST /api/citas                              pedir una cita (queda pendiente)
      GET  /api/citas/gestion/:codigo              ver la cita desde el enlace
-     POST /api/citas/gestion/:codigo/reprogramar  una sola vez
+     POST /api/citas/gestion/:codigo/reprogramar  una sola vez (vuelve a pendiente)
      POST /api/citas/gestion/:codigo/cancelar
-   Paciente con usuario:
-     GET  /api/mis-citas                          con lo que puede hacer en cada una
-     POST /api/mis-citas/:id/reprogramar          mismas reglas que el enlace
-     POST /api/mis-citas/:id/cancelar
-     (y POST /api/citas con su sesión: sin límite de citas activas)
    Secretaria:
      GET  /api/admin/citas                        agenda con filtros
+     POST /api/admin/citas                        agendar a un paciente (queda confirmada)
+     POST /api/admin/citas/:id/aceptar            pendiente → confirmada
+     POST /api/admin/citas/:id/rechazar           pendiente → rechazada
      PATCH /api/admin/citas/:id/estado            atendida | no_asistio | cancelada
      POST /api/admin/citas/:id/reprogramar        sin límite
 
-   Reglas acordadas (documento "Alcance v2"):
-   - La cita queda confirmada al agendar.
-   - El paciente reprograma 1 vez; después solo puede cancelar.
-   - Reprogramar o cancelar desde el enlace o desde "Mis citas": hasta 24 h antes.
-   - Las canceladas no se borran: quedan como 'cancelada'. */
+   Reglas acordadas (documento "Alcance v2", ajustado el 9 de octubre):
+   - La cita pedida por la web queda pendiente y aparta la hora. La
+     secretaria la acepta (llega el WhatsApp con los datos y el enlace)
+     o la rechaza (la hora se libera y llega un WhatsApp avisando).
+   - Al aceptarla, la cita se enlaza con el paciente del mismo documento;
+     si no existe, se crea con los datos de la cita.
+   - El paciente reprograma 1 vez desde el enlace; la nueva hora vuelve a
+     quedar pendiente. Después solo puede cancelar.
+   - Reprogramar o cancelar desde el enlace: hasta 24 h antes.
+   - Las canceladas y rechazadas no se borran. */
 
 const citaModelo = require('../models/cita.model');
 const franjaModelo = require('../models/franja.model');
 const especialistaModelo = require('../models/especialista.model');
-const usuarioModelo = require('../models/usuario.model');
+const pacienteModelo = require('../models/paciente.model');
 const { notificarCita } = require('../services/notificaciones/NotificacionService');
 const { ErrorHttp } = require('../utils/errores');
 const { validarDatosPersona, aId, esFecha } = require('../utils/validaciones');
-const { generarCodigoGestion, hashCodigo, pareceCodigo } = require('../utils/codigos');
+const { hashCodigo, pareceCodigo } = require('../utils/codigos');
 const { ahoraBogota, hoyBogota, sumarDias } = require('../utils/tiempo');
 
 const HORAS_MINIMAS = () => Number(process.env.HORAS_MINIMAS_GESTION ?? 24);
-const LIMITE_SIN_USUARIO = () => Number(process.env.LIMITE_CITAS_ACTIVAS_SIN_USUARIO ?? 1);
+// Citas pendientes o confirmadas que una persona puede tener a la vez
+// desde la web (0 = sin límite). Se acepta el nombre anterior de la variable.
+const LIMITE_POR_DOCUMENTO = () =>
+  Number(process.env.LIMITE_CITAS_ACTIVAS_POR_DOCUMENTO ?? process.env.LIMITE_CITAS_ACTIVAS_SIN_USUARIO ?? 1);
 
 const MENSAJE_HORA_TOMADA = 'Esa hora acaba de ser tomada por otra persona. Elige otra.';
 
@@ -58,7 +64,10 @@ function reglasGestion(cita) {
   if (cita.estado === 'cancelada') {
     return { puedeReprogramar: false, puedeCancelar: false, motivo: 'Esta cita fue cancelada.' };
   }
-  if (cita.estado !== 'confirmada') {
+  if (cita.estado === 'rechazada') {
+    return { puedeReprogramar: false, puedeCancelar: false, motivo: 'El consultorio no pudo confirmar esta cita. Puedes pedir una nueva.' };
+  }
+  if (cita.estado !== 'confirmada' && cita.estado !== 'pendiente') {
     return { puedeReprogramar: false, puedeCancelar: false, motivo: 'Esta cita ya pasó.' };
   }
   if (cita.fechaHora <= ahoraBogota(HORAS_MINIMAS())) {
@@ -66,6 +75,13 @@ function reglasGestion(cita) {
       puedeReprogramar: false,
       puedeCancelar: false,
       motivo: `Faltan menos de ${HORAS_MINIMAS()} horas para tu cita. Para cambiarla, comunícate con el consultorio.`,
+    };
+  }
+  if (cita.estado === 'pendiente') {
+    return {
+      puedeReprogramar: false,
+      puedeCancelar: true,
+      motivo: 'Tu nueva hora está pendiente de confirmación. Te avisaremos por WhatsApp cuando el consultorio la confirme.',
     };
   }
   if (cita.reprogramaciones >= 1) {
@@ -86,7 +102,9 @@ function esHoraTomada(error) {
 
 /* POST /api/citas
    { especialidadId, franjaId, nombreCompleto, documento, telefono,
-     correo?, autorizacionDatos: true, sitioWeb: '' }
+     correo, autorizacionDatos: true, sitioWeb: '' }
+   La cita queda pendiente: aparta la hora hasta que la secretaria la
+   acepte o la rechace. El WhatsApp con el enlace llega al aceptarla.
    `sitioWeb` es un campo trampa: el formulario lo oculta, así que
    una persona lo deja vacío y un bot suele llenarlo. */
 async function crear(req, res, next) {
@@ -113,53 +131,37 @@ async function crear(req, res, next) {
       throw new ErrorHttp(400, 'Ese especialista no atiende la especialidad elegida.');
     }
 
-    // La cita queda a nombre de un usuario solo si quien agenda es ese
-    // paciente con su sesión iniciada. Escribir el documento de otra
-    // persona no basta: si no, cualquiera podría llenar la agenda a su
-    // nombre saltándose el límite.
-    let usuario = null;
-    if (req.usuario?.rol === 'paciente') {
-      const propio = await usuarioModelo.buscarPacientePorDocumento(valores.documento);
-      if (propio && propio.id === req.usuario.id) usuario = propio;
-    }
-    // Sin sesión (o con el documento de otra persona) se limita cuántas
-    // citas activas puede tener ese documento a la vez.
-    if (!usuario && LIMITE_SIN_USUARIO() > 0) {
+    if (LIMITE_POR_DOCUMENTO() > 0) {
       const activas = await citaModelo.contarActivasPorDocumento(valores.documento, ahora);
-      if (activas >= LIMITE_SIN_USUARIO()) {
+      if (activas >= LIMITE_POR_DOCUMENTO()) {
         throw new ErrorHttp(
           409,
-          'Ya tienes una cita agendada. Para pedir otra, primero asiste a esa cita o cancélala desde el enlace que te llegó por WhatsApp.'
+          'Ya tienes una cita pedida. Para pedir otra, primero asiste a esa cita o cancélala desde el enlace que te llegó por WhatsApp.'
         );
       }
     }
 
-    const { codigo, hash } = generarCodigoGestion();
     let id;
     try {
       id = await citaModelo.crear({
-        pacienteId: usuario ? usuario.id : null,
+        pacienteId: null,
         servicioId: especialidadId,
         franjaId,
+        estado: 'pendiente',
         nombre: valores.nombreCompleto,
         documento: valores.documento,
         telefono: valores.telefono,
         correo: valores.correo,
-        codigoHash: hash,
       });
     } catch (error) {
       if (esHoraTomada(error)) throw new ErrorHttp(409, MENSAJE_HORA_TOMADA, { franjaId: MENSAJE_HORA_TOMADA });
       throw error;
     }
 
-    const notificacion = await notificarCita({ citaId: id, tipo: 'confirmacion', codigo });
-    const cita = await citaModelo.buscarDetalle(id);
-
     res.set('Cache-Control', 'no-store');
     res.status(201).json({
-      mensaje: 'Tu cita quedó agendada.',
-      cita: vistaPublica(cita),
-      whatsapp: notificacion.estado === 'enviada' ? 'enviado' : 'pendiente',
+      mensaje: 'Recibimos tu solicitud. Te confirmaremos por WhatsApp.',
+      cita: vistaPublica(await citaModelo.buscarDetalle(id)),
     });
   } catch (error) {
     next(error);
@@ -184,65 +186,39 @@ async function verGestion(req, res, next) {
   }
 }
 
-/* Reprograma o cancela una cita a pedido del paciente, ya sea desde el
-   enlace de gestión o desde "Mis citas" con su sesión. Las reglas son las
-   mismas en los dos casos (reglasGestion). `codigo` es el del enlace, si
-   se tiene: sin él, el mensaje de WhatsApp lleva un enlace nuevo y el
-   anterior deja de servir. */
-async function reprogramarPorPaciente(cita, cuerpo, codigo) {
-  const reglas = reglasGestion(cita);
-  if (!reglas.puedeReprogramar) throw new ErrorHttp(409, reglas.motivo);
-
-  const franjaId = aId(cuerpo?.franjaId);
-  if (!franjaId) throw new ErrorHttp(400, 'Elige un día y una hora.', { franjaId: 'Elige un día y una hora.' });
-  if (franjaId === cita.franjaId) throw new ErrorHttp(400, 'Elige una hora distinta a la actual.');
-
-  const franja = await franjaModelo.buscarLibre(franjaId, ahoraBogota());
-  if (!franja) throw new ErrorHttp(409, 'Esa hora ya no está disponible. Elige otra.');
-  if (franja.especialistaId !== cita.especialistaId) {
-    throw new ErrorHttp(400, 'Elige una hora del mismo especialista.');
-  }
-
-  let cambiada;
-  try {
-    cambiada = await citaModelo.cambiarFranja(cita.id, franjaId, { contarAlPaciente: true });
-  } catch (error) {
-    if (esHoraTomada(error)) throw new ErrorHttp(409, MENSAJE_HORA_TOMADA);
-    throw error;
-  }
-  if (!cambiada) throw new ErrorHttp(409, 'Esta cita ya no se puede reprogramar.');
-
-  const notificacion = await notificarCita({ citaId: cita.id, tipo: 'reprogramacion', codigo });
-  return {
-    actualizada: await citaModelo.buscarDetalle(cita.id),
-    whatsapp: notificacion.estado === 'enviada' ? 'enviado' : 'pendiente',
-  };
-}
-
-async function cancelarPorPaciente(cita) {
-  const reglas = reglasGestion(cita);
-  if (!reglas.puedeCancelar) throw new ErrorHttp(409, reglas.motivo);
-
-  if (!(await citaModelo.cancelar(cita.id, 'paciente'))) {
-    throw new ErrorHttp(409, 'Esta cita ya no se puede cancelar.');
-  }
-  await notificarCita({ citaId: cita.id, tipo: 'cancelacion' });
-}
-
-const MENSAJE_CANCELADA = 'Tu cita fue cancelada. La hora quedó libre para otra persona.';
-
 /* POST /api/citas/gestion/:codigo/reprogramar   { franjaId }
-   La nueva hora debe ser del mismo especialista. */
+   La nueva hora debe ser del mismo especialista. La cita vuelve a
+   quedar pendiente: el WhatsApp llega cuando la secretaria la acepte. */
 async function reprogramarGestion(req, res, next) {
   try {
-    const codigo = req.params.codigo;
-    const cita = await citaDesdeCodigo(codigo);
-    const { actualizada, whatsapp } = await reprogramarPorPaciente(cita, req.body, codigo);
+    const cita = await citaDesdeCodigo(req.params.codigo);
+    const reglas = reglasGestion(cita);
+    if (!reglas.puedeReprogramar) throw new ErrorHttp(409, reglas.motivo);
+
+    const franjaId = aId(req.body?.franjaId);
+    if (!franjaId) throw new ErrorHttp(400, 'Elige un día y una hora.', { franjaId: 'Elige un día y una hora.' });
+    if (franjaId === cita.franjaId) throw new ErrorHttp(400, 'Elige una hora distinta a la actual.');
+
+    const franja = await franjaModelo.buscarLibre(franjaId, ahoraBogota());
+    if (!franja) throw new ErrorHttp(409, 'Esa hora ya no está disponible. Elige otra.');
+    if (franja.especialistaId !== cita.especialistaId) {
+      throw new ErrorHttp(400, 'Elige una hora del mismo especialista.');
+    }
+
+    let cambiada;
+    try {
+      cambiada = await citaModelo.cambiarFranja(cita.id, franjaId, { porPaciente: true });
+    } catch (error) {
+      if (esHoraTomada(error)) throw new ErrorHttp(409, MENSAJE_HORA_TOMADA);
+      throw error;
+    }
+    if (!cambiada) throw new ErrorHttp(409, 'Esta cita ya no se puede reprogramar.');
+
+    const actualizada = await citaModelo.buscarDetalle(cita.id);
     res.json({
-      mensaje: 'Tu cita fue reprogramada.',
+      mensaje: 'Recibimos tu cambio. Te confirmaremos la nueva hora por WhatsApp.',
       cita: vistaPublica(actualizada),
       ...reglasGestion(actualizada),
-      whatsapp,
     });
   } catch (error) {
     next(error);
@@ -252,57 +228,15 @@ async function reprogramarGestion(req, res, next) {
 /* POST /api/citas/gestion/:codigo/cancelar */
 async function cancelarGestion(req, res, next) {
   try {
-    await cancelarPorPaciente(await citaDesdeCodigo(req.params.codigo));
-    res.json({ mensaje: MENSAJE_CANCELADA });
-  } catch (error) {
-    next(error);
-  }
-}
+    const cita = await citaDesdeCodigo(req.params.codigo);
+    const reglas = reglasGestion(cita);
+    if (!reglas.puedeCancelar) throw new ErrorHttp(409, reglas.motivo);
 
-/* ---------- Paciente con usuario ---------- */
-
-/* Cita con lo que el paciente puede hacer con ella. */
-function vistaPaciente(cita) {
-  return { ...vistaPublica(cita), ...reglasGestion(cita) };
-}
-
-/* GET /api/mis-citas
-   Cada cita trae puedeReprogramar, puedeCancelar y motivo, como en el
-   enlace de gestión. */
-async function misCitas(req, res, next) {
-  try {
-    const citas = await citaModelo.listarDePaciente(req.usuario.id);
-    res.json(citas.map(vistaPaciente));
-  } catch (error) {
-    next(error);
-  }
-}
-
-/* Cita del paciente con sesión. Si es de otra persona responde 404,
-   igual que si no existiera, para no revelar qué ids hay. */
-async function citaPropia(req) {
-  const id = aId(req.params.id);
-  const cita = id ? await citaModelo.buscarDetalle(id) : null;
-  if (!cita || cita.pacienteId !== req.usuario.id) throw new ErrorHttp(404, 'Cita no encontrada.');
-  return cita;
-}
-
-/* POST /api/mis-citas/:id/reprogramar   { franjaId } */
-async function reprogramarMia(req, res, next) {
-  try {
-    const cita = await citaPropia(req);
-    const { actualizada, whatsapp } = await reprogramarPorPaciente(cita, req.body);
-    res.json({ mensaje: 'Tu cita fue reprogramada.', cita: vistaPaciente(actualizada), whatsapp });
-  } catch (error) {
-    next(error);
-  }
-}
-
-/* POST /api/mis-citas/:id/cancelar */
-async function cancelarMia(req, res, next) {
-  try {
-    await cancelarPorPaciente(await citaPropia(req));
-    res.json({ mensaje: MENSAJE_CANCELADA });
+    if (!(await citaModelo.cancelar(cita.id, 'paciente'))) {
+      throw new ErrorHttp(409, 'Esta cita ya no se puede cancelar.');
+    }
+    await notificarCita({ citaId: cita.id, tipo: 'cancelacion' });
+    res.json({ mensaje: 'Tu cita fue cancelada. La hora quedó libre para otra persona.' });
   } catch (error) {
     next(error);
   }
@@ -310,7 +244,7 @@ async function cancelarMia(req, res, next) {
 
 /* ---------- Secretaria ---------- */
 
-const ESTADOS = ['pendiente', 'confirmada', 'cancelada', 'atendida', 'no_asistio'];
+const ESTADOS = ['pendiente', 'confirmada', 'rechazada', 'cancelada', 'atendida', 'no_asistio'];
 
 /* GET /api/admin/citas?fecha=&desde=&hasta=&especialistaId=&estado=&q=
    Sin fechas: desde hoy hasta dentro de 30 días. */
@@ -366,6 +300,9 @@ async function cambiarEstado(req, res, next) {
     if (!['atendida', 'no_asistio', 'cancelada'].includes(estado)) {
       throw new ErrorHttp(400, 'El estado debe ser atendida, no_asistio o cancelada.');
     }
+    if (cita.estado === 'pendiente') {
+      throw new ErrorHttp(409, 'La cita está pendiente: primero acéptala o recházala.');
+    }
     if (cita.estado !== 'confirmada') {
       throw new ErrorHttp(409, `La cita ya está ${cita.estado.replace('_', ' ')}.`);
     }
@@ -396,7 +333,9 @@ async function cambiarEstado(req, res, next) {
 async function reprogramarAdmin(req, res, next) {
   try {
     const cita = await citaPorId(req.params.id);
-    if (cita.estado !== 'confirmada') throw new ErrorHttp(409, 'Solo se pueden reprogramar citas confirmadas.');
+    if (!['pendiente', 'confirmada'].includes(cita.estado)) {
+      throw new ErrorHttp(409, 'Solo se pueden reprogramar citas pendientes o confirmadas.');
+    }
 
     const franjaId = aId(req.body?.franjaId);
     if (!franjaId) throw new ErrorHttp(400, 'Elige un día y una hora.', { franjaId: 'Elige un día y una hora.' });
@@ -410,16 +349,135 @@ async function reprogramarAdmin(req, res, next) {
 
     let cambiada;
     try {
-      cambiada = await citaModelo.cambiarFranja(cita.id, franjaId, { contarAlPaciente: false });
+      cambiada = await citaModelo.cambiarFranja(cita.id, franjaId, { porPaciente: false });
     } catch (error) {
       if (esHoraTomada(error)) throw new ErrorHttp(409, MENSAJE_HORA_TOMADA);
       throw error;
     }
     if (!cambiada) throw new ErrorHttp(409, 'La cita ya cambió de estado.');
 
-    // Sin código en claro: el mensaje lleva un enlace nuevo y el anterior deja de servir.
-    const notificacion = await notificarCita({ citaId: cita.id, tipo: 'reprogramacion' });
+    // Una pendiente aún no tiene mensaje: el paciente se entera al aceptarla.
+    // Una confirmada recibe el aviso con un enlace nuevo (sin código en
+    // claro no se puede reutilizar el anterior, que deja de servir).
+    const notificacion = cita.estado === 'confirmada'
+      ? await notificarCita({ citaId: cita.id, tipo: 'reprogramacion' })
+      : null;
     res.json({ mensaje: 'Cita reprogramada.', cita: vistaPublica(await citaModelo.buscarDetalle(cita.id)), notificacion });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/* Paciente con el documento de la cita; si no existe, se crea con los
+   datos que escribió al pedirla. Devuelve { paciente, nuevo }. */
+async function pacienteDeCita(cita, creadoPor) {
+  const existente = await pacienteModelo.buscarPorDocumento(cita.documento);
+  if (existente) return { paciente: existente, nuevo: false };
+  try {
+    const id = await pacienteModelo.crear({
+      nombreCompleto: cita.nombrePaciente,
+      documento: cita.documento,
+      telefono: cita.telefono,
+      correo: cita.correo || '',
+      origen: 'web',
+      fechaAutorizacion: cita.fechaAutorizacion,
+      creadoPor,
+    });
+    return { paciente: await pacienteModelo.buscarPorId(id), nuevo: true };
+  } catch (error) {
+    // Otra aceptación lo creó al mismo tiempo: se usa ese.
+    if (error.code === 'ER_DUP_ENTRY') {
+      return { paciente: await pacienteModelo.buscarPorDocumento(cita.documento), nuevo: false };
+    }
+    throw error;
+  }
+}
+
+/* POST /api/admin/citas/:id/aceptar
+   La cita pasa a confirmada, queda en la ficha del paciente y le llega
+   el WhatsApp con los datos y el enlace para reprogramar o cancelar. */
+async function aceptar(req, res, next) {
+  try {
+    const cita = await citaPorId(req.params.id);
+    if (cita.estado !== 'pendiente') throw new ErrorHttp(409, `La cita ya está ${cita.estado.replace('_', ' ')}.`);
+    if (cita.fechaHora <= ahoraBogota()) {
+      throw new ErrorHttp(409, 'La hora de esta cita ya pasó. Recházala o reprográmala.');
+    }
+
+    const { paciente, nuevo } = await pacienteDeCita(cita, req.usuario.id);
+    if (!(await citaModelo.aceptar(cita.id, paciente.id))) {
+      throw new ErrorHttp(409, 'La cita ya cambió de estado.');
+    }
+    const notificacion = await notificarCita({ citaId: cita.id, tipo: 'confirmacion' });
+    res.json({
+      mensaje: nuevo ? 'Cita aceptada. Se creó la ficha del paciente.' : 'Cita aceptada.',
+      cita: vistaPublica(await citaModelo.buscarDetalle(cita.id)),
+      pacienteId: paciente.id,
+      pacienteNuevo: nuevo,
+      notificacion,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/* POST /api/admin/citas/:id/rechazar
+   La hora se libera y al paciente le llega un WhatsApp invitándolo a
+   pedir otra hora. */
+async function rechazar(req, res, next) {
+  try {
+    const cita = await citaPorId(req.params.id);
+    if (cita.estado !== 'pendiente') throw new ErrorHttp(409, `La cita ya está ${cita.estado.replace('_', ' ')}.`);
+    if (!(await citaModelo.rechazar(cita.id))) throw new ErrorHttp(409, 'La cita ya cambió de estado.');
+    const notificacion = await notificarCita({ citaId: cita.id, tipo: 'rechazo' });
+    res.json({ mensaje: 'Solicitud rechazada. La hora quedó libre.', notificacion });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/* POST /api/admin/citas   { pacienteId, especialidadId, franjaId }
+   Para quien llega al consultorio o llama: la secretaria le agenda la
+   cita con los datos de su ficha. Queda confirmada de una vez (no hay
+   nada que aprobar) y le llega el WhatsApp con el enlace. */
+async function crearAdmin(req, res, next) {
+  try {
+    const cuerpo = req.body || {};
+    const errores = {};
+    const pacienteId = aId(cuerpo.pacienteId);
+    const especialidadId = aId(cuerpo.especialidadId);
+    const franjaId = aId(cuerpo.franjaId);
+    if (!pacienteId) errores.pacienteId = 'Elige un paciente.';
+    if (!especialidadId) errores.especialidadId = 'Elige una especialidad.';
+    if (!franjaId) errores.franjaId = 'Elige un día y una hora.';
+    if (Object.keys(errores).length > 0) throw new ErrorHttp(400, 'Revisa los datos de la cita.', errores);
+
+    const paciente = await pacienteModelo.buscarPorId(pacienteId);
+    if (!paciente) throw new ErrorHttp(404, 'Paciente no encontrado.');
+    const franja = await franjaModelo.buscarLibre(franjaId, ahoraBogota());
+    if (!franja) throw new ErrorHttp(409, 'Esa hora ya no está disponible. Elige otra.');
+    if (!(await especialistaModelo.atiende(franja.especialistaId, especialidadId))) {
+      throw new ErrorHttp(400, 'Ese especialista no atiende la especialidad elegida.');
+    }
+
+    let id;
+    try {
+      id = await citaModelo.crear({
+        pacienteId: paciente.id,
+        servicioId: especialidadId,
+        franjaId,
+        estado: 'confirmada',
+        nombre: paciente.nombreCompleto,
+        documento: paciente.documento,
+        telefono: paciente.telefono,
+        correo: paciente.correo,
+      });
+    } catch (error) {
+      if (esHoraTomada(error)) throw new ErrorHttp(409, MENSAJE_HORA_TOMADA);
+      throw error;
+    }
+    const notificacion = await notificarCita({ citaId: id, tipo: 'confirmacion' });
+    res.status(201).json({ mensaje: 'Cita agendada.', cita: vistaPublica(await citaModelo.buscarDetalle(id)), notificacion });
   } catch (error) {
     next(error);
   }
@@ -430,10 +488,10 @@ module.exports = {
   verGestion,
   reprogramarGestion,
   cancelarGestion,
-  misCitas,
-  reprogramarMia,
-  cancelarMia,
   agenda,
+  crearAdmin,
+  aceptar,
+  rechazar,
   cambiarEstado,
   reprogramarAdmin,
 };

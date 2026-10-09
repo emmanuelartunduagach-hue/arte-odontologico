@@ -14,6 +14,5 @@ router.get('/', controlador.listar);
 router.get('/:id', historia.ficha);
 router.get('/:id/historia', historia.listar);
 router.post('/:id/historia', historia.crear);
-router.post('/:id/restablecer-contrasena', controlador.restablecerContrasena);
 
 module.exports = router;
