@@ -296,7 +296,7 @@ Si el envío automático falla, la cita igual queda registrada y la API
 devuelve el enlace de WhatsApp con el texto listo, para que la secretaria
 lo envíe a mano desde el panel.
 
-## 23. El paciente con sesión gestiona su cita desde "Mis citas" (8 de octubre)
+## 23. El paciente con sesión gestiona su cita desde "Mis citas" (8 de octubre; reemplazada por la 24)
 
 Antes, el paciente con usuario solo veía sus citas: para reprogramar o
 cancelar tenía que buscar el enlace del WhatsApp. Ahora lo hace desde su
@@ -314,3 +314,39 @@ Si la cita no es del paciente de la sesión, la respuesta es 404 y no 403: con
 Al reprogramar desde el panel no se tiene el código del enlace en claro (en la
 base solo está su hash), así que el WhatsApp de confirmación lleva un enlace
 nuevo y el anterior deja de servir, como cuando reprograma la secretaria.
+
+## 24. Citas por aprobar y pacientes sin login (9 de octubre)
+
+El flujo acordado con el equipo es más simple: la persona pide la cita, la
+secretaria la acepta y entonces le llega el WhatsApp con los datos y el
+enlace; unas 24 horas antes, el recordatorio. Quien llega al consultorio sin
+pasar por la web se registra en el panel y sigue el mismo flujo.
+
+- **La cita pedida por la web queda `pendiente`** y aparta la hora (la
+  columna `franja_ocupada` solo la libera si está cancelada o rechazada), así
+  nadie más la toma mientras la secretaria decide. Rechazar la libera y
+  envía un mensaje invitando a pedir otra hora.
+- **Los pacientes no tienen usuario ni contraseña.** Tener dos tipos de
+  cuenta confundía (paciente con usuario, sin usuario, clave temporal…) y el
+  enlace del WhatsApp ya cubre lo que el paciente necesita. Se quitan "Mis
+  citas" (decisión 23), las claves temporales y el restablecimiento de
+  claves de pacientes. Solo la secretaria inicia sesión, desde "Acceso del
+  consultorio" en el pie de la página.
+- **Tabla `pacientes` aparte de `usuarios`.** Una ficha de paciente no debe
+  poder usarse para ingresar, y el correo de un paciente no puede ser único
+  (una madre usa el suyo para sus hijos). La ficha se crea sola al aceptar la
+  primera cita, buscando por documento, o la crea la secretaria en el
+  consultorio. Así la historia clínica se va completando con cada cita.
+- **El correo pasa a ser obligatorio**, para tener otro medio de contacto en
+  la ficha.
+- **Si el paciente reprograma, la nueva hora vuelve a pendiente:** la
+  secretaria debe confirmar también el cambio.
+- **Recordatorio 24 horas antes** en lugar de "el día anterior": se revisa
+  cada 30 minutos qué citas confirmadas empiezan en las próximas 24 horas.
+  Como solo se envía entre las 8:00 y las 19:00, una cita de las 7:00 lo
+  recibe a las 8:00 del día anterior.
+
+La migración 003 lleva las bases existentes al modelo nuevo sin perder datos:
+copia los pacientes de `usuarios` a `pacientes` con el mismo id, de modo que
+sus citas e historia clínica siguen apuntando a ellos.
+
