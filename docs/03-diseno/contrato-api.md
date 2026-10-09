@@ -45,12 +45,14 @@ Flujo de pantallas: especialidad → especialista → calendario → hora → da
 
 **`POST /citas`**
 ```json
-{ "especialidadId": 1, "franjaId": 42, "nombreCompleto": "Ana Pérez",
-  "documento": "1075123456", "telefono": "318 715 3718",
-  "correo": "ana@correo.co", "autorizacionDatos": true, "sitioWeb": "" }
+{ "especialidadId": 1, "franjaId": 42, "nombres": "Ana María", "apellidos": "Pérez Gómez",
+  "tipoDocumento": "CC", "documento": "1075123456", "telefono": "318 715 3718",
+  "telefonoFijo": "", "correo": "ana@correo.co", "autorizacionDatos": true, "sitioWeb": "" }
 ```
 - **El formulario de datos va al final**, cuando ya eligió especialidad, especialista, día y hora. Arriba muestra el resumen de lo elegido ("Ortodoncia · Dra. Laura Gómez · jueves 15 de octubre, 8:30 a. m.") con la opción "Cambiar".
-- Nombre, documento, teléfono y **correo** son obligatorios. Si falta o viene mal escrito → 400 con el mensaje en `campos`.
+- Nombres, apellidos, tipo y número de documento, celular y **correo** son obligatorios; `telefonoFijo` es opcional. Si falta o viene mal escrito → 400 con el mensaje en `campos`.
+- `tipoDocumento`: `CC` (cédula de ciudadanía), `TI` (tarjeta de identidad), `RC` (registro civil), `CE` (cédula de extranjería), `PA` (pasaporte) o `PPT` (permiso por protección temporal). El pasaporte acepta letras y números; los demás, solo números (5 a 20). Puntos, espacios y guiones se quitan.
+- `nombres` y `apellidos`: 2 a 60 caracteres cada uno, sin números. En las respuestas, `paciente` sigue siendo el nombre completo.
 - `autorizacionDatos`: casilla **sin marcar por defecto** con enlace a `politica-datos.html`. Sin ella → 400 con `campos.autorizacionDatos`.
 - `sitioWeb`: **campo trampa contra bots**. Inclúyelo en el formulario oculto con CSS (no con `type="hidden"`), con `tabindex="-1"` y `autocomplete="off"`, y envíalo vacío.
 - **201:** `{ mensaje, cita: { id, estado: "pendiente", paciente, especialidad, especialista, fecha, hora, sede, direccion, reprogramaciones } }`
@@ -58,7 +60,7 @@ Flujo de pantallas: especialidad → especialista → calendario → hora → da
   - El enlace para reprogramar o cancelar **no** viene en la respuesta: llega por WhatsApp al teléfono escrito cuando la secretaria acepta la cita, para que únicamente lo tenga el dueño de ese número.
 - **409** posibles:
   - La hora se tomó o ya no está → volver a pedir las horas del día.
-  - Esa persona (por documento) ya tiene una cita pendiente o confirmada (límite `LIMITE_CITAS_ACTIVAS_POR_DOCUMENTO`, por defecto 1).
+  - Esa persona (por documento) ya tiene una cita pendiente o confirmada (límite `LIMITE_CITAS_ACTIVAS_POR_DOCUMENTO`, por defecto 1). El mensaje distingue los dos casos: si la que tiene está **pendiente**, explica que se le avisará por WhatsApp cuando la confirmen (todavía no tiene enlace); si está **confirmada**, que la cancele desde el enlace del WhatsApp.
 
 ## 2. Público: "Gestionar mi cita" (`gestionar-cita.html?codigo=…`)
 
@@ -109,7 +111,7 @@ Los pacientes no tienen cuenta. El acceso está en el pie de la página principa
 - **Aceptar:** `POST /admin/citas/:id/aceptar` → `{ mensaje, cita, pacienteId, pacienteNuevo, notificacion }`. Enlaza la cita con el paciente del mismo documento o crea su ficha (`pacienteNuevo: true`) y envía el WhatsApp de confirmación con el enlace. Si la hora ya pasó → **409**.
 - **Rechazar:** `POST /admin/citas/:id/rechazar` → `{ mensaje, notificacion }`. Libera la hora y envía un WhatsApp invitando a pedir otra.
 - **Agendar a un paciente** (llegó al consultorio o llamó): `POST /admin/citas` `{ pacienteId, especialidadId, franjaId }` → 201 `{ mensaje, cita, notificacion }`. Queda confirmada de una vez.
-- **Ver:** `GET /admin/citas?fecha=` o `?desde=&hasta=`, más `&especialistaId=&estado=&q=` (`q` busca por nombre, documento o teléfono) → citas con `especialidadId`, `documento`, `telefono`, `correo`, `pacienteId`, `canceladaPor`, `creadoEn`.
+- **Ver:** `GET /admin/citas?fecha=` o `?desde=&hasta=`, más `&especialistaId=&estado=&q=` (`q` busca por nombre, documento o teléfono) → citas con `especialidadId`, `tipoDocumento`, `documento`, `telefono`, `telefonoFijo`, `correo`, `pacienteId`, `canceladaPor`, `creadoEn`, `fechaAnterior` y `horaAnterior`. Las dos últimas traen la hora que tenía la cita antes de que **el paciente** la reprogramara (o `null`): el panel muestra "Cambio de hora · antes: …" en las solicitudes pendientes, para que la secretaria sepa qué cambio está aprobando.
 - **Cambiar estado:** `PATCH /admin/citas/:id/estado` `{ estado: "atendida" | "no_asistio" | "cancelada" }`. Solo para citas confirmadas (una pendiente se acepta o se rechaza). Atendida o no asistió solo se permite cuando ya llegó la hora.
 - **Reprogramar:** `POST /admin/citas/:id/reprogramar` `{ franjaId }`. Para citas pendientes o confirmadas; no tiene límite y puede pasar la cita a otro especialista de la misma especialidad. Respuesta: `{ mensaje, cita, notificacion }`; `notificacion` es `null` si la cita estaba pendiente (el paciente se entera al aceptarla).
 - **Cancelar** (`PATCH …/estado` con `cancelada`) responde `{ mensaje, notificacion }`. `notificacion` es `{ id, estado, enlaceWhatsApp }`: si `estado` es `pendiente`, el panel ofrece "Enviar por WhatsApp" y "Marcar como enviado" ahí mismo.
@@ -123,8 +125,8 @@ Los pacientes no tienen cuenta. El acceso está en el pie de la página principa
 - Conviene un contador de pendientes visible en el menú del panel.
 
 **Pacientes** (registro sin usuario ni contraseña)
-- `POST /pacientes` `{ nombreCompleto, documento, telefono, correo, autorizacionDatos: true }` → 201 `{ mensaje, paciente, citasVinculadas }`. Para quien llega al consultorio. `citasVinculadas`: citas que pidió antes por la web con el mismo documento y celular. Documento repetido → **409** con `pacienteId` del existente, para ofrecer "Abrir su ficha".
-- `GET /pacientes?q=` → `[{ id, nombreCompleto, documento, telefono, correo, origen: "web" | "consultorio", fechaAutorizacion, creadoEn }]`; busca por nombre, documento, celular o correo.
+- `POST /pacientes` `{ nombres, apellidos, tipoDocumento, documento, telefono, telefonoFijo?, correo, motivoConsulta?, autorizacionDatos: true }` → 201 `{ mensaje, paciente, citasVinculadas }`. Mismas reglas de los datos que en `POST /citas`; `motivoConsulta` (a qué vino, hasta 500 caracteres) es opcional. Para quien llega al consultorio. `citasVinculadas`: citas que pidió antes por la web con el mismo documento y celular. Documento repetido → **409** con `pacienteId` del existente, para ofrecer "Abrir su ficha".
+- `GET /pacientes?q=` → `[{ id, nombres, apellidos, nombreCompleto, tipoDocumento, documento, telefono, telefonoFijo, correo, origen: "web" | "consultorio", motivoConsulta, fechaAutorizacion, creadoEn }]`; busca por nombre, documento, celular o correo. `nombreCompleto` lo calcula la base (nombres + apellidos).
 
 **Ficha del paciente e historia clínica**
 - `GET /pacientes/:id` → `{ paciente, citas: [{ id, estado, especialidadId, especialidad, especialistaId, especialista, fecha, hora }], historia: [...] }` — la pantalla de ficha en una sola petición. `citas` incluye las que pidió por la web con su documento y aún están pendientes.

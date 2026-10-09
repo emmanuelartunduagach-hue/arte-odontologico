@@ -1,129 +1,107 @@
-ARTE ODONTOLOGICO - PRUEBAS: ALTA DE PACIENTES POR EL ADMINISTRADOR
-====================================================================
-Version del 6 de octubre de 2026 (ya fusionado en main).
+ARTE ODONTOLOGICO - PRUEBAS: PACIENTES, SOLICITUDES Y FICHA
+============================================================
+Version del 9 de octubre de 2026 (decisiones 24 y 25).
 
-Que cambio
-----------
-- Se ELIMINO POST /api/auth/registro (el registro publico ya no existe).
-- NUEVO  POST /api/pacientes          (solo administrador) crea un paciente y
-                                       devuelve una clave temporal UNA sola vez.
-- NUEVO  GET  /api/pacientes?q=texto  (solo administrador) lista y busca.
-- NUEVO  POST /api/auth/cambiar-contrasena (cualquier usuario con sesion).
-- CAMBIA POST /api/auth/ingreso: ahora devuelve usuario.debeCambiarContrasena.
-- Base de datos: 3 columnas nuevas en `usuarios` (ver paso 1).
+Que se prueba
+-------------
+- Los pacientes NO tienen usuario ni clave. Solo la secretaria inicia sesion.
+- La cita pedida por la web queda pendiente; la secretaria la acepta (se crea
+  la ficha del paciente) o la rechaza (se libera la hora).
+- Datos de la persona: nombres, apellidos, tipo y numero de documento, correo,
+  celular (WhatsApp) y telefono fijo opcional. En el consultorio, ademas, el
+  motivo de consulta.
+- Cambio de hora pedido por el paciente: se ve "Cambio de hora" con la hora
+  anterior.
+- Modo oscuro del panel.
 
-Tambien cubierto por la prueba de integracion automatizada contra MySQL 8 (ver pruebas.md).
-
-
-PASO 1 - Actualizar la base de datos (UNA sola vez)
----------------------------------------------------
-En MySQL Workbench: File > Open SQL Script... y abre
-    backend\database\migraciones\001_alta_pacientes_por_administrador.sql
-Ejecutalo (rayo). Debe terminar sin error.
- - Si dice "Duplicate column name", ya estaba aplicada: sigue al paso 2.
- - Si creas la base desde cero con schema.sql, NO necesitas la migracion.
-
-Opcional: si quedaron pacientes de prueba del registro anterior y quieres
-repetir los mismos datos, borralos (solo en desarrollo):
-    DELETE FROM usuarios WHERE rol = 'paciente';
+Se hace todo desde el navegador. Anota en cada paso: fecha, quien, resultado.
 
 
-PASO 2 - Arrancar
+PASO 1 - Preparar
 -----------------
-Carpeta backend:   npm.cmd run dev
-Debe decir "Conexion a MySQL establecida" y "API escuchando...".
-Debe existir un administrador (si no: npm.cmd run crear-admin).
+1. Base de datos:
+   - Base nueva: ejecutar backend\database\schema.sql.
+   - Base existente: respaldo y luego, en orden, las migraciones que falten
+     (003 y 004). Ver el manual de instalacion, seccion 5.2.
+2. Carpeta backend: npm run dev. Debe decir "Conexion a MySQL establecida".
+3. Si no hay horas publicadas: npm run datos-demo (solo desarrollo).
+4. Abrir frontend\index.html con Live Server: http://localhost:5500
+   (usar localhost, no 127.0.0.1: el backend solo acepta ese origen).
+5. En backend\.env, WHATSAPP_MODO=consola para ver los mensajes en la terminal.
 
 
-PASO 3 - Pegar esta funcion en PowerShell (una vez por terminal)
-----------------------------------------------------------------
-    function Llamar($metodo, $ruta, $cuerpo, $token) {
-      $cab = @{}
-      if ($token) { $cab['Authorization'] = "Bearer $token" }
-      try {
-        $p = @{ Method = $metodo; Uri = "http://localhost:3000/api$ruta"; Headers = $cab }
-        if ($cuerpo) {
-          $p.ContentType = 'application/json; charset=utf-8'
-          $p.Body = [System.Text.Encoding]::UTF8.GetBytes(($cuerpo | ConvertTo-Json))
-        }
-        Invoke-RestMethod @p | ConvertTo-Json -Depth 5
-      } catch {
-        Write-Host "HTTP" ([int]$_.Exception.Response.StatusCode)
-        $_.ErrorDetails.Message
-      }
-    }
+PASO 2 - Pedir una cita desde la web
+------------------------------------
+1. Elegir una especialidad, el especialista, un dia resaltado y una hora.
+2. Pulsar "Pedir cita" sin llenar nada.
+   Esperado: un mensaje debajo de cada campo obligatorio; el telefono fijo
+   no se marca (es opcional).
+3. Llenar: nombres, apellidos, tipo de documento (probar Pasaporte con
+   letras, ej. AB12345, y Cedula con letras para ver el error), numero,
+   correo, celular, telefono fijo (opcional), marcar la autorizacion.
+4. Pedir cita.
+   Esperado: "Tu solicitud quedo registrada" y "Recibimos tu solicitud!" con
+   el nombre completo.
+5. Pedir otra cita con el MISMO documento.
+   Esperado: "Ya tienes una solicitud de cita en revision..." (no menciona un
+   enlace, porque aun no lo tiene).
 
 
-PASO 4 - Pruebas
+PASO 3 - Aceptar y rechazar (panel)
+-----------------------------------
+1. Entrar con el candado junto a "Agendar cita" (o "Acceso del consultorio"
+   en el pie de pagina).
+2. En Inicio aparece la solicitud con "Por confirmar" y los botones
+   "Aceptar" y "Rechazar" a la vista.
+3. Aceptar.
+   Esperado: aviso "Se creo su ficha de paciente"; en la terminal del
+   backend, el WhatsApp de confirmacion con el enlace "Gestionar mi cita".
+4. Pacientes > abrir la ficha.
+   Esperado: documento con su tipo (ej. "CC 1075123456"), celular, telefono
+   fijo si se escribio, correo y la cita confirmada.
+5. Pedir otra cita con otro documento y rechazarla.
+   Esperado: la ventana dice "...a las 9:00 a. m. La hora queda libre..."
+   (un solo punto); la hora vuelve a aparecer libre en la web.
+
+
+PASO 4 - Cambio de hora pedido por el paciente
+----------------------------------------------
+1. Abrir el enlace de la confirmacion (paso 3.3) y "Reprogramar mi cita".
+2. Elegir otro dia y hora y "Solicitar el cambio".
+   Esperado: "Tu cita esta pendiente de confirmacion".
+3. En el panel, Inicio.
+   Esperado: la solicitud dice "Cambio de hora · antes: <dia y hora>".
+4. Aceptar. Llega un WhatsApp con un enlace NUEVO.
+5. Abrir el enlace VIEJO.
+   Esperado: "No encontramos tu cita" y la explicacion de usar el enlace del
+   ultimo WhatsApp.
+
+
+PASO 5 - Registrar a quien llega al consultorio
+-----------------------------------------------
+1. Pacientes > "Registrar paciente".
+2. Llenar nombres, apellidos, tipo y numero de documento, correo, celular,
+   telefono fijo (opcional) y "Motivo de consulta" (ej. "Dolor en una muela").
+   Marcar la autorizacion. Registrar.
+   Esperado: abre la ficha con el motivo de consulta en un recuadro.
+3. Registrar de nuevo con el mismo documento.
+   Esperado: "Ya existe un paciente con este documento" y boton "Abrir su
+   ficha".
+4. En la ficha: "Agendar cita". Queda confirmada y sale el WhatsApp.
+
+
+PASO 6 - Modo oscuro
+--------------------
+1. Menu de la cuenta (arriba a la derecha) > "Modo oscuro".
+2. Recorrer Inicio, Agenda, Pacientes, una ficha, Horarios y Mensajes.
+   Esperado: todo legible; botones, estados y avisos se distinguen.
+3. Recargar la pagina: sigue en oscuro. Volver con "Modo claro".
+4. Repetir en el celular (o Chrome con F12 a 390 px): sin barra horizontal.
+
+
+PASO 7 - Celular
 ----------------
-1) Ingresar como administrador y guardar el token (cambia correo y clave por los tuyos):
-
-    $r = Invoke-RestMethod -Method Post -Uri http://localhost:3000/api/auth/ingreso -ContentType 'application/json' -Body (@{ correo='TU_CORREO_ADMIN'; contrasena='TU_CLAVE' } | ConvertTo-Json)
-    $tokenAdmin = $r.token
-    $r.usuario        # rol administrador, debeCambiarContrasena False
-
-2) El registro publico ya no existe -> HTTP 404:
-
-    Llamar 'POST' '/auth/registro' @{ nombreCompleto='X'; documento='123456'; correo='x@x.co'; telefono='3001234567'; contrasena='Clave1234' }
-
-3) Sin sesion no se puede crear pacientes -> HTTP 401:
-
-    Llamar 'POST' '/pacientes' @{ nombreCompleto='Ana Perez' }
-
-4) Crear un paciente como administrador -> HTTP 201, con "contrasenaTemporal"
-   (10 caracteres). ANOTALA: no se vuelve a mostrar.
-
-    Llamar 'POST' '/pacientes' @{ nombreCompleto='Ana Perez'; documento='1075123456'; correo='ana@correo.com'; telefono='318 715 3718'; autorizacionDatos=$true } $null $tokenAdmin
-
-   Nota: el telefono se guarda con indicativo de Colombia (573187153718).
-
-5) Repetir el mismo comando -> HTTP 409 con campos.correo.
-   Cambiar solo el correo y dejar el documento -> HTTP 409 con campos.documento.
-
-6) Sin autorizacion (autorizacionDatos=$false) -> HTTP 400 con campos.autorizacionDatos.
-   Datos malos (documento='abc', telefono='12') -> HTTP 400 con un mensaje por campo.
-
-7) Intento de colarse: agregar  rol='administrador'; contrasena='MiClave123'  al comando
-   del paso 4 con otro correo y otro documento. Debe crearse igual como paciente y la
-   clave que vale es la temporal, NO la enviada. En MySQL:
-       SELECT id, correo, rol, debe_cambiar_contrasena, creado_por, autorizacion_registrada_por
-         FROM usuarios;
-   Esperado en el paciente nuevo: rol paciente, debe_cambiar_contrasena 1,
-   creado_por y autorizacion_registrada_por = id del administrador.
-
-8) El paciente ingresa con la clave temporal (reemplaza la clave anotada):
-
-    $p = Invoke-RestMethod -Method Post -Uri http://localhost:3000/api/auth/ingreso -ContentType 'application/json' -Body (@{ correo='ana@correo.com'; contrasena='CLAVE_TEMPORAL' } | ConvertTo-Json)
-    $tokenPaciente = $p.token
-    $p.usuario        # rol paciente, debeCambiarContrasena True
-
-9) El paciente NO puede usar rutas del administrador -> HTTP 403 las dos:
-
-    Llamar 'GET' '/pacientes' $null $tokenPaciente
-    Llamar 'POST' '/pacientes' @{ nombreCompleto='Otro Paciente' } $null $tokenPaciente
-
-10) Listar y buscar como administrador (devuelve un arreglo, sin contrasenas):
-
-    Llamar 'GET' '/pacientes' $null $tokenAdmin
-    Llamar 'GET' '/pacientes?q=1075123' $null $tokenAdmin
-
-11) Cambio de contrasena del paciente:
-    a) Clave actual incorrecta -> HTTP 400 con campos.contrasenaActual (400 y no 401, a proposito):
-
-        Llamar 'POST' '/auth/cambiar-contrasena' @{ contrasenaActual='Incorrecta1'; contrasenaNueva='Nueva1234' } $tokenPaciente
-
-    b) Clave nueva debil (abc) -> HTTP 400 con campos.contrasenaNueva.
-    c) Correcto -> HTTP 200:
-
-        Llamar 'POST' '/auth/cambiar-contrasena' @{ contrasenaActual='CLAVE_TEMPORAL'; contrasenaNueva='Nueva1234' } $tokenPaciente
-
-    d) Ingresar con la clave temporal -> HTTP 401 "Correo o contrasena incorrectos."
-       Ingresar con Nueva1234 -> 200 y debeCambiarContrasena False.
-
-
-LIMITACION CONOCIDA
--------------------
-"Debe cambiar la contrasena" lo hace cumplir el frontend (lleva al usuario a la
-pantalla de cambio). El servidor no bloquea el resto de rutas mientras tanto. No
-es un hueco de seguridad (la clave temporal solo la conocen el administrador y el
-paciente), pero si quieren que el servidor tambien lo exija, se agrega luego.
+Repetir los pasos 2 y 3 en el celular o a 390 px:
+- el candado y "Agendar cita" caben en el encabezado;
+- los campos del formulario quedan uno debajo de otro;
+- en Inicio, "Aceptar", "Rechazar" y "Mas" no se salen de la tarjeta.

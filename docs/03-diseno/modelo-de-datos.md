@@ -37,11 +37,15 @@ Ficha de cada paciente, sin usuario ni contraseña. Se crea sola al aceptar su p
 | Columna | Tipo | Notas |
 |---|---|---|
 | `id` | INT UNSIGNED PK | |
-| `nombre_completo` | VARCHAR(120) | |
+| `nombres`, `apellidos` | VARCHAR(60) | Por separado desde la migración 004 |
+| `nombre_completo` | VARCHAR(121) | **Columna generada**: nombres + apellidos. La búsqueda y los listados la siguen usando |
+| `tipo_documento` | ENUM('CC','TI','RC','CE','PA','PPT') | Cédula, tarjeta de identidad, registro civil, cédula de extranjería, pasaporte, permiso por protección temporal |
 | `documento` | VARCHAR(20) UNIQUE | Así se reconoce al paciente cuando vuelve a pedir cita |
-| `telefono` | VARCHAR(20) | Con indicativo (57…) |
+| `telefono` | VARCHAR(20) | Celular (WhatsApp) con indicativo (57…) |
+| `telefono_fijo` | VARCHAR(20) NULL | Opcional |
 | `correo` | VARCHAR(160) | No es único: una madre puede usar el suyo para sus hijos |
 | `origen` | ENUM('web','consultorio') | |
+| `motivo_consulta` | VARCHAR(500) NULL | A qué vino, cuando la secretaria lo registra en el consultorio |
 | `autorizacion_datos`, `fecha_autorizacion`, `version_politica_datos` | | Prueba de la autorización (Ley 1581 de 2012) |
 | `creado_por` | FK → usuarios | Secretaria que lo registró o aceptó su primera cita |
 
@@ -77,8 +81,11 @@ Una franja está **libre** si está activa, todavía no pasó y no tiene una cit
 |---|---|
 | `paciente_id` | FK → pacientes. NULL mientras la cita pedida por la web está pendiente; se llena al aceptarla |
 | `servicio_id`, `franja_id` | Especialidad y hora |
+| `franja_anterior_id` | FK → franjas_horarias (NULL). La hora que tenía antes de que el paciente la reprogramara desde su enlace; el panel la muestra en la solicitud como "Cambio de hora" |
 | `estado` | `pendiente` (pedida por la web), `confirmada`, `rechazada`, `cancelada`, `atendida`, `no_asistio` |
-| `nombre_paciente`, `documento_paciente`, `telefono_paciente`, `correo_paciente` | Datos de quien pide la cita; todos obligatorios (el correo es NULL en citas anteriores al 9 de octubre) |
+| `nombres_paciente`, `apellidos_paciente`, `tipo_documento_paciente`, `documento_paciente`, `telefono_paciente`, `correo_paciente` | Datos de quien pide la cita; todos obligatorios (el correo es NULL en citas anteriores al 9 de octubre) |
+| `telefono_fijo_paciente` | Opcional |
+| `nombre_paciente` | **Columna generada**: nombres + apellidos (la usan la agenda, los mensajes y la vista `v_agenda`) |
 | `autorizacion_datos`, `fecha_autorizacion`, `version_politica_datos` | Autorización dada al agendar |
 | `codigo_gestion_hash` | SHA-256 del código del enlace "Gestionar mi cita" (UNIQUE) |
 | `reprogramaciones` | Las que hizo el paciente (máximo 1) |

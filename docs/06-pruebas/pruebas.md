@@ -236,9 +236,29 @@ Corrida del 7 de octubre de 2026: **117 de 117 comprobaciones correctas.**
 | 117 | la vista v_agenda funciona | Correcta |
 
 
+### Pruebas del 9 de octubre: migración 004, formularios, cambio de hora y modo oscuro
+
+Hechas contra la API real con MySQL 8.0.46 (base nueva con `schema.sql` y base migrada de la 003 a la 004) y en el navegador (Chromium) a 1366, 1000 y 390 px, en modo claro, oscuro y de demostración.
+
+| # | Comprobación | Resultado |
+|---|---|---|
+| 118 | la migración 004 corre sin errores y parte bien los nombres existentes (4, 2, 3 y 1 palabra) | Correcta |
+| 119 | la estructura migrada es igual a la de una base nueva (salvo el orden de un índice) | Correcta |
+| 120 | pedir cita con nombres, apellidos, tipo de documento y teléfono fijo guarda todo; el nombre completo se calcula | Correcta |
+| 121 | aceptar crea la ficha con los datos nuevos | Correcta |
+| 122 | registrar en el consultorio con motivo de consulta; la ficha lo muestra | Correcta |
+| 123 | límite por documento: mensaje distinto si la cita está pendiente o confirmada | Correcta |
+| 124 | el paciente reprograma: la solicitud muestra "Cambio de hora" con la hora anterior | Correcta |
+| 125 | el enlace viejo muestra la ayuda de usar el último WhatsApp | Correcta |
+| 126 | la ventana de rechazar no repite el punto ("a. m.") | Correcta |
+| 127 | Aceptar, Rechazar y Más caben en la fila a 390, 1000 y 1366 px | Correcta |
+| 128 | modo oscuro: se activa, se recuerda al recargar y vuelve a claro | Correcta |
+| 129 | ninguna pantalla tiene barra horizontal a 390 px | Correcta |
+| 130 | el límite de 10 ingresos por IP responde 429 | Correcta |
+
 ## 4. Guías de prueba manual
 
-- `pruebas-alta-pacientes.txt`: alta de pacientes por la secretaria, clave temporal, cambio de contraseña.
+- `pruebas-alta-pacientes.txt`: pedir cita, aceptar y rechazar, cambio de hora, registro en el consultorio con motivo de consulta, ficha y modo oscuro.
 - `pruebas-agenda-citas.txt`: especialistas, disponibilidad, calendario, agendar sin cuenta, gestionar la cita, panel de la secretaria.
 
 ## 5. Pendiente

@@ -71,7 +71,7 @@ El detalle de cada tabla y el diagrama entidad-relación están en `docs/03-dise
 | Tabla | Propósito |
 |---|---|
 | `usuarios` | Quienes inician sesión: la secretaria (rol `administrador`) |
-| `pacientes` | Ficha de cada paciente (sin usuario ni contraseña), con su origen: web o consultorio |
+| `pacientes` | Ficha de cada paciente (sin usuario ni contraseña), con su origen (web o consultorio), tipo de documento, teléfono fijo y motivo de consulta |
 | `servicios` | Especialidades del consultorio |
 | `especialistas` | Odontólogos; no inician sesión |
 | `especialista_especialidad` | Qué especialidades atiende cada especialista (muchos a muchos) |
@@ -122,7 +122,7 @@ Todas las rutas cuelgan de `/api` y responden JSON. El contrato completo con eje
 | Aceptar crea o enlaza la ficha del paciente | `aceptar` → `pacienteDeCita`: busca por documento y, si no existe, crea el paciente con los datos y la autorización de la cita; luego `cita.model.aceptar` y WhatsApp de confirmación con enlace |
 | Rechazar libera la hora | `rechazar`: estado `rechazada` y WhatsApp de tipo `rechazo` |
 | La cita que agenda la secretaria queda confirmada | `crearAdmin` (`POST /admin/citas`) con los datos de la ficha |
-| Pedir cita sin cuenta con nombre, documento, teléfono y correo | `validarDatosPersona` (todos obligatorios); el teléfono se normaliza con indicativo 57 |
+| Pedir cita sin cuenta con nombres, apellidos, tipo y número de documento, celular y correo (teléfono fijo opcional) | `validarDatosPersona`; el celular se normaliza con indicativo 57; el pasaporte admite letras. `nombre_completo` y `nombre_paciente` son columnas generadas (nombres + apellidos) |
 | Autorización de datos obligatoria (Ley 1581 de 2012) | `autorizacionDatos === true`; se guarda la fecha y la versión de la política en la cita |
 | Máximo 1 cita pendiente o confirmada por documento | `contarActivasPorDocumento`; configurable con `LIMITE_CITAS_ACTIVAS_POR_DOCUMENTO` |
 | El paciente reprograma una sola vez y la nueva hora vuelve a pendiente | `UPDATE … SET estado = 'pendiente' … WHERE reprogramaciones < 1` (la condición va en la misma sentencia para evitar dobles clics) |
@@ -183,6 +183,7 @@ Detalle en `docs/06-pruebas/pruebas.md`.
 - **Base de datos:** todo cambio de esquema va en `schema.sql` (instalación nueva) **y** en una migración numerada (bases existentes). Se verifica que ambos caminos produzcan el mismo esquema.
 - **Estilos:** solo valores de `tokens.css`; sin colores sueltos.
 - **Código:** nombres en español, comentarios que explican el porqué, SQL con parámetros.
+- **Modo oscuro del panel:** `js/tema.js` se carga en el `<head>` de las páginas con sesión y pone `data-tema="oscuro"` en `<html>`. Los colores oscuros son las mismas variables de `css/tokens.css` redefinidas bajo `:root[data-tema="oscuro"]`. Para el morado usado como texto se usa `--acento-texto` y para el texto sobre botones morados, `--sobre-marca`; no usar `--violeta-600` ni `--papel` como color de texto.
 
 ## 12. Cómo extender el sistema
 
