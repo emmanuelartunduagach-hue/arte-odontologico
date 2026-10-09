@@ -104,7 +104,7 @@ Los mensajes llevan solo fecha, hora, especialista y dirección, nada clínico, 
 ## 6. Datos personales e historia clínica
 
 - **Autorización de datos (Ley 1581 de 2012):** casilla sin marcar por defecto, con enlace a la política. Cada cita guarda la autorización, la fecha y la versión de la política. La ficha del paciente guarda la misma información y qué secretaria la creó.
-- **Política de datos:** hay que actualizarla (canal WhatsApp, sede Rivera) y definir el responsable del tratamiento y la fecha de vigencia.
+- **Política de datos:** reescrita (versión 1.1, decisión 26). Falta que el consultorio confirme el nombre legal y NIT o cédula del responsable, el correo para solicitudes, quién las atiende, el proveedor de alojamiento y la fecha de vigencia.
 - **Historia clínica:** cada entrada tiene fecha, especialidad, especialista, procedimiento, notas y autor. "Editar" significa agregar entradas o anotar correcciones; nunca borrar ni sobrescribir (Resolución 1995 de 1999). Solo la secretaria tiene acceso.
 - **Contraseñas:** solo la secretaria tiene; cifradas con bcrypt.
 

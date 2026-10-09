@@ -397,3 +397,28 @@ Después de revisar el flujo con el consultorio:
 La migración 004 lleva las bases existentes al modelo nuevo sin perder
 datos: parte el nombre que ya existía (con 4 palabras o más, las 2 primeras
 son nombres; con 2 o 3, la primera) y deja el tipo de documento en CC.
+
+## 26. Política de tratamiento de datos, versión 1.1 (9 de octubre)
+
+`politica-datos.html` se reescribió para el flujo actual: sin cuentas de
+paciente, con historia clínica, motivo de consulta, mensajes por WhatsApp y
+los datos nuevos del formulario. Sigue el contenido mínimo del Decreto 1377
+de 2013 (compilado en el Decreto 1074 de 2015): responsable, finalidades,
+derechos, área que atiende las solicitudes, procedimiento y vigencia.
+
+- **Datos sensibles y menores:** la historia clínica y el motivo de consulta
+  son datos de salud; la autorización en el consultorio es explícita y por
+  escrito. Para menores autoriza el representante legal.
+- **Encargados y transmisión internacional:** Meta (WhatsApp) recibe el
+  celular y el texto del aviso; el proveedor de alojamiento se completa al
+  publicar. Los mensajes no llevan datos de salud.
+- **Conservación:** historia clínica mínimo 15 años desde la última atención
+  (Resolución 839 de 2017), por lo que no se elimina aunque se pida.
+- **Plazos:** consultas 10 días hábiles (+5) y reclamos 15 días hábiles (+8),
+  artículos 14 y 15 de la Ley 1581.
+- `VERSION_POLITICA_DATOS` pasa a `1.1` en los modelos de citas y pacientes,
+  para que cada autorización quede ligada al texto que se aceptó.
+
+Quedan marcados en ámbar los datos que solo puede dar el consultorio: nombre
+legal y NIT o cédula del responsable, correo para solicitudes, quién las
+atiende, proveedor de alojamiento y fecha de vigencia.
