@@ -93,7 +93,7 @@ PASO 5 - Registrar a quien llega al consultorio
 PASO 6 - Modo oscuro
 --------------------
 1. Menu de la cuenta (arriba a la derecha) > "Modo oscuro".
-2. Recorrer Inicio, Agenda, Pacientes, una ficha, Horarios y Mensajes.
+2. Recorrer Inicio, Agenda, Pacientes, una ficha y Horarios.
    Esperado: todo legible; botones, estados y avisos se distinguen.
 3. Recargar la pagina: sigue en oscuro. Volver con "Modo claro".
 4. Repetir en el celular (o Chrome con F12 a 390 px): sin barra horizontal.

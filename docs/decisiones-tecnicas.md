@@ -386,6 +386,14 @@ Después de revisar el flujo con el consultorio:
   principal 14:1, secundario 8.6:1, botones 7.5:1. La página pública sigue
   en modo claro.
 
+- **Sin sección de Mensajes.** Con el envío automático por la API de
+  WhatsApp, la secretaria no tiene que enviar nada: se quitan la sección
+  Mensajes, su contador del menú y la tarjeta "mensajes por enviar" de
+  Inicio. Como red de seguridad, si un envío falla (token vencido, Meta
+  caído) o el servidor está en modo manual, Inicio muestra "WhatsApp sin
+  enviar" con el botón para enviarlo a mano; si no hay ninguno, no aparece.
+  Los recordatorios se siguen generando solos cada 30 minutos.
+
 La migración 004 lleva las bases existentes al modelo nuevo sin perder
 datos: parte el nombre que ya existía (con 4 palabras o más, las 2 primeras
 son nombres; con 2 o 3, la primera) y deja el tipo de documento en CC.

@@ -255,6 +255,9 @@ Hechas contra la API real con MySQL 8.0.46 (base nueva con `schema.sql` y base m
 | 128 | modo oscuro: se activa, se recuerda al recargar y vuelve a claro | Correcta |
 | 129 | ninguna pantalla tiene barra horizontal a 390 px | Correcta |
 | 130 | el límite de 10 ingresos por IP responde 429 | Correcta |
+| 131 | el menú del panel ya no tiene Mensajes (4 secciones) e Inicio muestra 2 datos | Correcta |
+| 132 | un WhatsApp fallido aparece en Inicio como "WhatsApp sin enviar"; "Ya lo envié" lo quita | Correcta |
+| 133 | modo demostración: al aceptar, "Se avisó al paciente por WhatsApp" | Correcta |
 
 ## 4. Guías de prueba manual
 

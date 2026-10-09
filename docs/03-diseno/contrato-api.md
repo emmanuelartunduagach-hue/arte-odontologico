@@ -116,7 +116,9 @@ Los pacientes no tienen cuenta. El acceso está en el pie de la página principa
 - **Reprogramar:** `POST /admin/citas/:id/reprogramar` `{ franjaId }`. Para citas pendientes o confirmadas; no tiene límite y puede pasar la cita a otro especialista de la misma especialidad. Respuesta: `{ mensaje, cita, notificacion }`; `notificacion` es `null` si la cita estaba pendiente (el paciente se entera al aceptarla).
 - **Cancelar** (`PATCH …/estado` con `cancelada`) responde `{ mensaje, notificacion }`. `notificacion` es `{ id, estado, enlaceWhatsApp }`: si `estado` es `pendiente`, el panel ofrece "Enviar por WhatsApp" y "Marcar como enviado" ahí mismo.
 
-**Mensajes de WhatsApp (modo manual)**
+**Mensajes de WhatsApp**
+
+> Desde el 9 de octubre los mensajes se envían solos (`WHATSAPP_MODO=api`) y el panel no tiene sección de Mensajes. Inicio consulta `?estado=fallida` y `?estado=pendiente` y, solo si hay alguno, muestra "WhatsApp sin enviar" con las acciones de abajo. Las rutas siguen igual.
 - `GET /admin/notificaciones?estado=pendiente` (o `fallida`, `enviada`) → `[{ id, citaId, paciente, tipo, destino, mensaje, enlaceWhatsApp, creadoEn }]`
 - Botón **"Enviar por WhatsApp"**: abre `enlaceWhatsApp` en pestaña nueva. Abre la app o WhatsApp Web de la clínica con el texto listo.
 - Luego, botón **"Marcar como enviado"**: `PATCH /admin/notificaciones/:id` `{ estado: "enviada" }`.

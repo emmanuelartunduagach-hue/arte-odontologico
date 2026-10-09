@@ -53,7 +53,7 @@ Reglas que hay que explicar:
 - **4.4 Especialistas:** registrar y asignar especialidades.
 - **4.5 Horarios de atención:** cuadrícula de horas, copiar a varios días, quitar horas, y qué pasa si una hora tiene cita.
 - **4.6 Agenda del día:** filtros (incluye "Por confirmar"), búsqueda, marcar atendida o no asistió, reprogramar, cancelar.
-- **4.7 Mensajes de WhatsApp pendientes:** botón "Abrir en WhatsApp" y "Ya lo envié"; recordatorios de las próximas 24 horas (salen solos y se pueden generar con un botón).
+- **4.7 Mensajes de WhatsApp:** se envían solos (confirmación, rechazo, cambios, cancelación y recordatorio 24 horas antes); no hay que hacer nada. Si alguno no se pudo enviar, aparece en Inicio como "WhatsApp sin enviar", con "Abrir en WhatsApp" y "Ya lo envié" para enviarlo a mano.
 - **4.8 Registrar a un paciente que llegó al consultorio:** nombres, apellidos, tipo y número de documento, correo, celular, teléfono fijo (opcional), motivo de consulta (opcional), autorización de datos y qué pasa si el documento ya existe ("Abrir su ficha").
 - **4.9 Ficha del paciente:** datos, citas, agendar una cita desde la ficha, historia clínica (agregar una entrada, "Agregar a la historia" desde una cita atendida y corregir sin borrar).
 
