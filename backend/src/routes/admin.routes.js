@@ -25,6 +25,7 @@ router.post('/especialistas/:id/franjas', especialistas.publicarFranjas);
 router.delete('/franjas/:id', especialistas.quitarFranja);
 
 router.get('/citas', citas.agenda);
+router.get('/citas/novedades', citas.novedades);
 router.post('/citas', citas.crearAdmin);
 router.post('/citas/:id/aceptar', citas.aceptar);
 router.post('/citas/:id/rechazar', citas.rechazar);
