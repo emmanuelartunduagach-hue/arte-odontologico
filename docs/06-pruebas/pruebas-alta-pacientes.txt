@@ -1,0 +1,109 @@
+ARTE ODONTOLOGICO - PRUEBAS: PACIENTES, CITAS DE LA WEB Y FICHA
+================================================================
+Version del 9 de octubre de 2026 (decisiones 24, 25 y 27).
+
+Que se prueba
+-------------
+- Los pacientes NO tienen usuario ni clave. Solo la secretaria inicia sesion.
+- La cita pedida por la web queda CONFIRMADA de una vez: se crea la ficha
+  del paciente y llega el WhatsApp. La secretaria no aprueba nada.
+- Datos de la persona: nombres, apellidos, tipo y numero de documento, correo,
+  celular (WhatsApp) y telefono fijo opcional. En el consultorio, ademas, el
+  motivo de consulta.
+- "Novedades de la web" en Inicio: citas nuevas, cambios de hora y
+  cancelaciones del paciente.
+- Modo oscuro del panel.
+
+Se hace todo desde el navegador. Anota en cada paso: fecha, quien, resultado.
+
+
+PASO 1 - Preparar
+-----------------
+1. Base de datos:
+   - Base nueva: ejecutar backend\database\schema.sql.
+   - Base existente: respaldo y luego, en orden, las migraciones que falten
+     (003, 004 y 005). Ver el manual de instalacion, seccion 5.2.
+2. Carpeta backend: npm run dev. Debe decir "Conexion a MySQL establecida".
+3. Si no hay horas publicadas: npm run datos-demo (solo desarrollo).
+4. Abrir frontend\index.html con Live Server: http://localhost:5500
+   (usar localhost, no 127.0.0.1: el backend solo acepta ese origen).
+5. En backend\.env, WHATSAPP_MODO=consola para ver los mensajes en la
+   terminal (o api con un celular registrado en Meta).
+
+
+PASO 2 - Pedir una cita desde la web
+------------------------------------
+1. Elegir una especialidad, el especialista, un dia resaltado y una hora.
+2. Pulsar "Pedir cita" sin llenar nada.
+   Esperado: un mensaje debajo de cada campo obligatorio; el telefono fijo
+   no se marca (es opcional).
+3. Llenar: nombres, apellidos, tipo de documento (probar Pasaporte con
+   letras, ej. AB12345, y Cedula con letras para ver el error), numero,
+   correo, celular, telefono fijo (opcional), marcar la autorizacion.
+4. Pedir cita.
+   Esperado: "Tu cita quedo confirmada!" con el resumen; en la terminal del
+   backend, el WhatsApp de confirmacion con el enlace "Gestionar mi cita".
+5. Pedir otra cita con el MISMO documento.
+   Esperado: "Ya tienes una cita confirmada..." (limite de 1 por documento).
+
+
+PASO 3 - Lo ve la secretaria (panel)
+------------------------------------
+1. Entrar con el candado junto a "Agendar cita" (o "Acceso del consultorio"
+   en el pie de pagina).
+2. Inicio > "Novedades de la web".
+   Esperado: la cita del paso 2, confirmada, con "Pedida por la web · hoy,
+   <hora de Colombia>". El dato "citas nuevas por la web (48 h)" la cuenta.
+3. Pacientes > abrir su ficha (se creo sola).
+   Esperado: documento con su tipo (ej. "CC 1075123456"), celular, telefono
+   fijo si se escribio, correo y la cita confirmada.
+4. Pedir una cita con el documento de un paciente que YA tiene ficha, pero
+   con otro celular y otro correo.
+   Esperado: la cita queda confirmada, pero no se enlaza a esa ficha (en
+   Novedades el nombre no es un enlace); en la ficha de ese paciente aparece
+   igual, para revisarla.
+
+
+PASO 4 - Cambio de hora y cancelacion del paciente
+--------------------------------------------------
+1. Abrir el enlace de la confirmacion (paso 2.4) y "Reprogramar mi cita".
+2. Elegir otro dia y hora y "Confirmar el cambio".
+   Esperado: "Listo: tu cita quedo en la nueva hora..."; en la terminal, el
+   WhatsApp de reprogramacion con el MISMO enlace.
+3. Abrir otra vez el enlace.
+   Esperado: funciona y dice que ya reprogramo una vez (solo puede cancelar).
+4. En el panel, Inicio > Novedades.
+   Esperado: "El paciente cambio la hora · hoy, ..." y "Antes · <dia y hora>".
+5. Desde el enlace, cancelar la cita.
+   Esperado: en Novedades, "El paciente la cancelo".
+
+
+PASO 5 - Registrar a quien llega al consultorio
+-----------------------------------------------
+1. Pacientes > "Registrar paciente".
+2. Llenar nombres, apellidos, tipo y numero de documento, correo, celular,
+   telefono fijo (opcional) y "Motivo de consulta" (ej. "Dolor en una muela").
+   Marcar la autorizacion. Registrar.
+   Esperado: abre la ficha con el motivo de consulta en un recuadro.
+3. Registrar de nuevo con el mismo documento.
+   Esperado: "Ya existe un paciente con este documento" y boton "Abrir su
+   ficha".
+4. En la ficha: "Agendar cita". Queda confirmada y sale el WhatsApp.
+
+
+PASO 6 - Modo oscuro
+--------------------
+1. Menu de la cuenta (arriba a la derecha) > "Modo oscuro".
+2. Recorrer Inicio, Agenda, Pacientes, una ficha y Horarios.
+   Esperado: todo legible; botones, estados y avisos se distinguen.
+3. Recargar la pagina: sigue en oscuro. Volver con "Modo claro".
+4. Repetir en el celular (o Chrome con F12 a 390 px): sin barra horizontal.
+
+
+PASO 7 - Celular
+----------------
+Repetir los pasos 2 y 3 en el celular o a 390 px:
+- el candado y "Agendar cita" caben en el encabezado;
+- los campos del formulario quedan uno debajo de otro;
+- en Novedades, la etiqueta de que paso y la hora anterior quedan debajo del
+  estado, sin salirse de la tarjeta.

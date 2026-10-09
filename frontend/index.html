@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/png" href="assets/img/favicon.png">
-  <title>Arte Odontológico — Agenda tu cita en línea | Neiva, Huila</title>
-  <meta name="description" content="Consultorio de odontología estética e integral en Neiva, dirigido por la Dra. Ximena Acosta Oliveros. Agenda tu cita en línea y recibe recordatorios automáticos.">
+  <title>Arte Odontológico — Agenda tu cita en línea | Rivera, Huila</title>
+  <meta name="description" content="Consultorio de odontología estética e integral en Rivera, Huila, dirigido por la Dra. Ximena Acosta Oliveros. Agenda tu cita en línea y recibe recordatorios automáticos.">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/base.css">
@@ -26,13 +26,17 @@
       <img class="marca__icono" src="assets/img/logo.png" alt="" width="44" height="44">
       <span>
         <span class="marca__nombre">Arte Odontológico</span>
-        <span class="marca__lugar">Odontología estética e integral · Neiva y Rivera</span>
+        <span class="marca__lugar">Odontología estética e integral · Rivera, Huila</span>
       </span>
     </a>
 
     <div class="encabezado__acciones">
-      <button type="button" class="btn btn--fantasma" data-abrir="modal-ingreso">Ingresar</button>
-      <button type="button" class="btn btn--primario" data-abrir="modal-registro">Crear cuenta</button>
+      <!-- Acceso de la secretaria: discreto, pero a la vista. -->
+      <a class="btn btn--secundario btn--candado" href="#" data-abrir="modal-ingreso" data-acceso-icono
+         aria-label="Acceso del consultorio" title="Acceso del consultorio">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      </a>
+      <a class="btn btn--primario" href="#especialidades" data-ir-especialidades>Agendar cita</a>
     </div>
   </div>
 </header>
@@ -43,18 +47,14 @@
   <section class="portada">
     <div class="contenedor portada__rejilla">
       <div class="entrada">
-        <h1 class="portada__titulo">Tu cita odontológica, agendada en un minuto</h1>
+        <h1 class="portada__titulo">Agenda tu cita en un minuto</h1>
 
         <p class="portada__entrada">
-          Elige el tratamiento, la fecha y la hora desde tu celular. Nosotros te
-          confirmamos y te recordamos antes de que llegue el día.
+          Elige la especialidad, fecha y hora, te recordaremos tu cita.
         </p>
 
         <div class="portada__acciones">
-          <button type="button" class="btn btn--primario btn--grande" data-abrir="modal-registro">
-            Agendar mi cita
-          </button>
-          <a class="btn btn--secundario btn--grande" href="#servicios">Ver servicios</a>
+          <a class="btn btn--primario btn--grande" href="#especialidades" data-ir-especialidades>Agendar mi cita</a>
         </div>
 
         <ul class="portada__datos">
@@ -75,63 +75,69 @@
 
       <figure class="portada__figura">
         <img class="portada__imagen" src="assets/img/portada.jpg"
-             alt="Sonrisa de una paciente tras un tratamiento de odontología estética" width="660" height="825">
+             alt="Odontóloga con mascarilla y espejo dental, bajo el mensaje «Luce una sonrisa natural»" width="1255" height="1233">
 
       </figure>
     </div>
   </section>
 
-  <!-- ══════════ Cómo funciona ══════════ -->
-  <section class="seccion seccion--tinta">
+  <!-- ══════════ Carrusel de fotos ══════════ -->
+  <section class="seccion seccion--lavanda" aria-labelledby="titulo-consultorio">
     <div class="contenedor">
       <div class="seccion__intro">
-        <h2>Cómo funciona</h2>
-        <p>Tres pasos desde que eliges tu tratamiento hasta que llegas al consultorio.</p>
+        <h2 id="titulo-consultorio">Nuestros espacios</h2>
+        <p>Conoce nuestro equipo y los lugares que hemos creado para brindarte una experiencia de atención cálida, profesional y personalizada.</p>
       </div>
 
-      <ol class="pasos">
-        <li class="paso">
-          <h3>Agendas</h3>
-          <p>Creas tu cuenta con tu documento y tu celular, eliges el tratamiento y reservas
-             una de las franjas que el consultorio tiene disponibles.</p>
-        </li>
-        <li class="paso">
-          <h3>Confirmamos</h3>
-          <p>El consultorio revisa tu solicitud y la confirma. Puedes ver el estado de tu
-             cita en cualquier momento desde tu perfil.</p>
-        </li>
-        <li class="paso">
-          <h3>Te recordamos</h3>
-          <p>Recibes un recordatorio automático antes de tu cita, para que no se te pase
-             y no tengas que reprogramar.</p>
-        </li>
-      </ol>
+      <div class="carrusel" data-carrusel role="region" aria-label="Fotografías del consultorio">
+        <div class="carrusel__pista">
+          <div class="carrusel__carril">
+        <figure class="carrusel__item">
+          <img src="assets/img/carrusel-01.jpg" alt="Odontóloga conversando con una paciente recostada en la unidad odontológica, con una auxiliar al fondo" width="734" height="1100">
+        </figure>
+        <figure class="carrusel__item">
+          <img src="assets/img/carrusel-02.jpg" alt="Odontóloga mostrando una radiografía panorámica a un paciente" width="971" height="1100">
+        </figure>
+        <figure class="carrusel__item">
+          <img src="assets/img/carrusel-03.jpg" alt="Antes y después de un diseño de sonrisa: arriba, dientes con espacios; abajo, carillas blancas y alineadas" width="1081" height="1100">
+        </figure>
+        <figure class="carrusel__item">
+          <img src="assets/img/carrusel-04.jpg" alt="Primer plano de una sonrisa con carillas dentales" width="1100" height="956" loading="lazy">
+        </figure>
+        <figure class="carrusel__item">
+          <img src="assets/img/carrusel-05.jpg" alt="Sonrisa de una paciente con dientes blancos y labial morado con brillos" width="880" height="1100" loading="lazy">
+        </figure>
+        <figure class="carrusel__item">
+          <img src="assets/img/carrusel-06.jpg" alt="Odontóloga con gorro morado de muelitas sosteniendo una lámpara de fotocurado" width="785" height="1100" loading="lazy">
+        </figure>
+        <figure class="carrusel__item">
+          <img src="assets/img/carrusel-07.jpg" alt="Odontóloga con uniforme fucsia sonriendo frente a la pared del consultorio" width="880" height="1100" loading="lazy">
+        </figure>
+        <figure class="carrusel__item">
+          <img src="assets/img/carrusel-08.jpg" alt="Afiche de odontología para niños: control y limpieza dental, flúor y sellados, tratamiento de caries infantil y ortodoncia temprana" width="1100" height="1100" loading="lazy">
+        </figure>
+        <figure class="carrusel__item">
+          <img src="assets/img/carrusel-09.jpg" alt="Afiche con los tipos de brackets: metálicos, cerámicos, Invisalign, zafiro, autoligados y Flowjack" width="1099" height="1100" loading="lazy">
+        </figure>
+        <figure class="carrusel__item">
+          <img src="assets/img/carrusel-10.jpg" alt="Logo de Arte Odontológico en la pared de la recepción" width="745" height="1100" loading="lazy">
+        </figure>
+          </div>
+        </div>
+      </div>
+
+      <p class="seccion__cierre">Cada detalle está pensado para que te sientas cómodo, seguro y en las mejores manos</p>
     </div>
   </section>
 
   <!-- ══════════ Servicios ══════════ -->
-  <section class="seccion seccion--papel" id="servicios">
+  <section class="seccion seccion--papel" id="especialidades" aria-labelledby="titulo-especialidades">
     <div class="contenedor">
       <div class="seccion__intro">
-        <h2>Servicios</h2>
-        <p>Selecciona un tratamiento para empezar a agendar.</p>
+        <h2 id="titulo-especialidades" tabindex="-1">Especialidades</h2>
+        <p>Selecciona una especialidad para empezar a agendar.</p>
       </div>
-      <div class="servicios" id="lista-servicios"><!-- se llena desde js/servicios.js --></div>
-    </div>
-  </section>
-
-  <!-- ══════════ Galería ══════════ -->
-  <section class="seccion seccion--tinta">
-    <div class="contenedor">
-      <div class="seccion__intro">
-        <h2>El consultorio</h2>
-      </div>
-      <div class="galeria">
-        <img class="galeria__item" src="assets/img/galeria-1.jpg" alt="La Dra. Ximena Acosta conversando con una paciente en el consultorio" width="640" height="640">
-        <img class="galeria__item" loading="lazy" src="assets/img/galeria-2.jpg" alt="Consultorio de Arte Odontológico durante una atención" width="420" height="420">
-        <img class="galeria__item" loading="lazy" src="assets/img/galeria-3.jpg" alt="Valoración odontológica" width="420" height="420">
-        <img class="galeria__item" loading="lazy" src="assets/img/galeria-4.jpg" alt="Procedimiento de odontología estética" width="800" height="400">
-      </div>
+      <div class="servicios" id="lista-especialidades"><!-- se llena desde js/agendar.js --></div>
     </div>
   </section>
 
@@ -142,13 +148,6 @@
         <div>
           <h2>Contacto</h2>
           <ul class="contacto__lista">
-            <li>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span>
-                <strong style="font-weight:var(--peso-semi)">Sede Neiva</strong><br>
-                <span style="color:var(--ink-600)">Carrera 7 No. 6-45, Centro</span>
-              </span>
-            </li>
             <li>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg>
               <span>
@@ -187,14 +186,14 @@
     <div class="pie__rejilla">
       <div>
         <h4>Arte Odontológico</h4>
-        <p style="color:#d5c6de">Odontología estética e integral en Neiva y Rivera, Huila.<br>Dra. Ximena Acosta Oliveros.</p>
+        <p style="color:#d5c6de">Odontología estética e integral en Rivera, Huila.<br>Dra. Ximena Acosta Oliveros.</p>
       </div>
       <div>
         <h4>Navegación</h4>
         <ul>
-          <li><a href="#servicios">Servicios</a></li>
+          <li><a href="#especialidades">Especialidades</a></li>
           <li><a href="#contacto">Contacto</a></li>
-          <li><a href="#" data-abrir="modal-ingreso">Ingresar</a></li>
+          <li><a href="#" data-abrir="modal-ingreso">Acceso del consultorio</a></li>
         </ul>
       </div>
       <div>
@@ -218,8 +217,8 @@
   <div class="modal__panel">
     <div class="modal__cabecera">
       <div>
-        <h2 id="titulo-ingreso" style="font-size:var(--txt-lg)">Ingresar</h2>
-        <p>Accede para ver y gestionar tus citas.</p>
+        <h2 id="titulo-ingreso" style="font-size:var(--txt-lg)">Acceso del consultorio</h2>
+        <p>Solo para el personal de Arte Odontológico.</p>
       </div>
       <button type="button" class="modal__cerrar" data-cerrar aria-label="Cerrar">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
@@ -237,7 +236,7 @@
         <input class="campo__control" type="password" name="contrasena" autocomplete="current-password" required minlength="8">
       </label>
 
-      <p class="campo__error" data-error hidden></p>
+      <p class="campo__error" data-error role="alert" hidden></p>
 
       <button type="submit" class="btn btn--primario btn--bloque btn--grande">Ingresar</button>
 
@@ -246,82 +245,38 @@
            El rol ahora lo determina el backend a partir del usuario. -->
 
       <p class="modal__pie">
-        ¿No tienes cuenta?
-        <a href="#" data-abrir="modal-registro">Crear cuenta</a>
+        ¿Eres paciente? No necesitas cuenta: pide tu cita desde esta página y gestiónala con el enlace que te llega por WhatsApp.
       </p>
     </form>
   </div>
 </div>
 
-<!-- ══════════ Modal: registro ══════════ -->
-<div class="modal" id="modal-registro" role="dialog" aria-modal="true" aria-labelledby="titulo-registro" hidden>
-  <div class="modal__panel">
+<!-- ══════════ Modal: agendar cita ══════════
+     El contenido de #agendar-cuerpo lo construye js/agendar.js paso a paso. -->
+<div class="modal" id="modal-agendar" role="dialog" aria-modal="true" aria-labelledby="titulo-agendar" hidden>
+  <div class="modal__panel modal__panel--ancho">
     <div class="modal__cabecera">
       <div>
-        <h2 id="titulo-registro" style="font-size:var(--txt-lg)">Crear cuenta</h2>
-        <p>Necesitamos estos datos para identificarte y avisarte de tus citas.</p>
+        <h2 id="titulo-agendar" style="font-size:var(--txt-lg)">Agendar cita</h2>
+        <p id="agendar-sub">Agenda tu cita en pocos pasos.</p>
       </div>
       <button type="button" class="modal__cerrar" data-cerrar aria-label="Cerrar">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
     </div>
 
-    <form id="form-registro" novalidate>
-      <label class="campo">
-        <span class="campo__etiqueta">Nombre completo</span>
-        <input class="campo__control" type="text" name="nombre" autocomplete="name" required>
-      </label>
-
-      <div class="rejilla-2">
-        <label class="campo">
-          <span class="campo__etiqueta">Documento</span>
-          <input class="campo__control" type="text" name="documento" inputmode="numeric" required>
-        </label>
-        <label class="campo">
-          <span class="campo__etiqueta">Celular</span>
-          <input class="campo__control" type="tel" name="telefono" autocomplete="tel" required placeholder="300 000 0000">
-        </label>
-      </div>
-
-      <label class="campo">
-        <span class="campo__etiqueta">Correo electrónico</span>
-        <input class="campo__control" type="email" name="correo" autocomplete="email" required>
-      </label>
-
-      <div class="rejilla-2">
-        <label class="campo">
-          <span class="campo__etiqueta">Contraseña</span>
-          <input class="campo__control" type="password" name="contrasena" autocomplete="new-password" required minlength="8">
-        </label>
-        <label class="campo">
-          <span class="campo__etiqueta">Repetir contraseña</span>
-          <input class="campo__control" type="password" name="contrasena2" autocomplete="new-password" required minlength="8">
-        </label>
-      </div>
-      <p class="campo__ayuda">Mínimo 8 caracteres.</p>
-
-      <label class="casilla">
-        <input type="checkbox" name="autorizacion" required>
-        <span>Autorizo a Arte Odontológico a tratar mis datos personales para agendar
-              citas y enviarme recordatorios, según la
-              <a href="politica-datos.html">política de tratamiento de datos</a>.</span>
-      </label>
-
-      <p class="campo__error" data-error hidden></p>
-
-      <button type="submit" class="btn btn--primario btn--bloque btn--grande">Crear cuenta</button>
-
-      <p class="modal__pie">
-        ¿Ya tienes cuenta?
-        <a href="#" data-abrir="modal-ingreso">Ingresar</a>
-      </p>
-    </form>
+    <div id="agendar-cuerpo"></div>
   </div>
 </div>
 
 <script src="js/config.js"></script>
 <script src="js/servicios.js"></script>
+<script src="js/sesion.js"></script>
+<script src="js/api.js"></script>
+<script src="js/api-demo.js"></script>
 <script src="js/modales.js"></script>
+<script src="js/comun.js"></script>
+<script src="js/agendar.js"></script>
 <script src="js/landing.js"></script>
 </body>
 </html>

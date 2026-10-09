@@ -1,6 +1,7 @@
-/* Catálogo de servicios del consultorio.
-   Provisional en el frontend: en la siguiente iteración se
-   consume desde GET /api/servicios (tabla `servicios`). */
+/* Catálogo base de especialidades.
+   Las especialidades reales vienen de GET /especialidades (js/agendar.js).
+   Esta lista solo sirve como respaldo si la API no responde y como
+   fuente de los íconos, que se asocian por `id` == `codigo`. */
 const SERVICIOS = [
   { id: 'general',        nombre: 'Odontología general',  desc: 'Limpieza, resinas y control preventivo.',        icono: 'diente' },
   { id: 'sonrisa',        nombre: 'Diseño de sonrisa',    desc: 'Carillas y blanqueamiento estético.',            icono: 'brillo' },

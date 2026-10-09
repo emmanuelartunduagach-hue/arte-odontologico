@@ -6,8 +6,12 @@ const rutas = require('./routes');
 
 const app = express();
 
+// Detrás de un proxy (al publicar) para que req.ip sea la IP real
+// del visitante; lo usa el límite de peticiones.
+if (process.env.PROXY_CONFIABLE) app.set('trust proxy', Number(process.env.PROXY_CONFIABLE) || 1);
+
 app.use(cors({ origin: process.env.ORIGEN_PERMITIDO || '*' }));
-app.use(express.json());
+app.use(express.json({ limit: '100kb' }));
 
 app.use('/api', rutas);
 
@@ -25,6 +29,7 @@ app.use((err, req, res, next) => {
     error: err.publico || (estado < 500 ? 'Solicitud inválida' : 'Error interno del servidor'),
   };
   if (err.campos) cuerpo.campos = err.campos;
+  if (err.extra) Object.assign(cuerpo, err.extra); // datos útiles, ej. el id de un registro repetido
   res.status(estado).json(cuerpo);
 });
 

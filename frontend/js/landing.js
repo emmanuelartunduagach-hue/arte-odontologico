@@ -1,11 +1,45 @@
 /* Lógica de la página pública. */
 
 document.addEventListener('DOMContentLoaded', () => {
-  pintarServicios();
   configurarWhatsApp();
   prepararFormularios();
   vigilarDesplazamiento();
+  configurarCarruseles();
 });
+
+/* Carrusel de fotos: se desliza solo, lento y continuo.
+   Se duplica el contenido para que el bucle no tenga saltos; las
+   copias se ocultan a lectores de pantalla. Con "reducir
+   movimiento" activado no se anima: queda como tira que se
+   desplaza a mano. */
+const VELOCIDAD_CARRUSEL_PX_S = 35;
+
+function configurarCarruseles() {
+  const sinMovimiento = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  document.querySelectorAll('[data-carrusel]').forEach((carrusel) => {
+    const carril = carrusel.querySelector('.carrusel__carril');
+    if (!carril || sinMovimiento.matches) return;
+
+    [...carril.children].forEach((item) => {
+      const copia = item.cloneNode(true);
+      copia.setAttribute('aria-hidden', 'true');
+      copia.querySelector('img')?.setAttribute('alt', '');
+      carril.appendChild(copia);
+    });
+
+    // La duración depende del ancho real, para que la velocidad
+    // sea la misma en celular y en escritorio.
+    function ajustarVelocidad() {
+      const mitad = carril.scrollWidth / 2;
+      carrusel.style.setProperty('--duracion-carrusel', `${Math.round(mitad / VELOCIDAD_CARRUSEL_PX_S)}s`);
+    }
+    carrusel.classList.add('carrusel--auto');
+    ajustarVelocidad();
+    window.addEventListener('resize', ajustarVelocidad);
+    carrusel.querySelectorAll('img').forEach((img) => img.addEventListener('load', ajustarVelocidad));
+  });
+}
 
 /* El encabezado se separa del contenido solo cuando la página
    ya se desplazó. Se usa IntersectionObserver en lugar de
@@ -25,21 +59,6 @@ function vigilarDesplazamiento() {
   ).observe(centinela);
 }
 
-function pintarServicios() {
-  const contenedor = document.getElementById('lista-servicios');
-  if (!contenedor) return;
-
-  contenedor.innerHTML = SERVICIOS.map(s => `
-    <button type="button" class="servicio" data-abrir="modal-registro" data-servicio="${s.id}">
-      <span class="servicio__icono">${svgIcono(s.icono)}</span>
-      <span>
-        <span class="servicio__nombre">${s.nombre}</span>
-        <span class="servicio__desc">${s.desc}</span>
-      </span>
-    </button>
-  `).join('');
-}
-
 function configurarWhatsApp() {
   const enlace = document.getElementById('enlace-whatsapp');
   if (enlace) {
@@ -47,38 +66,65 @@ function configurarWhatsApp() {
   }
 }
 
-/* Validación en cliente. La validación real y obligatoria vive
-   en el backend; esta solo evita viajes innecesarios al servidor. */
+/* Formulario de "Acceso del consultorio": solo la secretaria inicia
+   sesión; los pacientes no tienen cuenta (contrato API v2, sección 3).
+   La validación real vive en el backend. */
 function prepararFormularios() {
-  const registro = document.getElementById('form-registro');
-  const ingreso  = document.getElementById('form-ingreso');
+  const ingreso = document.getElementById('form-ingreso');
+  if (!ingreso) return;
+  const error = ingreso.querySelector('[data-error]');
+  const boton = ingreso.querySelector('button[type="submit"]');
 
-  registro?.addEventListener('submit', (e) => {
+  // Con sesión abierta, "Ingresar" lleva directo al panel.
+  const sesion = obtenerSesion();
+  if (sesion) {
+    document.querySelectorAll('[data-abrir="modal-ingreso"]').forEach((enlace) => {
+      enlace.removeAttribute('data-abrir');
+      // El candado del encabezado conserva su icono; solo cambia lo que anuncia.
+      if (enlace.hasAttribute('data-acceso-icono')) {
+        enlace.setAttribute('aria-label', 'Ir a mi panel');
+        enlace.title = 'Ir a mi panel';
+      } else {
+        enlace.textContent = 'Mi panel';
+      }
+      if (enlace.tagName === 'A') enlace.href = destinoDe(sesion.usuario);
+      else enlace.addEventListener('click', () => location.assign(destinoDe(sesion.usuario)));
+    });
+  }
+
+  // index.html?ingresar=1 abre el formulario (lo usan los paneles al
+  // pedir sesión); &vencida=1 explica por qué.
+  const parametros = new URLSearchParams(location.search);
+  if (parametros.has('ingresar') && !sesion) {
+    abrirModal('modal-ingreso');
+    if (parametros.has('vencida')) mostrarError(error, 'Tu sesión venció. Ingresa de nuevo.');
+  }
+
+  ingreso.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const datos = Object.fromEntries(new FormData(registro));
-    const error = registro.querySelector('[data-error]');
-
-    if (datos.contrasena !== datos.contrasena2) {
-      return mostrarError(error, 'Las dos contraseñas no coinciden.');
-    }
-    if (datos.contrasena.length < 8) {
-      return mostrarError(error, 'La contraseña debe tener al menos 8 caracteres.');
-    }
-    if (!datos.autorizacion) {
-      return mostrarError(error, 'Debes autorizar el tratamiento de tus datos para continuar.');
-    }
-
     ocultarError(error);
-    // PENDIENTE: POST ${CONFIG.API}/auth/registro
-    console.log('Registro validado. Falta conectar con el backend.', datos);
-  });
 
-  ingreso?.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const error = ingreso.querySelector('[data-error]');
-    ocultarError(error);
-    // PENDIENTE: POST ${CONFIG.API}/auth/ingreso
-    console.log('Ingreso validado. Falta conectar con el backend.');
+    const correo = ingreso.correo.value.trim();
+    const contrasena = ingreso.contrasena.value;
+    if (!correo || !contrasena) {
+      mostrarError(error, 'Escribe tu correo y tu contraseña.');
+      (correo ? ingreso.contrasena : ingreso.correo).focus();
+      return;
+    }
+
+    boton.disabled = true;
+    boton.textContent = 'Ingresando…';
+    try {
+      const respuesta = await api('/auth/ingreso', { metodo: 'POST', cuerpo: { correo, contrasena } });
+      guardarSesion(respuesta);
+      location.assign(destinoDe(respuesta.usuario));
+    } catch (err) {
+      mostrarError(error, err.message);
+      ingreso.contrasena.value = '';
+      ingreso.contrasena.focus();
+      boton.disabled = false;
+      boton.textContent = 'Ingresar';
+    }
   });
 }
 

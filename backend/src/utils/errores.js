@@ -7,6 +7,7 @@ class ErrorHttp extends Error {
     this.status = status;
     this.publico = publico;
     this.campos = campos; // errores por campo, ej. { correo: 'Ya existe...' }
+    this.extra = null;    // datos adicionales para el cliente, ej. { pacienteId }
   }
 }
 

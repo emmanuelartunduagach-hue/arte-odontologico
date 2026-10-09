@@ -37,23 +37,22 @@
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 1fr .92fr;
+  grid-template-columns: 1fr 1fr;
   gap: var(--e-8);
   align-items: center;
   padding-block: var(--e-9);
 }
 
 /* Titular como elemento activo del diseño, no como simple
-   contenedor de texto. Fraunces es variable: en tamaños
-   grandes se sube el eje óptico y se cierra el interlineado
-   para que el bloque lea como una unidad compacta.
+   contenedor de texto. Playfair Display es de alto contraste:
+   a tamaño grande luce mejor, por eso el titular es amplio y el
+   interlineado se mantiene cerrado.
    Deliberadamente NO se acentúa una palabra suelta en color o
    cursiva: es el recurso más repetido y no aporta jerarquía. */
 .portada__titulo {
-  font-size: clamp(2.25rem, 5.2vw, 3.75rem);
-  line-height: 1.02;
-  letter-spacing: -.03em;
-  font-variation-settings: 'opsz' 120, 'SOFT' 30, 'WONK' 1;
+  font-size: clamp(2.75rem, 5.6vw, 4.5rem);
+  line-height: 1.06;
+  letter-spacing: -.01em;
   margin-bottom: var(--e-5);
   text-wrap: balance;
 }
@@ -91,11 +90,12 @@
 
 .portada__figura { position: relative; }
 
+/* La foto se muestra completa (sin recorte): lleva texto
+   incrustado y el rostro debe verse entero. La altura sale de
+   su proporción real. */
 .portada__imagen {
   width: 100%;
-  aspect-ratio: 4 / 5;
-  object-fit: cover;
-  object-position: center;
+  height: auto;
   border-radius: 170px 170px var(--radio-lg) var(--radio-lg);
   background: var(--violeta-100);
 }
@@ -119,66 +119,64 @@
 
 .seccion--tinta > * { position: relative; z-index: 1; }
 
-/* ---------- Cómo funciona ----------
-   Esta sección sí es una secuencia real (agendar → confirmar
-   → recordar), así que la numeración informa en lugar de
-   decorar.                                                   */
+/* ---------- Sección lavanda ----------
+   Fondo lavanda de la portada. Todo el texto de esta sección va
+   en --ink-900: es el único color de texto que mantiene contraste
+   AA sobre este fondo. La textura de arcos pasa a blanco.      */
 
-.pasos {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--e-6);
-  counter-reset: paso;
-}
+.seccion--lavanda { position: relative; background-color: var(--lavanda-500); }
 
-.paso {
-  position: relative;
-  padding-top: var(--e-5);
-  border-top: 2px solid var(--borde-fuerte);
-  counter-increment: paso;
-}
-
-.paso::before {
-  content: counter(paso);
+.seccion--lavanda::before {
+  content: '';
   position: absolute;
-  top: -.65em;
-  left: 0;
-  display: grid;
-  place-items: center;
-  width: 1.35em;
-  height: 1.35em;
-  background: var(--violeta-600);
-  color: var(--papel);
-  border-radius: var(--radio-pill);
-  font-family: var(--fuente-ui);
-  font-size: var(--txt-sm);
-  font-weight: var(--peso-fuerte);
-  line-height: 1;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='76' height='76' viewBox='0 0 76 76'%3E%3Cpath d='M14 62V34a24 24 0 0 1 48 0v28' fill='none' stroke='%23ffffff' stroke-width='1.5'/%3E%3C/svg%3E");
+  background-size: 76px 76px;
+  opacity: .16;
+  pointer-events: none;
 }
 
-.paso h3 {
+.seccion--lavanda > * { position: relative; z-index: 1; }
+/* Esta sección es más compacta para que quepa en una pantalla. */
+.seccion--lavanda { padding-block: var(--e-6); }
+.seccion--lavanda .seccion__intro { margin-bottom: var(--e-5); }
+.seccion--lavanda .seccion__intro h2 { font-size: clamp(var(--txt-lg), 3.6vw, var(--txt-xl)); }
+.seccion--lavanda .seccion__intro p { color: var(--ink-900); }
+
+/* Frase de cierre bajo el carrusel, dentro del fondo lavanda. */
+.seccion__cierre {
+  margin: var(--e-5) auto 0;
+  max-width: 52ch;
+  text-align: center;
+  font-family: var(--fuente-titular);
   font-size: var(--txt-md);
-  font-family: var(--fuente-ui);
-  font-weight: var(--peso-semi);
-  margin-bottom: var(--e-2);
-  padding-left: 2.4em;
+  color: var(--ink-900);
 }
-.paso p { color: var(--ink-600); font-size: var(--txt-sm); }
 
-/* ---------- Servicios ----------
-   Sin sombra por tarjeta. El borde delimita; el color de marca
-   aparece en el icono y se intensifica al interactuar.       */
+/* ---------- Especialidades ----------
+   Tarjetas en el mismo lavanda de la portada para que resalten
+   sobre el fondo blanco y la página mantenga una sola paleta.
+   Sin sombra por tarjeta: el color delimita. El texto va en
+   --ink-900 (único con contraste AA sobre lavanda).          */
 
-.servicios { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--e-4); }
+.servicios { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--e-3); }
+
+/* Compacta para que, al pulsar "Agendar mi cita", se vean las nueve
+   especialidades sin desplazarse. La sección queda justo debajo del
+   encabezado fijo (≈73px). */
+#especialidades { padding-block: var(--e-6); scroll-margin-top: 73px; }
+#especialidades .seccion__intro { margin-bottom: var(--e-5); }
+#especialidades .seccion__intro h2 { font-size: clamp(var(--txt-lg), 3.6vw, var(--txt-xl)); }
 
 .servicio {
   display: flex;
-  gap: var(--e-4);
-  padding: var(--e-5);
-  background: var(--papel);
-  border: 1px solid var(--borde);
+  gap: var(--e-3);
+  padding: var(--e-4);
+  background: var(--lavanda-500);
+  border: 1px solid transparent;
   border-radius: var(--radio-lg);
   text-align: left;
+  color: var(--ink-900);
   cursor: pointer;
   width: 100%;
   transition: border-color var(--transicion), transform var(--transicion);
@@ -193,9 +191,9 @@
   height: 44px;
   display: grid;
   place-items: center;
-  background: var(--violeta-100);
+  background: var(--papel);
   border-radius: var(--radio-md);
-  color: var(--violeta-600);
+  color: var(--acento-texto);
   transition: background var(--transicion), color var(--transicion);
 }
 .servicio__icono svg { width: 22px; height: 22px; }
@@ -203,35 +201,55 @@
 /* El icono se rellena al interactuar. Un solo cambio de estado,
    sobre el elemento que identifica la tarjeta.               */
 .servicio:hover .servicio__icono,
-.servicio:focus-visible .servicio__icono { background: var(--violeta-600); color: var(--papel); }
+.servicio:focus-visible .servicio__icono { background: var(--violeta-600); color: var(--sobre-marca); }
 
 .servicio__nombre { display: block; font-size: var(--txt-base); font-weight: var(--peso-semi); margin-bottom: var(--e-1); }
-.servicio__desc { display: block; font-size: var(--txt-sm); color: var(--ink-600); line-height: var(--alto-normal); }
+.servicio__desc { display: block; font-size: var(--txt-sm); color: var(--ink-900); line-height: var(--alto-normal); }
 
-/* ---------- Galería ---------- */
+/* ---------- Carrusel ----------
+   Las fotos conservan su proporción real (altura común, ancho
+   variable): así no se recortan los afiches con texto ni los
+   rostros. Sin JavaScript, o con "reducir movimiento" activado,
+   es una tira que se desplaza a mano (táctil o trackpad).
+   Con movimiento permitido, landing.js agrega .carrusel--auto:
+   la tira se desliza sola, lento y de forma continua. Se
+   detiene al pasar el cursor por encima.                       */
 
-/* Mosaico asimétrico. Una retícula de piezas idénticas obliga
-   a que todas las fotos compitan por igual; aquí una domina y
-   el resto la acompaña.
+.carrusel__pista {
+  /* Altura ligada a la pantalla: título, fotos y frase final se ven
+     completos sin desplazarse (≈400px es lo que ocupan encabezado,
+     título, descripción y frase). */
+  height: clamp(220px, calc(100svh - 400px), 440px);
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-radius: var(--radio-lg);
+}
+.carrusel__pista::-webkit-scrollbar { display: none; }
 
-       ┌───────────┬─────┬─────┐
-       │           │  2  │  3  │
-       │     1     ├─────┴─────┤
-       │           │     4     │
-       └───────────┴───────────┘                              */
+.carrusel__carril { display: flex; width: max-content; height: 100%; }
 
-.galeria { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--e-3); }
+/* El margen (y no "gap") hace que la mitad del carril mida
+   exactamente lo mismo que el original, para que el bucle no
+   se note al reiniciar. */
+.carrusel__item { flex: 0 0 auto; height: 100%; margin-right: var(--e-3); }
 
-.galeria__item {
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
+.carrusel__item img {
+  height: 100%;
+  width: auto;
+  max-width: none;
   border-radius: var(--radio-lg);
   background: var(--violeta-100);
 }
 
-.galeria__item:nth-child(1) { grid-column: span 2; grid-row: span 2; }
-.galeria__item:nth-child(4) { grid-column: span 2; aspect-ratio: 2 / 1; }
+.carrusel--auto .carrusel__pista { overflow: hidden; }
+.carrusel--auto .carrusel__carril {
+  animation: carrusel-deslizar var(--duracion-carrusel, 120s) linear infinite;
+}
+.carrusel--auto:hover .carrusel__carril { animation-play-state: paused; }
+
+@keyframes carrusel-deslizar {
+  to { transform: translateX(-50%); }
+}
 
 /* ---------- Contacto ---------- */
 
@@ -255,7 +273,7 @@
   font-size: var(--txt-sm);
 }
 .contacto__lista li:last-child { border-bottom: 0; }
-.contacto__lista svg { width: 18px; height: 18px; color: var(--violeta-600); flex-shrink: 0; margin-top: 3px; }
+.contacto__lista svg { width: 18px; height: 18px; color: var(--acento-texto); flex-shrink: 0; margin-top: 3px; }
 
 .aviso-wa { padding: var(--e-5); background: var(--violeta-50); border-radius: var(--radio-md); }
 .aviso-wa h3 { font-family: var(--fuente-ui); font-size: var(--txt-base); font-weight: var(--peso-semi); margin-bottom: var(--e-2); }
@@ -340,6 +358,144 @@
 }
 .casilla input { margin-top: 3px; flex-shrink: 0; width: 16px; height: 16px; accent-color: var(--violeta-600); }
 
+/* ---------- Agendar cita (modal) ----------
+   El contenido lo genera js/agendar.js. Reutiliza .campo, .casilla
+   y .rejilla-2 de base/landing. */
+
+.seccion[id] { scroll-margin-top: 80px; }
+#especialidades.seccion[id] { scroll-margin-top: 73px; }
+
+.modal__panel--ancho { max-width: 600px; }
+
+.agendar__titulo,
+.agendar__subtitulo {
+  font-family: var(--fuente-ui);
+  font-size: var(--txt-md);
+  font-weight: var(--peso-semi);
+  line-height: var(--alto-normal);
+  margin-bottom: var(--e-3);
+}
+.agendar__subtitulo { font-size: var(--txt-base); margin-top: var(--e-5); }
+.agendar__titulo:focus { outline: none; }
+.agendar__nota { margin-block: var(--e-4); color: var(--ink-900); font-size: var(--txt-sm); }
+
+.estado-carga { padding-block: var(--e-5); color: var(--ink-900); font-size: var(--txt-sm); }
+
+/* Resumen de lo elegido, con enlace "Cambiar" */
+.resumen {
+  display: grid;
+  gap: var(--e-2);
+  padding: var(--e-4);
+  margin-bottom: var(--e-5);
+  background: var(--violeta-50);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-md);
+}
+.resumen__item { display: flex; flex-wrap: wrap; gap: var(--e-1) var(--e-3); align-items: baseline; font-size: var(--txt-sm); }
+.resumen dt { min-width: 8em; color: var(--ink-600); }
+.resumen dd { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--e-3); font-weight: var(--peso-semi); color: var(--ink-900); }
+.resumen__cambiar {
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--acento-texto);
+  font-size: var(--txt-xs);
+  font-weight: var(--peso-semi);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Lista de especialistas */
+.opciones { display: grid; gap: var(--e-2); }
+.opcion {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  padding: var(--e-4);
+  background: var(--papel);
+  border: 1px solid var(--borde-fuerte);
+  border-radius: var(--radio-md);
+  font-weight: var(--peso-semi);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--transicion), background var(--transicion);
+}
+.opcion:hover,
+.opcion:focus-visible { border-color: var(--violeta-600); background: var(--violeta-50); }
+
+/* Calendario: los días con horas libres van en lavanda; el resto, apagado y sin acción */
+.calendario { margin-bottom: var(--e-4); }
+.calendario__cabecera { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--e-3); }
+.calendario__mes { font-weight: var(--peso-semi); text-transform: capitalize; }
+.calendario__nav {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: var(--papel);
+  color: var(--acento-texto);
+  border: 1px solid var(--borde-fuerte);
+  border-radius: var(--radio-pill);
+  cursor: pointer;
+}
+.calendario__nav svg { width: 18px; height: 18px; }
+.calendario__nav:disabled { opacity: .4; cursor: not-allowed; }
+.calendario__rejilla { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--e-1); }
+.calendario__sem { padding-block: var(--e-1); text-align: center; font-size: var(--txt-xs); color: var(--ink-600); }
+.dia {
+  display: grid;
+  place-items: center;
+  min-height: 40px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radio-md);
+  color: var(--ink-400);
+  font-size: var(--txt-sm);
+  cursor: default;
+}
+.dia--libre { background: var(--lavanda-500); color: var(--ink-900); font-weight: var(--peso-semi); cursor: pointer; }
+.dia--libre:hover { background: var(--violeta-600); color: var(--sobre-marca); }
+.dia[aria-pressed="true"] { background: var(--violeta-600); color: var(--sobre-marca); }
+.calendario__ayuda { margin-top: var(--e-3); font-size: var(--txt-xs); color: var(--ink-600); }
+
+/* Horas */
+.horas { display: flex; flex-wrap: wrap; gap: var(--e-2); margin-bottom: var(--e-4); }
+.hora {
+  padding: var(--e-2) var(--e-4);
+  background: var(--papel);
+  color: var(--acento-texto);
+  border: 1px solid var(--violeta-600);
+  border-radius: var(--radio-pill);
+  font-size: var(--txt-sm);
+  font-weight: var(--peso-semi);
+  cursor: pointer;
+  transition: background var(--transicion), color var(--transicion);
+}
+.hora:hover,
+.hora:focus-visible { background: var(--violeta-600); color: var(--sobre-marca); }
+
+/* Avisos */
+.alerta {
+  margin-block: var(--e-4);
+  padding: var(--e-3) var(--e-4);
+  background: var(--rosa-100);
+  border-radius: var(--radio-md);
+  color: var(--rosa-700);
+  font-size: var(--txt-sm);
+}
+.alerta[hidden] { display: none; }
+.alerta--info { background: var(--violeta-50); color: var(--ink-900); }
+.alerta__accion { margin-top: var(--e-3); }
+
+/* Campo trampa contra bots: fuera de pantalla (no display:none, que los bots detectan) */
+.trampa { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+/* Confirmación */
+.exito { display: flex; align-items: center; gap: var(--e-3); margin-bottom: var(--e-4); color: var(--menta-600); }
+.exito svg { width: 32px; height: 32px; flex-shrink: 0; }
+.exito .agendar__titulo { margin: 0; color: var(--ink-900); }
+
 /* ---------- Entrada de página ----------
    Una sola secuencia orquestada, al cargar y solo en el hero.
    Deliberadamente NO se anima cada sección al hacer scroll:
@@ -372,18 +528,39 @@
   .portada::after { display: none; }
   .portada__rejilla { grid-template-columns: 1fr; gap: var(--e-7); padding-block: var(--e-7); }
   .portada__figura { order: -1; }
-  .portada__imagen { aspect-ratio: 16 / 10; border-radius: var(--radio-lg); }
+  .portada__figura { width: min(100%, 440px); margin-inline: auto; }
+  .portada__imagen { border-radius: 140px 140px var(--radio-lg) var(--radio-lg); }
   .servicios { grid-template-columns: repeat(2, 1fr); }
   .contacto { grid-template-columns: 1fr; gap: var(--e-5); padding: var(--e-5); }
-  .pasos { grid-template-columns: 1fr; gap: var(--e-6); }
 }
 
 @media (max-width: 620px) {
   .servicios { grid-template-columns: 1fr; }
-  .galeria { grid-template-columns: repeat(2, 1fr); }
-  .galeria__item:nth-child(1) { grid-column: span 2; grid-row: span 1; }
-  .galeria__item:nth-child(4) { grid-column: span 2; }
   .rejilla-2 { grid-template-columns: 1fr; }
   .portada__datos { gap: var(--e-5); }
   .encabezado__acciones .btn { padding-inline: var(--e-4); }
+}
+
+
+/* ---------- Gestionar mi cita (gestionar-cita.html) ---------- */
+
+/* El fondo lila cubre toda la pantalla, también en celulares altos. */
+.pagina-gestion { background: var(--violeta-50); }
+.gestion { padding-block: var(--e-8); min-height: calc(100vh - 72px); min-height: calc(100dvh - 72px); background: var(--violeta-50); }
+.gestion__tarjeta {
+  max-width: 640px;
+  margin-inline: auto;
+  padding: var(--e-6);
+  background: var(--papel);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-flotante);
+}
+.gestion__titulo { font-size: clamp(var(--txt-lg), 5vw, var(--txt-xl)); line-height: 1.15; margin-bottom: var(--e-5); }
+.acciones { display: flex; flex-wrap: wrap; gap: var(--e-3); margin-top: var(--e-5); }
+.modal .acciones { margin-top: var(--e-5); }
+
+@media (max-width: 640px) {
+  .gestion { padding-block: var(--e-6); }
+  .gestion__tarjeta { padding: var(--e-5); }
+  .acciones .btn { width: 100%; }
 }

@@ -1,0 +1,114 @@
+erDiagram
+    pacientes |o--o{ citas : "tiene (al aceptarla)"
+    pacientes ||--o{ historia_clinica : "paciente de"
+    usuarios |o--o{ pacientes : "registra"
+    servicios ||--o{ citas : "especialidad de"
+    servicios ||--o{ especialista_especialidad : ""
+    especialistas ||--o{ especialista_especialidad : "atiende"
+    especialistas ||--o{ franjas_horarias : "disponible en"
+    sedes ||--o{ franjas_horarias : "ubicada en"
+    franjas_horarias ||--o{ citas : "ocupada por (máx. 1 viva)"
+    franjas_horarias |o--o{ citas : "hora anterior (cambio)"
+    citas ||--o{ notificaciones : "genera"
+    citas |o--o{ historia_clinica : "origina"
+    historia_clinica |o--o{ historia_clinica : "corrige a"
+
+    usuarios {
+        int id PK
+        varchar nombre_completo
+        varchar documento UK
+        varchar correo UK
+        varchar telefono
+        varchar contrasena_hash
+        enum rol "administrador"
+        bool activo
+        bool debe_cambiar_contrasena
+    }
+    pacientes {
+        int id PK
+        varchar nombres
+        varchar apellidos
+        varchar nombre_completo "generada"
+        enum tipo_documento "CC | TI | RC | CE | PA | PPT"
+        varchar documento UK
+        varchar telefono "celular"
+        varchar telefono_fijo
+        varchar correo
+        enum origen "web | consultorio"
+        varchar motivo_consulta
+        bool autorizacion_datos
+        datetime fecha_autorizacion
+        int creado_por FK
+    }
+    servicios {
+        int id PK
+        varchar codigo UK
+        varchar nombre
+        varchar descripcion
+        bool activo
+    }
+    especialistas {
+        int id PK
+        varchar nombre
+        bool activo
+    }
+    especialista_especialidad {
+        int especialista_id PK,FK
+        int servicio_id PK,FK
+    }
+    sedes {
+        int id PK
+        varchar nombre UK
+        varchar direccion
+        bool activa
+    }
+    franjas_horarias {
+        int id PK
+        int especialista_id FK
+        int sede_id FK
+        date fecha
+        time hora_inicio
+        bool activa
+    }
+    citas {
+        int id PK
+        int paciente_id FK "al aceptarla"
+        int servicio_id FK
+        int franja_id FK
+        int franja_anterior_id FK "si el paciente la reprogramó"
+        enum estado "pendiente | confirmada | rechazada | cancelada | atendida | no_asistio"
+        enum origen "web | consultorio"
+        varchar nombres_paciente
+        varchar apellidos_paciente
+        varchar nombre_paciente "generada"
+        enum tipo_documento_paciente
+        varchar documento_paciente
+        varchar telefono_paciente
+        varchar telefono_fijo_paciente
+        varchar correo_paciente
+        bool autorizacion_datos
+        char codigo_gestion_hash UK
+        tinyint reprogramaciones
+        datetime confirmada_en
+        int franja_ocupada UK "generada"
+    }
+    notificaciones {
+        int id PK
+        int cita_id FK
+        enum tipo
+        enum estado "pendiente | enviada | fallida"
+        varchar destino
+        text mensaje
+    }
+    historia_clinica {
+        int id PK
+        int paciente_id FK
+        date fecha_atencion
+        int servicio_id FK
+        int especialista_id FK
+        int cita_id FK
+        varchar procedimiento
+        text notas
+        int corrige_a FK
+        int creado_por FK
+    }

@@ -32,7 +32,7 @@ body {
 img, svg { display: block; max-width: 100%; }
 button, input, select, textarea { font: inherit; color: inherit; }
 ul, ol { list-style: none; }
-a { color: var(--violeta-600); text-decoration: none; }
+a { color: var(--acento-texto); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
 /* Foco visible y consistente: requisito de accesibilidad. */
@@ -46,15 +46,14 @@ a:hover { text-decoration: underline; }
 
 h1, h2, h3 {
   font-family: var(--fuente-titular);
-  font-weight: var(--peso-semi);
+  font-weight: var(--peso-titular);
   line-height: var(--alto-apretado);
-  letter-spacing: -0.015em;
+  letter-spacing: -0.005em;
   color: var(--ink-900);
-  font-variation-settings: 'SOFT' 20, 'WONK' 0;
 }
 
 h1 { font-size: var(--txt-2xl); }
-h2 { font-size: var(--txt-xl); }
+h2 { font-size: clamp(var(--txt-xl), 4.6vw, var(--txt-titulo)); }
 h3 { font-size: var(--txt-lg); }
 
 h4 {
@@ -94,7 +93,7 @@ p { max-width: var(--ancho-texto); }
   left: -9999px;
   top: var(--e-3);
   background: var(--violeta-600);
-  color: var(--papel);
+  color: var(--sobre-marca);
   padding: var(--e-3) var(--e-4);
   border-radius: var(--radio-md);
   z-index: 100;
@@ -124,13 +123,13 @@ p { max-width: var(--ancho-texto); }
 
 .btn--primario {
   background: var(--violeta-600);
-  color: var(--papel);
+  color: var(--sobre-marca);
 }
 .btn--primario:hover { background: var(--violeta-500); }
 
 .btn--secundario {
   background: var(--papel);
-  color: var(--violeta-600);
+  color: var(--acento-texto);
   border-color: var(--borde-fuerte);
 }
 .btn--secundario:hover { border-color: var(--violeta-600); background: var(--violeta-50); }
@@ -139,9 +138,9 @@ p { max-width: var(--ancho-texto); }
   background: transparent;
   color: var(--ink-600);
 }
-.btn--fantasma:hover { background: var(--violeta-100); color: var(--violeta-600); }
+.btn--fantasma:hover { background: var(--violeta-100); color: var(--acento-texto); }
 
-.btn--whatsapp { background: var(--whatsapp); color: var(--papel); }
+.btn--whatsapp { background: var(--whatsapp); color: var(--sobre-marca); }
 .btn--whatsapp:hover { background: #178f4a; }
 
 .btn--bloque { width: 100%; }
@@ -150,7 +149,7 @@ p { max-width: var(--ancho-texto); }
 /* ---------- Header ---------- */
 
 .encabezado {
-  background: rgba(255, 255, 255, .88);
+  background: var(--fondo-encabezado);
   backdrop-filter: saturate(1.6) blur(10px);
   border-bottom: 1px solid transparent;
   position: sticky;
@@ -209,6 +208,11 @@ p { max-width: var(--ancho-texto); }
 
 .encabezado__acciones { display: flex; align-items: center; gap: var(--e-3); }
 
+/* Candado de "Acceso del consultorio", junto a "Agendar cita". */
+.btn--candado,
+.encabezado__acciones .btn.btn--candado { width: 44px; height: 44px; padding: 0; justify-content: center; flex-shrink: 0; }
+.btn--candado svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
 /* ---------- Formularios ---------- */
 
 .campo { display: block; margin-bottom: var(--e-4); }
@@ -263,13 +267,13 @@ p { max-width: var(--ancho-texto); }
   padding-block: var(--e-7);
   font-size: var(--txt-sm);
 }
-.pie a { color: var(--papel); }
+.pie a { color: var(--sobre-marca); }
 .pie__rejilla {
   display: grid;
   grid-template-columns: 1.4fr 1fr 1fr;
   gap: var(--e-6);
 }
-.pie h4 { color: var(--papel); margin-bottom: var(--e-3); font-size: var(--txt-sm); }
+.pie h4 { color: var(--sobre-marca); margin-bottom: var(--e-3); font-size: var(--txt-sm); }
 .pie li { margin-bottom: var(--e-2); }
 .pie__legal {
   margin-top: var(--e-6);

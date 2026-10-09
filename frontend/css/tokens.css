@@ -31,12 +31,23 @@
      que la interfaz converse con las imágenes.               */
   --lila-400: #b39ddb;
 
+  /* Lavanda clara, derivada del tono de la foto de portada
+     (#AA82F8) aclarado ~30 % hacia el blanco. Fondo de las
+     secciones destacadas y de las tarjetas de especialidades,
+     para que toda la página lea como una sola familia.
+     Contraste del texto sobre este fondo: --ink-900 ≈ 9:1 y
+     --violeta-600 ≈ 6:1 (AA). --ink-600 (≈ 4:1) y el blanco
+     (≈ 2:1) NO alcanzan AA para texto normal: no usarlos.   */
+  --lavanda-500: #c4a8fa;
+
+
   /* Estados de una cita. Deliberadamente apagados: en una
      tabla clínica el color informa, no decora.               */
   --menta-600: #2f8f76;  /* Confirmada  */
   --menta-100: #dff0ea;
   --ambar-700: #9a6412;  /* Pendiente   */
   --ambar-100: #fbeed6;
+  --ambar-50:  #fffbf3;  /* Fondo de una solicitud por confirmar */
   --rosa-700:  #a32d44;  /* Cancelada   */
   --rosa-100:  #fadfe4;
 
@@ -47,14 +58,24 @@
   --borde: #e8deee;
   --borde-fuerte: #d6c6df;
 
+  /* Roles que cambian en el modo oscuro del panel:
+     el morado como color de TEXTO (enlaces, cifras), el texto que
+     va SOBRE el morado de marca (botones) y el fondo translúcido
+     del encabezado. En modo claro son los mismos colores de siempre. */
+  --acento-texto: var(--violeta-600);
+  --sobre-marca: #ffffff;
+  --fondo-encabezado: rgba(255, 255, 255, .88);
+
   /* ---------- Tipografía ----------
      Dos familias con roles claros:
-     Fraunces (serif con eje óptico) para titulares — aporta
-     el matiz de oficio que sugiere el nombre "Arte".
+     Playfair Display (serif de alto contraste, estilo Didone)
+     para titulares — trazos gruesos y finísimos que dan un
+     aire editorial y elegante, en la línea de las tipografías
+     de moda y estética. Se usa solo en titulares.
      Inter para interfaz y cuerpo — máxima legibilidad en
      tablas, formularios y datos.                             */
 
-  --fuente-titular: 'Fraunces', 'Georgia', serif;
+  --fuente-titular: 'Playfair Display', 'Georgia', serif;
   --fuente-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
 
   /* Escala modular 1.25 sobre 16px */
@@ -63,13 +84,15 @@
   --txt-base: 1rem;      /* 16 */
   --txt-md:   1.125rem;  /* 18 */
   --txt-lg:   1.5rem;    /* 24 */
-  --txt-xl:   2rem;      /* 32 */
+  --txt-xl:   2.5rem;    /* 40 */
   --txt-2xl:  2.75rem;   /* 44 */
   --txt-3xl:  3.5rem;    /* 56 */
+  --txt-titulo: 3.25rem; /* 52: tope de los títulos de sección */
 
   --peso-normal: 400;
   --peso-medio: 500;
   --peso-semi: 600;
+  --peso-titular: 500;   /* Titulares grandes: trazo ligero */
   --peso-fuerte: 700;
 
   --alto-apretado: 1.15;
@@ -106,6 +129,47 @@
   --ancho-texto: 62ch;
 
   --transicion: 180ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---------- Modo oscuro (solo panel de la secretaria) ----------
+   js/tema.js pone data-tema="oscuro" en <html> según la preferencia
+   guardada o, si no hay, la del sistema. Mismo matiz morado, sobre
+   superficies oscuras. Contrastes medidos (WCAG):
+   --ink-900 sobre --papel ≈ 14:1, --ink-600 ≈ 8.6:1,
+   --acento-texto ≈ 9.8:1, blanco sobre --violeta-600 ≈ 7.5:1.     */
+:root[data-tema="oscuro"] {
+  color-scheme: dark;
+
+  --ink-900: #f2ecf5;
+  --ink-600: #c4b8cc;
+  --ink-400: #93879c;
+
+  --violeta-700: #2a1a33;
+  --violeta-600: #6f3f91;   /* fondo de botones y menú activo */
+  --violeta-500: #7d4ba0;
+  --violeta-300: #8f73a6;
+  --violeta-100: #372744;
+  --violeta-50:  #1b1520;   /* fondo de página del panel */
+
+  --menta-600: #72d1b3;
+  --menta-100: #17382f;
+  --ambar-700: #f0c574;
+  --ambar-100: #3d2e13;
+  --ambar-50:  #2a2116;
+  --rosa-700:  #f39cb0;
+  --rosa-100:  #45212b;
+
+  --papel: #241d29;          /* tarjetas */
+  --lienzo: #1b1520;
+  --borde: #3a2f42;
+  --borde-fuerte: #4f4159;
+
+  --acento-texto: #d6bfec;
+  --sobre-marca: #ffffff;
+  --fondo-encabezado: rgba(30, 24, 35, .9);
+
+  --sombra-sutil: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --sombra-flotante: 0 12px 32px -8px rgba(0, 0, 0, 0.6);
 }
 
 @media (prefers-reduced-motion: reduce) {
