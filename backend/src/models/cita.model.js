@@ -5,7 +5,7 @@
    ya aparta la hora; una cancelada o rechazada la libera. */
 const { pool } = require('../config/db');
 
-const VERSION_POLITICA_DATOS = '1.0';
+const VERSION_POLITICA_DATOS = '1.1';  // debe coincidir con frontend/politica-datos.html
 
 /* Detalle completo de una cita, para respuestas y mensajes. */
 const SELECT_DETALLE = `

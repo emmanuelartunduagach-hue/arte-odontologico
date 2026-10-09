@@ -3,7 +3,7 @@
    parámetros (?) para evitar inyección SQL. */
 const { pool } = require('../config/db');
 
-const VERSION_POLITICA_DATOS = '1.0';
+const VERSION_POLITICA_DATOS = '1.1';  // debe coincidir con frontend/politica-datos.html
 
 const SELECT_PACIENTE = `
   SELECT id, nombres, apellidos, nombre_completo AS nombreCompleto,

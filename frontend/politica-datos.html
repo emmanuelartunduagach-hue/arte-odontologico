@@ -5,16 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/png" href="assets/img/favicon.png">
   <title>Política de tratamiento de datos — Arte Odontológico</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/base.css">
   <style>
-    .documento { max-width: 68ch; margin-inline: auto; }
+    .documento { max-width: 70ch; margin-inline: auto; }
+    .documento h1 { font-size: var(--txt-xl); }
     .documento h2 { margin-top: var(--e-7); margin-bottom: var(--e-3); font-size: var(--txt-lg); }
-    .documento p, .documento li { color: var(--ink-600); margin-bottom: var(--e-3); }
-    .documento ul { list-style: disc; padding-left: var(--e-5); }
+    .documento h3 { margin-top: var(--e-5); margin-bottom: var(--e-2); font-size: var(--txt-md); }
+    .documento p, .documento li { color: var(--ink-600); margin-bottom: var(--e-3); line-height: var(--alto-suelto); }
+    .documento ul, .documento ol { padding-left: var(--e-5); }
+    .documento ul { list-style: disc; }
+    .documento ol { list-style: decimal; }
+    .documento strong { color: var(--ink-900); }
+    .documento table { width: 100%; border-collapse: collapse; margin-bottom: var(--e-4); font-size: var(--txt-sm); }
+    .documento th, .documento td { text-align: left; vertical-align: top; padding: var(--e-2) var(--e-3); border-bottom: 1px solid var(--borde); color: var(--ink-600); }
+    .documento th { color: var(--ink-900); font-weight: var(--peso-semi); }
+    .tabla-desplazable { overflow-x: auto; }
+    .indice { padding: var(--e-4) var(--e-5); background: var(--violeta-50); border-radius: var(--radio-md); margin-block: var(--e-5); }
+    .indice ol { margin: 0; }
+    .indice li { margin-bottom: var(--e-1); }
+    .vigencia { font-size: var(--txt-sm); color: var(--ink-600); margin-top: var(--e-3); }
     .borrador {
       padding: var(--e-4);
       background: var(--ambar-100);
@@ -23,6 +38,8 @@
       font-size: var(--txt-sm);
       margin-bottom: var(--e-6);
     }
+    /* Dato que debe confirmar el consultorio antes de publicar. */
+    .pendiente { background: var(--ambar-100); color: var(--ambar-700); padding: 0 4px; border-radius: 4px; font-weight: var(--peso-semi); }
   </style>
 </head>
 <body>
@@ -40,70 +57,241 @@
   </div>
 </header>
 
-<main class="seccion">
+<main class="seccion" id="contenido">
   <div class="contenedor documento">
+
+    <!-- Quitar este aviso cuando el consultorio confirme los datos marcados en ámbar. -->
     <p class="borrador">
-      <strong>Borrador.</strong> Este texto debe revisarse con el consultorio antes
-      de la entrega final. Los datos de identificación del responsable son provisionales.
+      <strong>Borrador para revisión del consultorio.</strong> Los datos resaltados
+      en ámbar los debe confirmar Arte Odontológico antes de publicar la página.
     </p>
 
     <h1>Política de tratamiento de datos personales</h1>
-    <p style="margin-top:var(--e-4)">Versión 1.0 — Última actualización: pendiente</p>
-
-    <h2>Responsable</h2>
-    <p>
-      Consultorio Arte Odontológico, dirigido por la Dra. Ximena Acosta Oliveros,
-      con sede en Rivera, Huila (Carrera 7 No. 3-61). Contacto para asuntos de datos personales:
-      318 715 3718.
+    <p class="vigencia">
+      Versión 1.1 · Vigente desde el <span class="pendiente">[fecha de publicación]</span> ·
+      Reemplaza la versión 1.0
     </p>
 
-    <h2>Qué datos recogemos</h2>
+    <p>
+      En Arte Odontológico cuidamos la información que nos confías. Esta política
+      explica qué datos recogemos cuando pides una cita en esta página o te
+      atendemos en el consultorio, para qué los usamos, con quién los compartimos,
+      cuánto tiempo los guardamos y cómo puedes conocerlos, corregirlos o pedir
+      que los eliminemos. Se expide en cumplimiento de la Ley 1581 de 2012 y del
+      Decreto 1074 de 2015 (que compila el Decreto 1377 de 2013).
+    </p>
+
+    <nav class="indice" aria-label="Contenido">
+      <ol>
+        <li><a href="#responsable">Quién es el responsable</a></li>
+        <li><a href="#datos">Qué datos recogemos</a></li>
+        <li><a href="#finalidades">Para qué los usamos</a></li>
+        <li><a href="#sensibles">Datos de salud y de menores de edad</a></li>
+        <li><a href="#autorizacion">Cómo nos das tu autorización</a></li>
+        <li><a href="#terceros">Con quién los compartimos</a></li>
+        <li><a href="#conservacion">Cuánto tiempo los guardamos</a></li>
+        <li><a href="#seguridad">Cómo los protegemos</a></li>
+        <li><a href="#derechos">Tus derechos</a></li>
+        <li><a href="#procedimiento">Cómo ejercer tus derechos</a></li>
+        <li><a href="#vigencia">Vigencia y cambios</a></li>
+      </ol>
+    </nav>
+
+    <h2 id="responsable">1. Quién es el responsable</h2>
+    <p>
+      El responsable del tratamiento de tus datos es
+      <strong><span class="pendiente">[nombre legal: persona natural o razón social]</span></strong>,
+      identificado con <span class="pendiente">[NIT o cédula]</span>, que presta sus servicios
+      con el nombre de <strong>Arte Odontológico</strong>, bajo la dirección de la
+      Dra. Ximena Acosta Oliveros.
+    </p>
     <ul>
-      <li>Nombre completo y número de documento.</li>
-      <li>Correo electrónico y número de celular.</li>
-      <li>Historial de citas agendadas en la plataforma: tratamiento, fecha, hora y estado.</li>
+      <li><strong>Dirección:</strong> Carrera 7 No. 3-61, Rivera, Huila, Colombia.</li>
+      <li><strong>Teléfonos y WhatsApp:</strong> 318 715 3718 · 310 812 0241.</li>
+      <li><strong>Correo para asuntos de datos personales:</strong> <span class="pendiente">[correo]</span>.</li>
+      <li><strong>Horario de atención:</strong> lunes a viernes de 8:00 a. m. a 6:00 p. m. y sábados de 8:00 a. m. a 12:00 m.</li>
     </ul>
     <p>
-      No recogemos ni almacenamos historia clínica a través de esta plataforma.
+      La persona encargada de atender tus consultas y reclamos sobre datos
+      personales es <span class="pendiente">[nombre o cargo, por ejemplo, la administración del consultorio]</span>.
     </p>
 
-    <h2>Para qué los usamos</h2>
+    <h2 id="datos">2. Qué datos recogemos</h2>
+    <div class="tabla-desplazable">
+      <table>
+        <thead>
+          <tr><th scope="col">Cuándo</th><th scope="col">Datos</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Al pedir una cita en esta página</td>
+            <td>Nombres, apellidos, tipo y número de documento, correo electrónico,
+              celular (WhatsApp) y, si lo das, teléfono fijo. También la especialidad,
+              el especialista, la fecha y la hora que elegiste, y la fecha en que
+              autorizaste esta política.</td>
+          </tr>
+          <tr>
+            <td>Cuando te atendemos en el consultorio</td>
+            <td>Los mismos datos de identificación y contacto, el motivo de tu consulta
+              y tu historia clínica (procedimientos realizados y notas del tratamiento).</td>
+          </tr>
+          <tr>
+            <td>Mientras usas la página</td>
+            <td>Datos técnicos mínimos para que funcione y para protegerla de abusos,
+              como la dirección IP de la conexión. No usamos cookies de publicidad
+              ni herramientas de seguimiento.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      No necesitas crear una cuenta ni una contraseña para pedir o gestionar tu cita.
+    </p>
+
+    <h2 id="finalidades">3. Para qué los usamos</h2>
     <ul>
-      <li>Identificarte al ingresar a tu cuenta.</li>
-      <li>Registrar y gestionar tus citas.</li>
-      <li>Enviarte confirmaciones y recordatorios de tus citas.</li>
+      <li>Registrar tu solicitud de cita, apartarte la hora y confirmártela o avisarte si no la podemos atender.</li>
+      <li>Enviarte por WhatsApp la confirmación, los cambios, la cancelación y un recordatorio unas 24 horas antes de tu cita, con un enlace personal para reprogramarla o cancelarla.</li>
+      <li>Identificarte cuando vuelves, para que tus citas queden en una sola ficha.</li>
+      <li>Llevar tu historia clínica odontológica, como lo exige la ley a los prestadores de servicios de salud.</li>
+      <li>Contactarte por teléfono, WhatsApp o correo sobre tu atención.</li>
+      <li>Atender tus consultas, quejas y reclamos, y cumplir las obligaciones legales del consultorio.</li>
     </ul>
     <p>
-      No compartimos tus datos con terceros distintos a los proveedores técnicos
-      necesarios para el envío de notificaciones, y no los usamos con fines
-      publicitarios.
+      <strong>No vendemos ni alquilamos tus datos, y no los usamos para publicidad.</strong>
+      Si en el futuro quisiéramos enviarte información de promociones, te
+      pediremos una autorización aparte, que podrás negar sin afectar tu atención.
+    </p>
+    <p>
+      Los mensajes de WhatsApp solo llevan tu primer nombre, la fecha, la hora, el
+      especialista y la dirección del consultorio. Nunca incluyen información sobre
+      tu salud ni sobre tu tratamiento.
     </p>
 
-    <h2 id="derechos">Tus derechos</h2>
+    <h2 id="sensibles">4. Datos de salud y de menores de edad</h2>
+    <h3>Datos de salud</h3>
     <p>
-      Conforme a la Ley 1581 de 2012 y al Decreto 1074 de 2015, como titular de
-      los datos puedes:
+      El motivo de consulta y la historia clínica son <strong>datos sensibles</strong>.
+      Solo los conocen la secretaria del consultorio y el personal que te atiende.
+      No estás obligado a responder preguntas sobre datos sensibles, pero sin la
+      información clínica necesaria no es posible prestarte el servicio de salud.
+      La historia clínica no se puede editar ni borrar: si algo queda mal, se agrega
+      una corrección que deja constancia de la original.
     </p>
+    <h3>Niñas, niños y adolescentes</h3>
+    <p>
+      Los datos de menores de 18 años solo se tratan para prestarles atención
+      odontológica, respetando su interés superior y sus derechos fundamentales.
+      La cita y la autorización las debe dar su madre, padre o representante legal,
+      quien puede usar su propio celular y correo como datos de contacto.
+    </p>
+
+    <h2 id="autorizacion">5. Cómo nos das tu autorización</h2>
+    <ul>
+      <li><strong>En la página:</strong> al pedir una cita marcas la casilla de autorización,
+        que viene sin marcar. El sistema guarda la fecha y la versión de esta política que aceptaste.</li>
+      <li><strong>En el consultorio:</strong> la secretaria te informa esta política y registra
+        tu autorización. Para tus datos de salud, la autorización es explícita y por escrito.</li>
+    </ul>
+    <p>
+      Si pides una cita para otra persona, declaras que ella (o su representante)
+      te autorizó para entregarnos sus datos.
+    </p>
+
+    <h2 id="terceros">6. Con quién los compartimos</h2>
+    <p>
+      Solo compartimos tus datos con proveedores que nos ayudan a prestar el servicio
+      (llamados <em>encargados</em>), que deben protegerlos y no pueden usarlos para
+      nada distinto:
+    </p>
+    <ul>
+      <li><strong>Meta Platforms (WhatsApp Business):</strong> recibe tu número de celular
+        y el texto de los avisos de tu cita para entregártelos. Sus servidores pueden
+        estar fuera de Colombia, por lo que esto implica una transmisión internacional
+        de datos, que autorizas al aceptar esta política.</li>
+      <li><strong>Proveedor de alojamiento:</strong> <span class="pendiente">[nombre del servidor donde se publique la página y país]</span>,
+        donde se guarda la base de datos del sistema.</li>
+      <li><strong>Google Fonts:</strong> la página carga sus tipos de letra desde los
+        servidores de Google, que reciben la dirección IP de tu conexión. No reciben
+        tus datos de la cita.</li>
+    </ul>
+    <p>
+      También entregaremos datos a las autoridades cuando una ley o una orden judicial
+      lo exija, por ejemplo, la historia clínica en los casos que señala la norma.
+    </p>
+
+    <h2 id="conservacion">7. Cuánto tiempo los guardamos</h2>
+    <ul>
+      <li><strong>Historia clínica:</strong> como mínimo 15 años desde tu última atención,
+        como lo exige la Resolución 839 de 2017 del Ministerio de Salud. Durante ese
+        tiempo no se puede eliminar, aunque lo solicites.</li>
+      <li><strong>Datos de tus citas y de contacto:</strong> mientras seas paciente del
+        consultorio y, después, el tiempo necesario para atender reclamos y cumplir
+        obligaciones legales. Las citas canceladas o rechazadas se conservan como
+        registro, pero no se usan para contactarte.</li>
+      <li><strong>Mensajes de WhatsApp:</strong> guardamos un registro de cada aviso enviado;
+        el enlace personal de tu cita deja de funcionar cuando la cita cambia o pasa.</li>
+    </ul>
+
+    <h2 id="seguridad">8. Cómo los protegemos</h2>
+    <ul>
+      <li>Solo la secretaria del consultorio entra al sistema, con usuario y contraseña;
+        las contraseñas se guardan cifradas y hay un límite de intentos de ingreso.</li>
+      <li>El enlace para gestionar tu cita es un código secreto que solo llega a tu
+        WhatsApp; en la base de datos se guarda solo una huella cifrada de ese código.</li>
+      <li>La página se publica con conexión segura (HTTPS) <span class="pendiente">[confirmar al publicar]</span>.</li>
+      <li>Se sacan copias de respaldo de la base de datos y se guardan protegidas.</li>
+    </ul>
+    <p>
+      Si ocurriera un incidente de seguridad que afecte tus datos, lo informaremos a
+      la Superintendencia de Industria y Comercio y te avisaremos cuando corresponda.
+    </p>
+
+    <h2 id="derechos">9. Tus derechos</h2>
+    <p>Como titular de los datos tienes derecho a:</p>
     <ul>
       <li>Conocer, actualizar y rectificar tus datos personales.</li>
-      <li>Solicitar prueba de la autorización que otorgaste.</li>
-      <li>Ser informado sobre el uso que se ha dado a tus datos.</li>
-      <li>Presentar quejas ante la Superintendencia de Industria y Comercio.</li>
-      <li>Revocar la autorización o solicitar la supresión de tus datos, cuando no
-          exista un deber legal o contractual que lo impida.</li>
-      <li>Acceder de forma gratuita a tus datos personales.</li>
+      <li>Pedir prueba de la autorización que nos diste.</li>
+      <li>Saber qué uso le hemos dado a tus datos.</li>
+      <li>Revocar la autorización o pedir que eliminemos tus datos, cuando no exista
+        un deber legal o contractual que lo impida (como la conservación de la historia clínica).</li>
+      <li>Acceder gratis a tus datos personales.</li>
+      <li>Presentar quejas ante la Superintendencia de Industria y Comercio
+        (<a href="https://www.sic.gov.co" target="_blank" rel="noopener noreferrer">www.sic.gov.co</a>),
+        después de haber hecho tu consulta o reclamo ante nosotros.</li>
+    </ul>
+
+    <h2 id="procedimiento">10. Cómo ejercer tus derechos</h2>
+    <p>
+      Escríbenos al correo <span class="pendiente">[correo]</span>, al WhatsApp 318 715 3718,
+      o acércate al consultorio. Indica tu nombre completo, tu documento, qué
+      solicitas y cómo te respondemos. Si actúas en nombre de otra persona,
+      acredita que la representas.
+    </p>
+    <ul>
+      <li><strong>Consultas</strong> (conocer tus datos o cómo los usamos): te respondemos
+        en máximo <strong>10 días hábiles</strong>. Si no es posible, te explicamos por qué
+        y te respondemos en máximo 5 días hábiles más.</li>
+      <li><strong>Reclamos</strong> (corregir, actualizar, eliminar o revocar la autorización):
+        te respondemos en máximo <strong>15 días hábiles</strong>, prorrogables hasta 8 días
+        hábiles más avisándote el motivo. Si tu reclamo está incompleto, te pediremos lo
+        que falte dentro de los 5 días siguientes; si en 2 meses no lo completas,
+        se entiende que desististe.</li>
     </ul>
     <p>
-      Para ejercer cualquiera de estos derechos, escribe al correo de contacto
-      indicado arriba.
+      Para corregir un número de celular o un correo basta con escribirnos por
+      WhatsApp desde el número registrado.
     </p>
 
-    <h2>Conservación</h2>
+    <h2 id="vigencia">11. Vigencia y cambios</h2>
     <p>
-      Conservamos tus datos mientras tu cuenta esté activa. Si solicitas la
-      supresión, eliminamos tu información salvo la que debamos conservar por
-      obligación legal.
+      Esta política rige desde el <span class="pendiente">[fecha de publicación]</span>. Las
+      bases de datos se mantendrán mientras el consultorio preste sus servicios y por
+      los plazos de conservación indicados arriba. Si cambiamos algo importante de
+      esta política, lo publicaremos en esta página con una nueva versión y, cuando
+      la ley lo exija, te pediremos de nuevo tu autorización.
     </p>
+
   </div>
 </main>
 
