@@ -1,0 +1,12 @@
+{
+  "name": "arte-odontologico",
+  "private": true,
+  "description": "Publicación: instala el backend y arranca el servidor, que también entrega el frontend.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "postinstall": "npm --prefix backend ci --omit=dev",
+    "start": "npm --prefix backend start"
+  }
+}
