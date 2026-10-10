@@ -3,9 +3,9 @@
 **Proyecto:** plataforma web de agendamiento de citas para el consultorio Arte Odontológico\
 **Programa:** Ingeniería de Software — Fundación Escuela Tecnológica de Neiva Jesús Oviedo Pérez\
 **Autores:** Emmanuel Artunduaga Charry · Jawer Leonardo Manrique Yosa\
-**Versión del documento:** 0.9 (borrador) · 6 de octubre de 2026
+**Versión del documento:** 0.95 (borrador) · 10 de octubre de 2026
 
-> Pendiente: completar la sección 8 (publicación en servidor) cuando se elija el proveedor, y pasar el documento a la plantilla oficial de la FET.
+> Pendiente: confirmar el proveedor (la sección 8.2 describe Railway, la opción recomendada) y pasar el documento a la plantilla oficial de la FET.
 
 ## 1. Propósito
 
@@ -207,17 +207,69 @@ La plantilla del recordatorio usa solo los 5 primeros parámetros (no lleva enla
 
 **Recordatorio 24 horas antes.** Mientras el backend esté encendido, revisa cada 30 minutos (entre `RECORDATORIO_DESDE` y `RECORDATORIO_HASTA`) las citas confirmadas que empiezan en las próximas 24 horas y genera su recordatorio. Una cita de las 7:00 lo recibe a las 8:00 del día anterior. Si el servidor se apaga de noche, se puede programar `npm run recordatorios` cada hora con el Programador de tareas de Windows o con `cron` en Linux.
 
-## 8. Frontend
+## 8. Frontend y publicación
 
-**Desarrollo:** abrir la carpeta del proyecto en Visual Studio Code, clic derecho sobre `frontend/index.html` → **Open with Live Server**. Debe abrir en `http://localhost:5500` (el mismo origen configurado en `ORIGEN_PERMITIDO`).
+**Desarrollo:** abrir la carpeta del proyecto en Visual Studio Code, clic derecho sobre `frontend/index.html` → **Open with Live Server**. Debe abrir en `http://localhost:5500` (el mismo origen configurado en `ORIGEN_PERMITIDO`). Con `npm run dev` corriendo, el backend también entrega el frontend en `http://localhost:3000`.
 
-La dirección de la API se configura en `frontend/js/config.js`:
+La dirección de la API está en `frontend/js/config.js` y no hay que cambiarla: si la página se abre desde el puerto 5500 (Live Server) usa `http://localhost:3000/api`; en cualquier otro caso usa `/api`, en el mismo dominio.
 
-```js
-const CONFIG = { API: 'http://localhost:3000/api' };
+### 8.1 Cómo se publica
+
+Un solo servicio: Express atiende la API en `/api` y entrega la carpeta `frontend/` en el resto de rutas (`SERVIR_FRONTEND=true`, valor por defecto). Así hay un solo dominio con HTTPS y no hace falta CORS. El `package.json` de la raíz del repositorio instala el backend (`postinstall`) y lo arranca (`npm start`), para que el proveedor pueda construir desde la raíz.
+
+Requisitos de cualquier servidor: Node.js 20 o superior, MySQL 8 accesible desde el backend, HTTPS, proceso siempre encendido (los recordatorios se revisan cada 30 minutos dentro del mismo proceso, así que no sirven planes que apagan el servicio cuando no hay visitas) y las variables de entorno en el panel del proveedor, no en archivos.
+
+### 8.2 Publicación en Railway (opción recomendada)
+
+Plan **Hobby**: USD 5 al mes, que incluyen USD 5 de consumo; una app pequeña con su base de datos suele quedar en ese rango. El plan gratuito no alcanza porque después de la prueba solo permite un servicio por proyecto, y aquí son dos (la app y MySQL).
+
+1. Entrar a railway.com con la cuenta de GitHub del repositorio y activar el plan Hobby.
+2. **New Project → Deploy from GitHub repo →** `arte-odontologico`, rama `main`. Directorio raíz: la raíz del repositorio (no `backend/`, porque el servidor también necesita `frontend/`).
+3. En el mismo proyecto: **+ New → Database → MySQL**.
+4. En el servicio de la app, pestaña **Variables**, crear (las que van entre `${{ }}` son referencias a la base de datos que Railway completa solo):
+
+   | Variable | Valor |
+   |---|---|
+   | `DB_HOST` | `${{MySQL.MYSQLHOST}}` |
+   | `DB_PORT` | `${{MySQL.MYSQLPORT}}` |
+   | `DB_USER` | `${{MySQL.MYSQLUSER}}` |
+   | `DB_PASSWORD` | `${{MySQL.MYSQLPASSWORD}}` |
+   | `DB_NAME` | `arte_odontologico` |
+   | `JWT_SECRET` | una clave nueva y larga (ver sección 6), distinta a la de desarrollo |
+   | `PROXY_CONFIABLE` | `1` |
+   | `URL_PUBLICA` | el dominio público del paso 6, con `https://` |
+   | `WHATSAPP_MODO` y sus datos | como en la sección 7 (en producción, `api` con las plantillas aprobadas, o `manual` mientras tanto) |
+
+   El resto (`HORAS_MINIMAS_GESTION`, límites, recordatorios) puede quedar con los valores por defecto.
+5. **Crear las tablas.** En el servicio MySQL → **Connect → Public network** aparecen el host y el puerto públicos. Desde el PC, con MySQL Workbench o con la consola:
+
+   ```powershell
+   & "$bin\mysql.exe" -h HOST_PUBLICO -P PUERTO_PUBLICO -u root -p -e "source backend/database/schema.sql"
+   ```
+
+   `schema.sql` crea la base `arte_odontologico` con todas las tablas hasta la migración 005 y el catálogo inicial.
+6. **Dominio:** en el servicio de la app → **Settings → Networking → Generate Domain** (queda algo como `arte-odontologico.up.railway.app`), o **Custom Domain** si el consultorio tiene uno. Copiarlo en `URL_PUBLICA`.
+7. **Crear la cuenta de la secretaria** contra la base publicada. En `backend/`, crear un archivo `.env.railway` (no se sube: `.env.*` está en `.gitignore`) con `DB_HOST`, `DB_PORT`, `DB_USER` y `DB_PASSWORD` públicos del paso 5 y `DB_NAME=arte_odontologico`, y ejecutar:
+
+   ```powershell
+   node -r dotenv/config src/scripts/crearAdmin.js dotenv_config_path=.env.railway
+   ```
+
+   Borrar el archivo después.
+8. Verificar: `https://DOMINIO/api/salud` responde `{"estado":"ok"}`, la página principal carga, se puede pedir una cita y llega el WhatsApp con un enlace que abre `https://DOMINIO/gestionar-cita.html`.
+
+Cada vez que se fusiona un PR en `main`, Railway vuelve a publicar solo. Si un cambio trae una migración nueva, se aplica antes con el mismo comando del paso 5 cambiando el archivo.
+
+**Respaldos:** una vez por semana, y siempre antes de una migración:
+
+```powershell
+& "$bin\mysqldump.exe" -h HOST_PUBLICO -P PUERTO_PUBLICO -u root -p --result-file="respaldo-AAAA-MM-DD.sql" arte_odontologico
 ```
 
-**Publicación en servidor:** *pendiente de definir el proveedor.* La opción más simple es servir `frontend/` desde el mismo Express (un solo despliegue, sin CORS). Requisitos mínimos de la publicación: HTTPS, base de datos MySQL 8 accesible desde el backend, variables de entorno configuradas en el panel del proveedor (no en archivos), `PROXY_CONFIABLE=1` y `URL_PUBLICA` con el dominio real.
+### 8.3 Otras opciones
+
+- **AWS Lightsail (instancia con Node.js):** precio fijo mensual y control total, pero hay que instalar MySQL, Nginx y el certificado HTTPS y mantener el servidor a mano. Con la misma estructura: `npm install` en la raíz y `npm start` con un gestor de procesos (pm2).
+- **Vercel o Netlify:** no convienen, porque ejecutan funciones que se apagan entre visitas: se pierden los recordatorios cada 30 minutos y el límite de peticiones en memoria, y no incluyen MySQL.
 
 ## 9. Verificación rápida
 
