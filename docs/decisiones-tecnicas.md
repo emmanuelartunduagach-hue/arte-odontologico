@@ -465,3 +465,31 @@ decidir nada al verlas, y se quitó lo que sobraba en la agenda y en Inicio:
   cambió la hora" y "El paciente la canceló", con cuándo pasó, porque ahí sí
   hay algo que la secretaria debe saber.
 - El texto del modo demostración dejó de decir que la cita queda pendiente.
+
+## 29. Horarios: editar día por día (10 de octubre)
+
+La sección de horarios resultaba confusa: «Publicar horas» abría un diálogo
+con 25 casillas que no mostraba lo que ya estaba publicado, solo dejaba
+elegir días de la semana que se estaba viendo, y una hora se quitaba
+tocando su recuadro en la semana (con una confirmación por cada una). Se
+cambió por un editor por día:
+
+- **Cada día de la semana tiene un botón «Editar».** Abre el horario de ese
+  día con las horas ya publicadas marcadas (✓). Lo marcado es lo que los
+  pacientes pueden elegir: se marca o desmarca con un toque y hay atajos
+  (Mañana, Tarde, Mañana y tarde, Desmarcar todo). Lo que se ve es lo que
+  queda.
+- **«Usar este horario en otros días»** reemplaza a «Publicar horas»: se
+  eligen otros días de la semana y cuántas semanas repetir (1, 2, 4 u 8), y
+  esos días quedan con las mismas horas.
+- **Antes de guardar se ve el resumen** (cuántas horas se publican y cuántas
+  se quitan). Al guardar solo se envían las diferencias, con las rutas que
+  ya existían (`POST` de franjas agrupando las fechas que reciben las mismas
+  horas y `DELETE` de cada franja libre que sobra), así que no cambió la API.
+- **Las horas con cita y las que ya pasaron no se tocan.** En el editor la
+  hora con cita aparece con el nombre del paciente y bloqueada; si al
+  guardar alguna no se pudo quitar (por ejemplo, porque la acaban de
+  agendar), el aviso lo dice.
+- En la semana los recuadros de hora ya no son botones: se acabó el riesgo
+  de quitar una hora por un clic sin querer.
+
