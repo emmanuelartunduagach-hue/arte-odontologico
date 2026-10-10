@@ -4,3 +4,10 @@ node_modules/
 .DS_Store
 Thumbs.db
 .vscode/
+
+# Configuración y respaldos locales (nunca al repositorio)
+.env.*
+!.env.example
+*.sql
+!backend/database/schema.sql
+!backend/database/migraciones/*.sql
