@@ -16,7 +16,7 @@ Fuente de la documentación del proyecto. Los archivos `.md` son la versión edi
 | Diseño | `Decisiones técnicas.docx` | `decisiones-tecnicas.md` | Listo |
 | Manuales | `Manual de instalación.docx` | `04-manuales/manual-instalacion.md` | Borrador (falta la publicación en servidor) |
 | Manuales | `Manual técnico.docx` | `04-manuales/manual-tecnico.md` | Borrador (falta la parte del frontend) |
-| Manuales | `Manual de usuario.docx` | `04-manuales/manual-usuario.md` | Solo estructura (faltan las capturas) |
+| Manuales | `Manual de usuario.docx` | `04-manuales/manual-usuario.md` | Listo para revisión (formato FET de 10 secciones; capturas en modo demostración, se cambian por las del sistema publicado) |
 | Avances y actas | `Informe de avance (septiembre).docx` | `informe-avance.md` | Histórico (alcance anterior) |
 | Pruebas | `Pruebas.docx` y las dos guías `.txt` | `06-pruebas/` | Listo; faltan pruebas manuales y del frontend |
 
@@ -29,3 +29,18 @@ pandoc 04-manuales/manual-tecnico.md -o "para-drive/Manual técnico.docx"
 ```
 
 Para el modelo de datos hay que ejecutarlo desde `03-diseno/`, para que encuentre la imagen del diagrama.
+
+El manual de usuario lleva capturas y se genera desde `04-manuales/` (las rutas de las imágenes son relativas a esa carpeta):
+
+```bash
+cd 04-manuales
+pandoc manual-usuario.md --toc --toc-depth=2 -M toc-title="Contenido" -o "../para-drive/Manual de usuario.docx"
+```
+
+En Word, al abrirlo, clic derecho sobre «Contenido» → *Actualizar campo* para que aparezca el índice.
+
+## Cómo actualizar el manual de usuario
+
+1. Editar el texto en `04-manuales/manual-usuario.md` (sigue las 10 secciones del formato FET). Un usuario o flujo nuevo se agrega como una sección o paso nuevo en el mismo archivo.
+2. Si cambió una pantalla, volver a tomar su captura en `capturas/manual/` con el mismo nombre (el texto no cambia, solo la imagen).
+3. Regenerar el Word con el comando de arriba.
