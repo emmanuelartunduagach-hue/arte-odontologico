@@ -1,4 +1,4 @@
-/* Sesión de la secretaria (los pacientes no tienen cuenta).
+/* Sesión de la secretaria y del dueño (los pacientes no tienen cuenta).
 
    Se guarda en sessionStorage, no en localStorage: se borra al cerrar
    la pestaña, lo que conviene en el computador compartido del
@@ -8,9 +8,13 @@
 
 const CLAVE_SESION = 'arte-sesion';
 
+// El dueño (superadmin) usa el mismo panel, con dos secciones más.
 const PANELES = {
   administrador: 'panel-secretaria.html',
+  superadmin: 'panel-secretaria.html',
 };
+
+const esDueno = (usuario) => usuario?.rol === 'superadmin';
 
 function guardarSesion({ token, usuario }) {
   try {

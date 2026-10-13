@@ -1,4 +1,7 @@
-/* Panel de la secretaria (panel-secretaria.html), solo rol administrador.
+/* Panel de la secretaria (panel-secretaria.html): rol administrador y
+   dueño (superadmin). El dueño ve además Solicitudes (correcciones de
+   la historia y anulaciones del odontograma por aprobar) y Equipo
+   (administradores), en js/panel-superadmin.js.
 
    Una sola página con secciones; el menú cambia la sección por el
    fragmento de la URL (#inicio, #agenda, #pacientes, #pacientes/12,
@@ -14,14 +17,20 @@
      GET /admin/citas?estado=pendiente&desde=hoy&hasta=+180   citas antiguas sin confirmar
      GET /admin/notificaciones?estado=pendiente y ?estado=fallida   WhatsApp sin enviar */
 
-const sesion = exigirSesion('administrador');
+const sesion = exigirSesion('administrador', 'superadmin');
 const cuerpo = document.getElementById('panel-cuerpo');
+const DUENO = esDueno(sesion?.usuario);
+const NOMBRE_PANEL = DUENO ? 'Panel del dueño' : 'Panel de la secretaria';
 
 const SECCIONES = {
   inicio: { titulo: 'Inicio', montar: montarInicio },
   agenda: { titulo: 'Agenda', montar: montarAgenda },
   pacientes: { titulo: 'Pacientes', montar: montarPacientes },
   disponibilidad: { titulo: 'Horarios', montar: montarDisponibilidad },
+  ...(DUENO && {
+    solicitudes: { titulo: 'Solicitudes', montar: montarSolicitudes },
+    equipo: { titulo: 'Equipo', montar: montarEquipo },
+  }),
 };
 
 /** '#pacientes/12' → { nombre: 'pacientes', parametro: '12' }. */
@@ -45,7 +54,7 @@ function mostrarSeccion({ enfocar = false } = {}) {
     }
     else enlace.removeAttribute('aria-current');
   });
-  document.title = `${SECCIONES[nombre].titulo} · Panel de la secretaria — Arte Odontológico`;
+  document.title = `${SECCIONES[nombre].titulo} · ${NOMBRE_PANEL} — Arte Odontológico`;
   SECCIONES[nombre].montar(cuerpo, parametro);
   if (enfocar) {
     cuerpo.querySelector('[data-foco-seccion]')?.focus();
@@ -83,14 +92,15 @@ async function montarInicio(destino) {
 
   pintarEn(destino, avisoDemo(), encabezado, aviso, estadoCarga('Cargando el resumen del día…'));
 
-  let novedades, solicitudes, deHoy, porEnviar, conError;
+  let novedades, solicitudes, deHoy, porEnviar, conError, porAprobar;
   try {
-    [novedades, solicitudes, deHoy, porEnviar, conError] = await Promise.all([
+    [novedades, solicitudes, deHoy, porEnviar, conError, porAprobar] = await Promise.all([
       api(`/admin/citas/novedades?horas=${HORAS_NOVEDADES}`),
       api(`/admin/citas?estado=pendiente&desde=${hoy}&hasta=${sumarDiasA(hoy, 180)}`),
       api(`/admin/citas?fecha=${hoy}`),
       api('/admin/notificaciones?estado=pendiente'),
       api('/admin/notificaciones?estado=fallida'),
+      DUENO ? api('/superadmin/solicitudes') : null,
     ]);
   } catch (err) {
     pintarEn(destino, avisoDemo(), encabezado, aviso, errorConReintento(err, panel.refrescar));
@@ -108,6 +118,8 @@ async function montarInicio(destino) {
   // confirmaran solas (decisión 27). Solo se muestran si existen.
   const porConfirmar = ordenarPorHora(solicitudes);
   const nuevas = novedades.filter((c) => c.novedad === 'nueva').length;
+  const totalPorAprobar = porAprobar ? porAprobar.correcciones.length + porAprobar.anulaciones.length : 0;
+  if (porAprobar) actualizarContadorSolicitudes(totalPorAprobar);
 
   pintarEn(destino,
     avisoDemo(),
@@ -115,7 +127,8 @@ async function montarInicio(destino) {
     aviso,
     el('div', { class: 'datos-panel' },
       tarjetaDato(porAtender.length, porAtender.length === 1 ? 'cita por atender hoy' : 'citas por atender hoy', '#agenda'),
-      tarjetaDato(nuevas, nuevas === 1 ? 'cita nueva por la web (48 h)' : 'citas nuevas por la web (48 h)', 'titulo-novedades')),
+      tarjetaDato(nuevas, nuevas === 1 ? 'cita nueva por la web (48 h)' : 'citas nuevas por la web (48 h)', 'titulo-novedades'),
+      DUENO && tarjetaDato(totalPorAprobar, totalPorAprobar === 1 ? 'solicitud por aprobar' : 'solicitudes por aprobar', '#solicitudes', totalPorAprobar > 0)),
 
     // Solo aparece si el WhatsApp automático falló (o el servidor está en
     // modo manual): son avisos que el paciente aún no recibió.
@@ -157,6 +170,10 @@ async function montarInicio(destino) {
 }
 
 if (sesion) {
+  if (DUENO) {
+    document.querySelectorAll('[data-solo-dueno]').forEach((nodo) => { nodo.hidden = false; });
+    document.body.classList.add('pagina-panel--dueno');
+  }
   document.querySelectorAll('[data-nombre-usuario]').forEach((nodo) => { nodo.textContent = sesion.usuario.nombre; });
   document.querySelectorAll('[data-inicial-usuario]').forEach((nodo) => { nodo.textContent = sesion.usuario.nombre.charAt(0).toUpperCase(); });
   window.addEventListener('hashchange', () => mostrarSeccion({ enfocar: true }));

@@ -18,7 +18,11 @@
      GET /especialistas/:id/calendario?mes= · /especialistas/:id/horas?fecha=
 
    La historia clínica no se edita ni se borra (Resolución 1995 de 1999):
-   corregir es agregar una entrada nueva que apunta a la original. */
+   corregir es agregar una entrada nueva que apunta a la original. La
+   corrección que pide un administrador queda "esperando aprobación"
+   hasta que el dueño la apruebe o la rechace (panel-superadmin.js); la
+   del dueño queda vigente de una vez. El odontograma vive en
+   panel-odontograma.js. */
 
 const pacientesPanel = {
   q: '',
@@ -220,6 +224,7 @@ async function montarFicha(cuerpo, idTexto) {
   const proximas = citas.filter((c) => ['pendiente', 'confirmada'].includes(c.estado) && c.fecha >= hoy).reverse();
   const anteriores = citas.filter((c) => !proximas.includes(c));
   const citasConHistoria = new Set(historia.map((h) => h.citaId).filter(Boolean));
+  const odontogramaNodo = el('div', { class: 'odontograma-bloque' });
 
   pintarEn(cuerpo,
     avisoDemo(),
@@ -249,6 +254,11 @@ async function montarFicha(cuerpo, idTexto) {
             [...proximas, ...anteriores].map((c) => filaCitaFicha(c, paciente, !citasConHistoria.has(c.id))))
           : el('div', { class: 'vacio' }, el('p', { texto: 'Aún no tiene citas.' })))),
 
+    el('section', { class: 'bloque-panel', 'aria-labelledby': 'titulo-odontograma' },
+      el('div', { class: 'bloque-panel__cabecera' },
+        el('h2', { id: 'titulo-odontograma', class: 'bloque-panel__titulo', texto: 'Odontograma' })),
+      odontogramaNodo),
+
     el('section', { class: 'bloque-panel', 'aria-labelledby': 'titulo-historia' },
       el('div', { class: 'bloque-panel__cabecera' },
         el('h2', { id: 'titulo-historia', class: 'bloque-panel__titulo', texto: 'Historia clínica' }),
@@ -257,6 +267,7 @@ async function montarFicha(cuerpo, idTexto) {
         ? el('ol', { class: 'historia' }, historia.map((h) => entradaHistoria(h, historia, paciente, citas)))
         : el('div', { class: 'vacio' },
           el('p', { texto: 'Sin entradas todavía. Se van agregando después de cada cita atendida.' }))));
+  montarOdontograma(odontogramaNodo, paciente);
 }
 
 function filaCitaFicha(cita, paciente, sinEntrada) {
@@ -275,18 +286,29 @@ function filaCitaFicha(cita, paciente, sinEntrada) {
 function entradaHistoria(h, historia, paciente, citas) {
   const corregida = h.correcciones.length > 0;
   const original = h.corrigeA && historia.find((x) => x.id === h.corrigeA);
-  return el('li', { class: 'nota-hc' + (corregida ? ' nota-hc--corregida' : '') },
+  const pendiente = h.estado === 'pendiente';
+  const rechazada = h.estado === 'rechazada';
+  const puedeCorregir = h.estado === 'vigente' && !corregida && !h.correccionPendiente;
+  return el('li', { class: 'nota-hc' + (corregida ? ' nota-hc--corregida' : '') + (pendiente ? ' nota-hc--pendiente' : '') + (rechazada ? ' nota-hc--rechazada' : '') },
     el('div', { class: 'nota-hc__cabecera' },
       el('p', { class: 'nota-hc__fecha', texto: capitalizar(fechaLarga(h.fechaAtencion)) }),
       corregida && el('span', { class: 'estado estado--no_asistio', texto: 'Corregida' }),
-      h.corrigeA && el('span', { class: 'estado estado--atendida', texto: 'Corrección' })),
+      h.correccionPendiente && el('span', { class: 'estado estado--pendiente', texto: 'Corrección por aprobar' }),
+      h.corrigeA && !pendiente && !rechazada && el('span', { class: 'estado estado--atendida', texto: 'Corrección' }),
+      pendiente && el('span', { class: 'estado estado--pendiente', texto: 'Esperando aprobación del dueño' }),
+      rechazada && el('span', { class: 'estado estado--cancelada', texto: 'Corrección rechazada' })),
     el('p', { class: 'nota-hc__procedimiento', texto: h.procedimiento }),
     (h.especialidad || h.especialista) && el('p', { class: 'fila-cita__detalle', texto: [h.especialidad, h.especialista].filter(Boolean).join(' · ') }),
-    original && el('p', { class: 'fila-cita__detalle', texto: `Corrige la entrada del ${fechaLarga(original.fechaAtencion)}.` }),
+    original && el('p', { class: 'fila-cita__detalle', texto: `${pendiente ? 'Propone corregir' : rechazada ? 'Proponía corregir' : 'Corrige'} la entrada del ${fechaLarga(original.fechaAtencion)}.` }),
     h.notas && el('p', { class: 'nota-hc__notas', texto: h.notas }),
+    rechazada && h.motivoRechazo && el('p', { class: 'nota-hc__notas', texto: `Motivo del rechazo: ${h.motivoRechazo}` }),
     el('div', { class: 'nota-hc__pie' },
-      el('span', { class: 'fila-cita__detalle', texto: `Registró ${h.autor} el ${fechaLarga(h.creadoEn.slice(0, 10))}, ${horaLarga(h.creadoEn.slice(11, 16))}` }),
-      !corregida && el('button', { type: 'button', class: 'btn btn--fantasma btn--compacto', onclick: () => corregirEntrada(h, paciente), texto: 'Corregir' })));
+      el('span', { class: 'fila-cita__detalle', texto: [
+        `Registró ${h.autor} el ${fechaLarga(h.creadoEn.slice(0, 10))}, ${horaLarga(h.creadoEn.slice(11, 16))}`,
+        h.corrigeA && h.revisor && h.estado === 'vigente' && `aprobó ${h.revisor}`,
+        rechazada && h.revisor && `rechazó ${h.revisor}`,
+      ].filter(Boolean).join(' · ') }),
+      puedeCorregir && el('button', { type: 'button', class: 'btn btn--fantasma btn--compacto', onclick: () => corregirEntrada(h, paciente), texto: 'Corregir' })));
 }
 
 /* ---------- Historia: agregar y corregir ---------- */
@@ -356,12 +378,14 @@ function corregirEntrada(entrada, paciente) {
     el('dl', { class: 'resumen' },
       dato('Paciente', paciente.nombreCompleto),
       dato('Entrada', `${fechaLarga(entrada.fechaAtencion)} · ${entrada.procedimiento}`)),
-    el('p', { class: 'agendar__nota', texto: 'La entrada original no se borra: queda marcada como corregida y la corrección se guarda como una entrada nueva.' }),
+    el('p', { class: 'agendar__nota', texto: esDueno(obtenerSesion()?.usuario)
+      ? 'La entrada original no se borra: queda marcada como corregida y la corrección se guarda como una entrada nueva.'
+      : 'La entrada original no se borra. La corrección se guarda como una entrada nueva y queda esperando la aprobación del dueño; mientras tanto, la original sigue vigente.' }),
     campoForm('procedimiento', 'Procedimiento', 'text', { value: entrada.procedimiento }),
     campoForm('notas', 'Corrección: qué cambia y por qué', 'textarea'),
     alerta,
     el('div', { class: 'acciones' },
-      el('button', { type: 'submit', class: 'btn btn--primario', texto: 'Guardar corrección' }),
+      el('button', { type: 'submit', class: 'btn btn--primario', texto: esDueno(obtenerSesion()?.usuario) ? 'Guardar corrección' : 'Enviar para aprobación' }),
       el('button', { type: 'button', class: 'btn btn--secundario', 'data-cerrar': true, texto: 'Cancelar' })));
 
   form.addEventListener('submit', async (e) => {
@@ -371,11 +395,13 @@ function corregirEntrada(entrada, paciente) {
     alerta.hidden = true;
     boton.disabled = true;
     try {
-      await api(`/admin/historia/${entrada.id}/correccion`, {
+      const nueva = await api(`/admin/historia/${entrada.id}/correccion`, {
         metodo: 'POST',
         cuerpo: { procedimiento: form.procedimiento.value, notas: form.notas.value },
       });
-      panel.aviso = el('p', { class: 'alerta alerta--exito', role: 'status', texto: 'Corrección guardada.' });
+      panel.aviso = el('p', { class: 'alerta alerta--exito', role: 'status', texto: nueva.estado === 'pendiente'
+        ? 'Corrección enviada al dueño. Quedará en la historia cuando la apruebe.'
+        : 'Corrección guardada.' });
       dialogo.cerrar();
       panel.refrescar();
     } catch (err) {
