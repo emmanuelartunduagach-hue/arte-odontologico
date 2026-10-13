@@ -3,13 +3,18 @@
    La historia no se edita ni se borra (Resolución 1995 de 1999):
    "editar" es agregar una entrada nueva, y corregir es agregar una
    entrada que apunta a la corregida (`corrigeA`). La original queda
-   intacta y el panel muestra ambas, con autor y fecha. */
+   intacta y el panel muestra ambas, con autor y fecha.
+
+   Las correcciones que pide un administrador quedan en espera hasta que
+   el dueño (superadmin) las apruebe; las del dueño quedan vigentes de
+   una vez. Las entradas nuevas no necesitan aprobación. */
 const pacienteModelo = require('../models/paciente.model');
 const citaModelo = require('../models/cita.model');
 const historiaModelo = require('../models/historia.model');
 const servicioModelo = require('../models/servicio.model');
 const especialistaModelo = require('../models/especialista.model');
 const { ErrorHttp } = require('../utils/errores');
+const { esSuperadmin } = require('../middleware/autenticacion');
 const { aId, esFecha } = require('../utils/validaciones');
 const { hoyBogota } = require('../utils/tiempo');
 
@@ -139,12 +144,20 @@ async function crear(req, res, next) {
 /* POST /api/admin/historia/:id/correccion
    { notas, procedimiento?, fechaAtencion? }
    Crea una entrada nueva que corrige a la indicada. Lo no enviado se
-   copia de la original. `notas` es obligatorio: explica la corrección. */
+   copia de la original. `notas` es obligatorio: explica la corrección.
+   Responde 201 con la entrada; `estado` dice si quedó 'vigente' (la
+   hizo el dueño) o 'pendiente' (espera la aprobación del dueño). */
 async function corregir(req, res, next) {
   try {
     const id = aId(req.params.id);
     const original = id ? await historiaModelo.buscarPorId(id) : null;
     if (!original) throw new ErrorHttp(404, 'Entrada no encontrada.');
+    if (original.estado !== 'vigente') {
+      throw new ErrorHttp(409, 'Solo se pueden corregir entradas vigentes.');
+    }
+    if (await historiaModelo.tieneCorreccionPendiente(original.id)) {
+      throw new ErrorHttp(409, 'Esta entrada ya tiene una corrección esperando la aprobación del dueño.');
+    }
 
     const cuerpo = req.body || {};
     if (!texto(cuerpo.notas)) {
@@ -160,12 +173,18 @@ async function corregir(req, res, next) {
       citaId: original.citaId,
     };
     const datos = await validarEntrada(cuerpo, original.pacienteId, base);
+    const directa = esSuperadmin(req);
     const nuevoId = await historiaModelo.crear({
       ...datos,
       pacienteId: original.pacienteId,
       corrigeA: original.id,
+      estado: 'pendiente',
       creadoPor: req.usuario.id,
     });
+    if (directa) {
+      // La del dueño se aprueba de una vez y queda registrado quién la revisó.
+      await historiaModelo.revisar(nuevoId, { estado: 'vigente', revisadoPor: req.usuario.id });
+    }
     res.status(201).json(await historiaModelo.buscarEntrada(nuevoId));
   } catch (error) {
     next(error);

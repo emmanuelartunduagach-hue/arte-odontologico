@@ -15,7 +15,9 @@ USE arte_odontologico;
 
 -- ------------------------------------------------------------
 --  usuarios
---  Quienes inician sesión: la secretaria (rol administrador).
+--  Quienes inician sesión: la secretaria (rol administrador) y el
+--  dueño (rol superadmin, migración 006). El dueño solo se crea con
+--  el script `npm run superadmin`, protegido por una clave especial.
 --  Los pacientes NO tienen usuario: están en `pacientes`. El
 --  valor 'paciente' del rol se conserva solo por compatibilidad
 --  con bases anteriores. En el boceto el rol se elegía desde un
@@ -30,7 +32,7 @@ CREATE TABLE usuarios (
   correo              VARCHAR(160)  NOT NULL,
   telefono            VARCHAR(20)   NOT NULL,
   contrasena_hash     VARCHAR(255)  NOT NULL,  -- bcrypt, nunca texto plano
-  rol                 ENUM('paciente','administrador') NOT NULL DEFAULT 'administrador',
+  rol                 ENUM('paciente','administrador','superadmin') NOT NULL DEFAULT 'administrador',
   activo              BOOLEAN       NOT NULL DEFAULT TRUE,
   -- TRUE mientras el usuario use la contraseña temporal que le dio el
   -- administrador; el frontend lo obliga a cambiarla al ingresar.
@@ -306,6 +308,12 @@ CREATE TABLE historia_clinica (
   procedimiento    VARCHAR(200) NOT NULL,
   notas            TEXT NULL,
   corrige_a        INT UNSIGNED NULL,
+  -- Una corrección pedida por un administrador queda 'pendiente' hasta
+  -- que el dueño la apruebe ('vigente') o la rechace ('rechazada').
+  estado           ENUM('vigente','pendiente','rechazada') NOT NULL DEFAULT 'vigente',
+  revisado_por     INT UNSIGNED NULL,
+  revisado_en      DATETIME     NULL,
+  motivo_rechazo   VARCHAR(300) NULL,
   creado_por       INT UNSIGNED NOT NULL,
   creado_en        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -321,7 +329,52 @@ CREATE TABLE historia_clinica (
     REFERENCES historia_clinica(id) ON DELETE RESTRICT,
   CONSTRAINT fk_hc_autor FOREIGN KEY (creado_por)
     REFERENCES usuarios(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_hc_revisor FOREIGN KEY (revisado_por)
+    REFERENCES usuarios(id) ON DELETE SET NULL,
+  INDEX idx_hc_estado (estado),
   INDEX idx_hc_paciente (paciente_id, fecha_atencion)
+) ENGINE=InnoDB;
+
+-- ------------------------------------------------------------
+--  odontograma
+--  Hallazgos por diente (FDI) y por cara. No se borran: anular
+--  uno lo pide un administrador y lo aprueba el dueño.
+-- ------------------------------------------------------------
+CREATE TABLE odontograma (
+  id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  paciente_id      INT UNSIGNED NOT NULL,
+  diente           TINYINT UNSIGNED NOT NULL,   -- FDI: 11–48 permanentes, 51–85 temporales
+  cara             ENUM('completo','oclusal','mesial','distal','vestibular','lingual') NOT NULL,
+  hallazgo         VARCHAR(20)  NOT NULL,       -- código del catálogo (odontograma.controller.js)
+  estado           ENUM('por_hacer','realizado') NOT NULL,
+  notas            VARCHAR(500) NULL,
+  creado_por       INT UNSIGNED NOT NULL,
+  creado_en        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- Un hallazgo "por hacer" pasa a "realizado" una sola vez, con autor y fecha.
+  realizado_por    INT UNSIGNED NULL,
+  realizado_en     DATETIME     NULL,
+  -- Anulación (si se registró por error): la pide un administrador
+  -- y la decide el dueño. Mientras no se apruebe, el hallazgo sigue vigente.
+  anulacion             ENUM('pendiente','aprobada','rechazada') NULL,
+  anulacion_motivo      VARCHAR(300) NULL,
+  anulacion_pedida_por  INT UNSIGNED NULL,
+  anulacion_pedida_en   DATETIME     NULL,
+  anulacion_revisada_por INT UNSIGNED NULL,
+  anulacion_revisada_en  DATETIME    NULL,
+  anulacion_rechazo     VARCHAR(300) NULL,
+
+  CONSTRAINT fk_odo_paciente FOREIGN KEY (paciente_id)
+    REFERENCES pacientes(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_odo_autor FOREIGN KEY (creado_por)
+    REFERENCES usuarios(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_odo_realizo FOREIGN KEY (realizado_por)
+    REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT fk_odo_pidio FOREIGN KEY (anulacion_pedida_por)
+    REFERENCES usuarios(id) ON DELETE SET NULL,
+  CONSTRAINT fk_odo_reviso FOREIGN KEY (anulacion_revisada_por)
+    REFERENCES usuarios(id) ON DELETE SET NULL,
+  INDEX idx_odo_paciente (paciente_id, diente),
+  INDEX idx_odo_anulacion (anulacion)
 ) ENGINE=InnoDB;
 
 -- ============================================================

@@ -1,5 +1,6 @@
-/* Ingreso y cambio de contraseña de la secretaria.
-   Los pacientes no tienen cuenta (ver controllers/pacientes.controller.js). */
+/* Ingreso y cambio de contraseña de la secretaria (administrador) y
+   del dueño (superadmin). Los pacientes no tienen cuenta (ver
+   controllers/pacientes.controller.js). */
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const usuarioModelo = require('../models/usuario.model');
@@ -13,6 +14,7 @@ const RONDAS_BCRYPT = 10;
 const HASH_FALSO = bcrypt.hashSync('relleno-sin-uso', RONDAS_BCRYPT);
 
 const MENSAJE_CREDENCIALES = 'Correo o contraseña incorrectos.';
+const ROLES_CON_INGRESO = ['administrador', 'superadmin'];
 
 /* POST /api/auth/ingreso
    Cuerpo: { correo, contrasena }
@@ -39,9 +41,9 @@ async function ingresar(req, res, next) {
     );
 
     // Mismo mensaje si el correo no existe, la clave es incorrecta o la
-    // cuenta está desactivada. Solo la secretaria inicia sesión: los
-    // pacientes no tienen cuenta.
-    if (!usuario || !coincide || !usuario.activo || usuario.rol !== 'administrador') {
+    // cuenta está desactivada. Solo inician sesión la secretaria y el
+    // dueño: los pacientes no tienen cuenta.
+    if (!usuario || !coincide || !usuario.activo || !ROLES_CON_INGRESO.includes(usuario.rol)) {
       throw new ErrorHttp(401, MENSAJE_CREDENCIALES);
     }
 
