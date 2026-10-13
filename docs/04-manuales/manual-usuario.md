@@ -21,9 +21,10 @@ lang: es-CO
 **Público objetivo:**
 
 - **Pacientes** o personas que quieren una cita. No necesitan usuario ni contraseña.
-- **Secretaria del consultorio** (rol de administrador). Es la única persona que inicia sesión.
+- **Secretaria del consultorio** (rol de administrador). Inicia sesión para atender el panel.
+- **Dueño del consultorio** (rol superadmin). Tiene permiso total: ve y cambia todo, aprueba las correcciones a la historia clínica y administra al equipo.
 
-**Alcance:** pedir una cita, reprogramarla o cancelarla, los mensajes de WhatsApp que se reciben, y, para la secretaria, el panel con inicio, agenda, pacientes (con su historia clínica) y horarios de atención.
+**Alcance:** pedir una cita, reprogramarla o cancelarla, los mensajes de WhatsApp que se reciben; para la secretaria, el panel con inicio, agenda, pacientes (con su historia clínica y su odontograma) y horarios de atención; y para el dueño, además, las solicitudes por aprobar y el equipo de administradores.
 
 # 2. Requisitos del sistema
 
@@ -60,7 +61,7 @@ La página principal muestra:
 
 ![Especialidades: se elige una para empezar a pedir la cita.](../capturas/manual/u02-especialidades.png){width=90%}
 
-## 4.2 Menú del panel (para la secretaria)
+## 4.2 Menú del panel (secretaria y dueño)
 
 Al iniciar sesión se abre el panel. En computador el menú está a la izquierda y en el celular abajo:
 
@@ -70,6 +71,8 @@ Al iniciar sesión se abre el panel. En computador el menú está a la izquierda
 | **Agenda** | Todas las citas de un día, con filtros y búsqueda. |
 | **Pacientes** | Buscar, registrar y abrir la ficha de cada paciente. |
 | **Horarios** | Publicar las horas en que cada especialista atiende. |
+| **Solicitudes** (solo el dueño) | Aprobar o rechazar las correcciones a la historia clínica y las anulaciones del odontograma que piden los administradores. Un número rojo indica cuántas hay. |
+| **Equipo** (solo el dueño) | Agregar, editar, desactivar y eliminar administradores. |
 
 Arriba a la derecha está el **menú de la cuenta**: modo oscuro o claro, cambiar contraseña y cerrar sesión.
 
@@ -185,9 +188,38 @@ Si el documento ya existe, el sistema lo avisa y ofrece **Abrir su ficha**, para
 ![Ficha del paciente.](../capturas/manual/s08-ficha.png){width=95%}
 
 - **Agendar cita:** desde la ficha se elige especialidad, especialista, día y hora; la cita queda confirmada y al paciente le llega el WhatsApp.
-- **Historia clínica:** **Agregar entrada** guarda una nota; en una cita atendida, **Agregar a la historia** la deja ligada a esa cita. Una entrada no se borra: **Corregir** la marca como corregida y guarda la corrección como una entrada nueva, para que quede el registro.
+- **Historia clínica:** **Agregar entrada** guarda una nota; en una cita atendida, **Agregar a la historia** la deja ligada a esa cita. Las entradas nuevas no necesitan aprobación.
+- **Corregir una entrada:** una entrada no se borra ni se edita. **Corregir** guarda la corrección como una entrada nueva. Si la hace la secretaria, se envía con **Enviar para aprobación** y queda **«Esperando aprobación del dueño»**: la entrada original sigue vigente hasta que el dueño la apruebe. Si el dueño la rechaza, la corrección queda marcada como **«Corrección rechazada»** con su motivo. Las correcciones del dueño quedan aprobadas de una vez.
 
-## 5.8 Horarios de atención (secretaria)
+![Corrección esperando la aprobación del dueño.](../capturas/manual/s21-correccion-pendiente.png){width=90%}
+
+## 5.8 Odontograma (secretaria y dueño)
+
+En la ficha del paciente, el **odontograma** muestra la boca como una dentadura: arriba los dientes superiores y abajo los inferiores, con la numeración internacional (FDI). El lado derecho del paciente queda a la izquierda de la pantalla, como cuando se le mira de frente. Con **Adulto (32)** y **Niño (20)** se cambia entre dientes permanentes y de leche.
+
+Cada diente tiene su figura y un cuadro con sus 5 caras: oclusal (centro), mesial, distal, vestibular y lingual o palatina. Los colores siguen la convención clínica:
+
+- **Rojo:** por hacer (por ejemplo, una caries que hay que tratar).
+- **Azul:** realizado o existente (por ejemplo, una resina ya hecha).
+- Las letras sobre el diente indican hallazgos del diente completo (CO corona, EN endodoncia, EX extracción, AU ausente, IM implante, PR prótesis, FR fractura, OT otro). Un diente ausente o extraído aparece con una X.
+- Un punto naranja indica que ese diente tiene una anulación esperando la aprobación del dueño.
+
+Debajo aparece la lista **Por hacer**: el plan de tratamiento pendiente. Al tocar una línea se abre el diente.
+
+![Odontograma en la ficha del paciente.](../capturas/manual/s16-odontograma.png){width=95%}
+
+**Registrar un hallazgo:**
+
+1. Toque el diente.
+2. Elija qué se encontró o qué se hizo (caries, resina, corona, endodoncia, etc.).
+3. Marque las caras tocando el dibujo o las casillas. Algunos hallazgos van por caras (caries, resina, amalgama, sellante) y otros en el diente completo (corona, endodoncia, extracción, ausente, implante, prótesis); el sistema marca solo lo que corresponde.
+4. Elija **Por hacer** o **Realizado**, agregue notas si hace falta y toque **Guardar hallazgo**.
+
+![Detalle de un diente: hallazgos registrados y formulario.](../capturas/manual/s17-diente.png){width=90%}
+
+En el mismo detalle, cada hallazgo **por hacer** tiene **Marcar realizado** (queda quién y cuándo). Si un hallazgo se registró por error, **Anular** pide la anulación con un motivo: el hallazgo sigue en el odontograma hasta que el dueño la apruebe. Nada se borra: los anulados quedan en el historial del diente.
+
+## 5.9 Horarios de atención (secretaria)
 
 Aquí se publican las horas en que cada especialista recibe pacientes. Solo esas horas aparecen disponibles en la web.
 
@@ -208,7 +240,7 @@ Aquí se publican las horas en que cada especialista recibe pacientes. Solo esas
 
 Las horas que ya tienen cita aparecen con el nombre del paciente y no se pueden quitar; las que ya pasaron tampoco se cambian. Para mover una cita hay que reprogramarla desde la agenda.
 
-## 5.9 Configuración de preferencias
+## 5.10 Configuración de preferencias
 
 - **Modo oscuro o claro:** en el menú de la cuenta, opción «Modo oscuro» / «Modo claro». Queda guardado en ese navegador.
 
@@ -220,13 +252,48 @@ Las horas que ya tienen cita aparecen con el nombre del paciente y no se pueden 
 
 ![Panel en el celular.](../capturas/manual/s15-movil.png){width=35%}
 
-## 5.10 Especialidades y especialistas
+## 5.11 Solicitudes (dueño)
+
+En **Solicitudes** el dueño ve lo que pidieron los administradores y aún no está aprobado:
+
+- **Correcciones de la historia clínica:** cada tarjeta muestra el paciente, quién la pidió y cuándo, la **entrada original** y la **corrección pedida**, una al lado de la otra.
+- **Anulaciones del odontograma:** el diente, la cara, el hallazgo y el motivo para anularlo.
+
+**Aprobar** aplica el cambio: la corrección pasa a la historia (la original queda «Corregida») o el hallazgo deja de dibujarse. **Rechazar** pide un motivo; el cambio no se aplica y el motivo queda registrado. El nombre del paciente abre su ficha.
+
+![Solicitudes por aprobar.](../capturas/manual/s18-solicitudes.png){width=90%}
+
+## 5.12 Equipo (dueño)
+
+En **Equipo** el dueño administra quién entra al panel.
+
+![Equipo de administradores.](../capturas/manual/s19-equipo.png){width=90%}
+
+**Agregar un administrador:**
+
+1. Toque **Agregar administrador**.
+2. Escriba nombre completo, documento, celular y correo (con ese correo ingresará).
+3. Toque **Agregar**. El sistema muestra una **contraseña temporal**: entréguela a la persona. **Solo se muestra esa vez** (con **Copiar clave** se copia).
+4. La primera vez que ingrese, el sistema le pedirá crear su propia contraseña.
+
+![Contraseña temporal del administrador nuevo.](../capturas/manual/s20-clave-temporal.png){width=60%}
+
+En **Opciones** de cada persona:
+
+- **Editar datos:** nombre, documento, celular o correo.
+- **Nueva clave temporal:** si olvidó su contraseña.
+- **Desactivar / Activar:** un administrador desactivado no puede ingresar y, si tenía el panel abierto, se le cierra de inmediato. Sus registros se conservan.
+- **Eliminar:** borra a la persona. Si ya registró pacientes, citas o historia clínica no se puede borrar (esos registros deben decir quién los hizo) y el sistema sugiere desactivarla.
+
+La cuenta del dueño no aparece aquí: solo la crea o la modifica el equipo técnico.
+
+## 5.13 Especialidades y especialistas
 
 En esta versión las especialidades y los especialistas **los configura el equipo técnico** al poner el sistema en marcha o cuando el consultorio lo pida (por ejemplo, para agregar un nuevo especialista o cambiar la descripción de una especialidad). El panel de la secretaria solo administra citas, pacientes y horarios. Una pantalla para que el consultorio los edite por sí mismo está prevista para una versión posterior.
 
 # 6. Gestión de usuarios
 
-**Crear cuenta o perfil.** Los pacientes no tienen cuenta ni perfil: sus datos quedan guardados en su ficha cuando piden o reciben una cita. La cuenta de la secretaria la crea el equipo técnico.
+**Crear cuenta o perfil.** Los pacientes no tienen cuenta ni perfil: sus datos quedan guardados en su ficha cuando piden o reciben una cita. Las cuentas de los administradores las crea el dueño desde **Equipo** (sección 5.12); la cuenta del dueño la crea el equipo técnico con una clave especial y el correo del dueño.
 
 **Primer ingreso (secretaria).** Con la contraseña temporal, el sistema abre la pantalla «Crea tu contraseña»: escriba la temporal como contraseña actual y elija una propia. Sin ese paso no se puede entrar al panel.
 
@@ -240,14 +307,15 @@ La contraseña nueva debe tener entre 8 y 72 caracteres, con al menos una letra 
 
 ![Cambiar contraseña.](../capturas/manual/s13-cambiar-contrasena.png){width=80%}
 
-Si olvidó la contraseña, no hay recuperación automática: avise al equipo técnico, que la restablece.
+Si olvidó la contraseña, no hay recuperación automática: un administrador le pide al dueño una **Nueva clave temporal** (sección 5.12); el dueño se la pide al equipo técnico.
 
 **Roles y permisos.**
 
 | Rol | Cómo entra | Qué puede hacer |
 |---|---|---|
 | **Paciente** (sin cuenta) | No inicia sesión | Pedir una cita; reprogramarla una vez o cancelarla con el enlace del WhatsApp, hasta 24 horas antes. |
-| **Secretaria** (administrador) | Con su correo y contraseña, por el candado | Todo el panel: agenda, pacientes e historia clínica, horarios, registrar pacientes y cambiar citas. |
+| **Secretaria** (administrador) | Con su correo y contraseña, por el candado | Agenda, pacientes, historia clínica y odontograma, horarios, registrar pacientes y cambiar citas. Sus correcciones a la historia y las anulaciones del odontograma esperan la aprobación del dueño. |
+| **Dueño** (superadmin) | Con su correo y contraseña, por el candado | Todo lo anterior, sin esperar aprobación, más **Solicitudes** (aprobar o rechazar cambios a la historia clínica) y **Equipo** (crear, editar, desactivar y eliminar administradores). |
 
 # 7. Notificaciones y alertas
 
@@ -303,6 +371,10 @@ Ejemplo de la confirmación:
 **Causa:** la hora tiene una cita o ya pasó.\
 **Solución:** reprograme o cancele primero la cita desde la agenda.
 
+**Problema 9: No me deja corregir una entrada de la historia.**\
+**Causa:** ya tiene una corrección esperando la aprobación del dueño, o la entrada ya fue corregida.\
+**Solución:** espere a que el dueño revise la solicitud, o corrija la corrección más reciente.
+
 # 9. Glosario
 
 **Agenda:** lista de las citas de un día en el panel.
@@ -319,7 +391,15 @@ Ejemplo de la confirmación:
 
 **Ficha del paciente:** registro del paciente con sus datos, citas e historia clínica.
 
-**Historia clínica:** notas que la secretaria agrega a la ficha después de las citas atendidas. No se borran: se corrigen dejando constancia.
+**Historia clínica:** notas que la secretaria agrega a la ficha después de las citas atendidas. No se borran: se corrigen dejando constancia, y las correcciones de la secretaria las aprueba el dueño.
+
+**Hallazgo:** lo que se encontró o se hizo en un diente o en una de sus caras (caries, resina, corona, etc.), por hacer o realizado.
+
+**Odontograma:** dibujo de la boca del paciente donde se registran los hallazgos de cada diente.
+
+**Solicitud:** cambio a la historia clínica (corrección o anulación) que pidió un administrador y espera la decisión del dueño.
+
+**FDI:** numeración internacional de los dientes: el primer número es el cuadrante (1 a 4 permanentes, 5 a 8 de leche) y el segundo la pieza, contando desde el centro de la boca.
 
 **Horario (franja):** hora en que un especialista atiende y que los pacientes pueden elegir.
 
