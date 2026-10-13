@@ -1,8 +1,10 @@
-/* Todas las rutas de pacientes son exclusivas del administrador.
-   El rol se lee del token firmado, nunca del cuerpo de la petición. */
+/* Rutas de pacientes: administrador (secretaria) y dueño (superadmin,
+   que pasa cualquier control de rol). El rol se lee del token firmado,
+   nunca del cuerpo de la petición. */
 const { Router } = require('express');
 const controlador = require('../controllers/pacientes.controller');
 const historia = require('../controllers/historia.controller');
+const odontograma = require('../controllers/odontograma.controller');
 const { requiereSesion, requiereRol } = require('../middleware/autenticacion');
 
 const router = Router();
@@ -14,5 +16,7 @@ router.get('/', controlador.listar);
 router.get('/:id', historia.ficha);
 router.get('/:id/historia', historia.listar);
 router.post('/:id/historia', historia.crear);
+router.get('/:id/odontograma', odontograma.listar);
+router.post('/:id/odontograma', odontograma.crear);
 
 module.exports = router;

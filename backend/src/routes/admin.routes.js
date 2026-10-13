@@ -1,6 +1,6 @@
-/* Panel de la secretaria (único usuario administrador).
-   Todas las rutas exigen sesión con rol administrador; el rol se lee
-   del token firmado, nunca del cuerpo de la petición. */
+/* Panel de la secretaria (administrador) y del dueño (superadmin, que
+   pasa cualquier control de rol). El rol se lee del token firmado,
+   nunca del cuerpo de la petición. */
 const { Router } = require('express');
 const { requiereSesion, requiereRol } = require('../middleware/autenticacion');
 const especialidades = require('../controllers/especialidades.controller');
@@ -8,6 +8,7 @@ const especialistas = require('../controllers/especialistas.controller');
 const citas = require('../controllers/citas.controller');
 const notificaciones = require('../controllers/notificaciones.controller');
 const historia = require('../controllers/historia.controller');
+const odontograma = require('../controllers/odontograma.controller');
 
 const router = Router();
 
@@ -37,5 +38,7 @@ router.patch('/notificaciones/:id', notificaciones.marcarEnviada);
 router.post('/recordatorios', notificaciones.ejecutarRecordatorios);
 
 router.post('/historia/:id/correccion', historia.corregir);
+router.post('/odontograma/:id/realizado', odontograma.marcarRealizado);
+router.post('/odontograma/:id/anular', odontograma.anular);
 
 module.exports = router;

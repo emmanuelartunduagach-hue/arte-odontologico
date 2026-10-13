@@ -14,8 +14,11 @@ router.use('/servicios',      require('./especialidades.routes')); // nombre ant
 router.use('/especialistas',  require('./especialistas.routes'));
 router.use('/citas',          require('./citas.routes'));
 
-// Secretaria
+// Secretaria (y el dueño, que tiene permiso total)
 router.use('/pacientes', require('./pacientes.routes'));
 router.use('/admin',     require('./admin.routes'));
+
+// Solo el dueño
+router.use('/superadmin', require('./superadmin.routes'));
 
 module.exports = router;

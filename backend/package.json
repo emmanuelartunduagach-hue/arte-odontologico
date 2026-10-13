@@ -8,6 +8,7 @@
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
     "crear-admin": "node src/scripts/crearAdmin.js",
+    "superadmin": "node src/scripts/superadmin.js",
     "restablecer-admin": "node src/scripts/restablecerAdmin.js",
     "recordatorios": "node src/scripts/enviarRecordatorios.js",
     "datos-demo": "node src/scripts/datosDemo.js"

@@ -493,3 +493,56 @@ cambió por un editor por día:
 - En la semana los recuadros de hora ya no son botones: se acabó el riesgo
   de quitar una hora por un clic sin querer.
 
+
+## 30. Dueño (superadmin), correcciones con aprobación y odontograma (13 de octubre)
+
+El consultorio pidió un rol para el dueño con permiso total y un
+odontograma en la historia clínica.
+
+- **Nuevo rol `superadmin` (el dueño).** Pasa cualquier control de rol:
+  ve y cambia todo lo que ve la secretaria. Además tiene dos secciones
+  propias en el panel: **Solicitudes** y **Equipo**.
+- **El dueño no se crea desde la web.** Solo con `npm run superadmin`, que
+  pide una clave especial guardada en la variable `SUPERADMIN_CLAVE` del
+  servidor (mínimo 16 caracteres; no es la contraseña del dueño) y el
+  correo del dueño. Si el correo no existe crea la cuenta; si ya es del
+  dueño, permite cambiar su nombre, celular y contraseña. Se eligió un
+  script y no una página oculta para que no quede nada expuesto en
+  internet: solo quien tiene acceso al servidor (equipo técnico) puede
+  usarlo.
+- **Equipo.** El dueño crea, edita, desactiva, restablece y elimina
+  administradores. Al crear o restablecer, el sistema genera una
+  contraseña temporal (4 letras y 4 números) que se muestra una sola vez y
+  que el administrador cambia al ingresar. Un administrador que ya
+  registró pacientes, citas o historia **no se puede borrar** (esos
+  registros deben decir quién los hizo): se desactiva. El dueño no aparece
+  en la lista ni se puede editar desde la web.
+- **Sesión cortada al instante.** Cada petición confirma en la base que el
+  usuario sigue activo y con el mismo rol. Si el dueño elimina o desactiva
+  a un administrador, su sesión deja de servir de inmediato, sin esperar a
+  que venza el token (8 horas).
+- **Correcciones de la historia con aprobación.** Agregar entradas nuevas
+  sigue libre. Una **corrección** pedida por un administrador queda
+  `pendiente`: la original sigue vigente y el dueño la aprueba
+  (`vigente`, la original pasa a «Corregida») o la rechaza con un motivo
+  (`rechazada`). Nada se borra: la fila rechazada queda con quién la
+  revisó, cuándo y por qué. Las correcciones del dueño quedan vigentes de
+  una vez. Mientras una entrada tenga una corrección pendiente no se le
+  puede pedir otra.
+- **Odontograma.** Numeración FDI, dentición de adulto (32) y de niño
+  (20). Cada hallazgo se registra en una o varias caras (oclusal, mesial,
+  distal, vestibular, lingual o palatina) o en el diente completo, como
+  «por hacer» (rojo) o «realizado» (azul), según la convención clínica.
+  Catálogo: caries, resina, amalgama, sellante y fractura (por caras);
+  corona, endodoncia, extracción, ausente, implante y prótesis (diente
+  completo); otro. Un «por hacer» se marca como realizado una vez, con
+  autor y fecha. Un hallazgo registrado por error se **anula**: la pide un
+  administrador y la aprueba el dueño (aparece en Solicitudes); la del
+  dueño queda aprobada de una vez. Los anulados no se dibujan pero quedan
+  en el historial del diente.
+- **Base de datos:** migración `006_superadmin_y_odontograma.sql` (rol
+  nuevo, columnas `estado`, `revisado_por`, `revisado_en` y
+  `motivo_rechazo` en `historia_clinica`, tabla `odontograma`).
+- Rutas nuevas: `/api/superadmin/...` (solo el dueño),
+  `GET/POST /api/pacientes/:id/odontograma`,
+  `POST /api/admin/odontograma/:id/realizado` y `.../anular`.
