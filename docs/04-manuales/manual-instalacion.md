@@ -71,6 +71,7 @@ Si la base se creó con una versión anterior del proyecto, ejecutar **una sola 
 | `003_pacientes_sin_login_y_aprobacion.sql` | Tabla `pacientes` (sin login), citas pendientes y rechazadas, `confirmada_en` y mensaje de rechazo. Conserva los datos: copia los pacientes que había en `usuarios` |
 | `004_datos_paciente_y_hora_anterior.sql` | Nombres y apellidos por separado, tipo de documento, teléfono fijo y motivo de consulta; hora anterior de las citas que el paciente reprograma. Conserva los datos: parte el nombre que ya existía y deja el tipo de documento en CC |
 | `005_citas_confirmadas_al_pedir.sql` | Las citas de la web nacen confirmadas: columna `origen` (web o consultorio) y estado por defecto `confirmada`. Las pendientes que existan se mantienen para aceptarlas o rechazarlas |
+| `006_superadmin_y_odontograma.sql` | Rol del dueño (`superadmin`), estado de las correcciones de la historia (pendiente, vigente, rechazada) y tabla `odontograma`. Conserva los datos: las entradas existentes quedan vigentes |
 
 Antes de una migración, saca un respaldo. En PowerShell de Windows (ajusta la versión de la carpeta si no es 8.0):
 
@@ -129,6 +130,7 @@ cp .env.example .env        # en Windows: copy .env.example .env
 | `RECORDATORIOS_AUTOMATICOS` | No | `false` desactiva el recordatorio automático | `true` |
 | `RECORDATORIO_DESDE`, `RECORDATORIO_HASTA` | No | Horas (de Colombia) entre las que se generan los recordatorios | `8`, `19` |
 | `RECORDATORIO_HORAS_MINIMAS` | No | No recordar citas agendadas hace menos de estas horas | `12` |
+| `SUPERADMIN_CLAVE` | Sí, para crear al dueño | Clave especial que pide `npm run superadmin`. Solo la conoce el equipo técnico; no es la contraseña del dueño. Mínimo 16 caracteres | ver comando abajo |
 | `WHATSAPP_MODO` | No | `manual`, `consola`, `twilio` o `api` (ver sección 7) | `manual` |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_DESDE` | Solo modo `twilio` | Credenciales de Twilio y número del sandbox | — |
 | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID` | Solo modo `api` | Credenciales de Meta | — |
@@ -140,13 +142,19 @@ Generar `JWT_SECRET`:
 node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 ```
 
+Generar `SUPERADMIN_CLAVE` (guardarla en un lugar seguro del equipo técnico):
+
+```bash
+node -e "console.log(require('crypto').randomBytes(24).toString('base64url'))"
+```
+
 ### 6.3 Crear el usuario administrador (secretaria)
 
 ```bash
 npm run crear-admin
 ```
 
-El script pide nombre, documento, correo, teléfono y contraseña (mínimo 8 caracteres, con letra y número). La contraseña se guarda cifrada con bcrypt. **Es la única forma de crear un administrador**: no existe ninguna pantalla ni ruta de la API para hacerlo.
+El script pide nombre, documento, correo, teléfono y contraseña (mínimo 8 caracteres, con letra y número). La contraseña se guarda cifrada con bcrypt. Sirve para crear el **primer** administrador. Después, el dueño puede crear más desde el panel (sección **Equipo**); fuera de eso no hay ninguna ruta pública para crear administradores.
 
 Si la secretaria olvida su contraseña:
 
@@ -155,6 +163,22 @@ npm run restablecer-admin
 ```
 
 Pide el correo del administrador y la contraseña nueva dos veces.
+
+Después de crear al dueño, también puede crear y gestionar administradores desde el panel (sección **Equipo**).
+
+### 6.3.1 Crear o editar la cuenta del dueño (superadmin)
+
+```bash
+npm run superadmin
+```
+
+Pide la **clave especial** (`SUPERADMIN_CLAVE`) y el **correo del dueño**:
+
+- Si el correo no existe, crea la cuenta del dueño: nombre, documento, celular y contraseña.
+- Si ya es la cuenta del dueño, permite cambiar su nombre, su celular y su contraseña (lo que se deje en blanco no cambia) y la reactiva si estaba desactivada. Sirve también si el dueño olvida su contraseña.
+- Si la clave especial es incorrecta, o el correo es de un administrador, no hace nada.
+
+No existe ninguna pantalla ni ruta de la API para crear o editar al dueño.
 
 ### 6.4 Arrancar
 
@@ -247,12 +271,18 @@ Plan **Hobby**: USD 5 al mes, que incluyen USD 5 de consumo; una app pequeña co
    & "$bin\mysql.exe" -h HOST_PUBLICO -P PUERTO_PUBLICO -u root -p -e "source backend/database/schema.sql"
    ```
 
-   `schema.sql` crea la base `arte_odontologico` con todas las tablas hasta la migración 005 y el catálogo inicial.
+   `schema.sql` crea la base `arte_odontologico` con todas las tablas hasta la migración 006 y el catálogo inicial.
 6. **Dominio:** en el servicio de la app → **Settings → Networking → Generate Domain** (queda algo como `arte-odontologico.up.railway.app`), o **Custom Domain** si el consultorio tiene uno. Copiarlo en `URL_PUBLICA`.
 7. **Crear la cuenta de la secretaria** contra la base publicada. En `backend/`, crear un archivo `.env.railway` (no se sube: `.env.*` está en `.gitignore`) con `DB_HOST`, `DB_PORT`, `DB_USER` y `DB_PASSWORD` públicos del paso 5 y `DB_NAME=arte_odontologico`, y ejecutar:
 
    ```powershell
    node -r dotenv/config src/scripts/crearAdmin.js dotenv_config_path=.env.railway
+   ```
+
+   Para la cuenta del dueño, agregar `SUPERADMIN_CLAVE` al mismo archivo y ejecutar:
+
+   ```powershell
+   node -r dotenv/config src/scripts/superadmin.js dotenv_config_path=.env.railway
    ```
 
    Borrar el archivo después.
