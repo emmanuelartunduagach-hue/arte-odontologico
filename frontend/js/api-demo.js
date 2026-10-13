@@ -9,7 +9,9 @@
    Ejemplo: http://localhost:5500/frontend/index.html?demo=1
    Queda activo en esa pestaña hasta cerrarla o abrir una página con ?demo=0.
    Para probar el error de "ya tiene una cita activa" usa el documento
-   999999999. */
+   999999999.
+   Cuentas (clave Demo1234): secretaria@demo.co (administrador) y
+   dueno@demo.co (dueño, superadmin: Solicitudes y Equipo). */
 
 (function () {
   const esLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
@@ -109,6 +111,7 @@
   const USUARIOS = {
     'secretaria@demo.co': { id: 1, nombre: 'Secretaria de Prueba', rol: 'administrador', debeCambiarContrasena: false },
     'nuevo@demo.co': { id: 3, nombre: 'Secretaria Nueva', rol: 'administrador', debeCambiarContrasena: true },
+    'dueno@demo.co': { id: 9, nombre: 'Dueña de Prueba', rol: 'superadmin', debeCambiarContrasena: false },
   };
   const CLAVE_DEMO = 'Demo1234';
 
@@ -131,7 +134,15 @@
   const PERFILES = {
     1: { id: 1, nombreCompleto: 'Secretaria de Prueba', documento: '1000000001', correo: 'secretaria@demo.co', telefono: '573000000001', rol: 'administrador' },
     3: { id: 3, nombreCompleto: 'Secretaria Nueva', documento: '1000000003', correo: 'nuevo@demo.co', telefono: '573000000003', rol: 'administrador' },
+    9: { id: 9, nombreCompleto: 'Dueña de Prueba', documento: '1000000009', correo: 'dueno@demo.co', telefono: '573000000009', rol: 'superadmin' },
   };
+
+  // Administradores que gestiona el dueño (sección Equipo).
+  const ADMINISTRADORES = [
+    { id: 1, nombreCompleto: 'Secretaria de Prueba', documento: '1000000001', correo: 'secretaria@demo.co', telefono: '573000000001', activo: true, debeCambiarContrasena: false, creadoEn: '2026-09-01 08:00:00', conRegistros: true },
+    { id: 3, nombreCompleto: 'Secretaria Nueva', documento: '1000000003', correo: 'nuevo@demo.co', telefono: '573000000003', activo: true, debeCambiarContrasena: true, creadoEn: '2026-10-10 09:00:00', conRegistros: false },
+  ];
+  const claveTemporalDemo = () => `DEMO${String(Math.floor(2000 + Math.random() * 7000))}`;
 
   const ahoraTexto = () => new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 19).replace('T', ' ');
 
@@ -151,17 +162,49 @@
     const e = {
       id: HISTORIA.length + 1, pacienteId, fechaAtencion: datos.fechaAtencion, procedimiento: datos.procedimiento,
       notas: datos.notas || null, especialidad: datos.especialidad || null, especialista: datos.especialista || null,
-      citaId: datos.citaId || null, corrigeA: datos.corrigeA || null, autor: 'Secretaria de Prueba', creadoEn: ahoraTexto(),
+      citaId: datos.citaId || null, corrigeA: datos.corrigeA || null, autor: datos.autor || 'Secretaria de Prueba', creadoEn: ahoraTexto(),
+      estado: datos.estado || 'vigente', revisor: datos.revisor || null, revisadoEn: null, motivoRechazo: null,
     };
     HISTORIA.push(e);
     return e;
   }
   entradaHistoria(1, { fechaAtencion: sumarDias(hoyColombia(), -1), procedimiento: 'Control de brackets', notas: 'Se ajustó el arco superior.', especialidad: 'Ortodoncia', especialista: 'Dra. Prueba Uno' });
+  // Una corrección esperando al dueño, para que Solicitudes no arranque vacía.
+  entradaHistoria(2, { fechaAtencion: sumarDias(hoyColombia(), -3), procedimiento: 'Resina en el diente 16', notas: 'Caries oclusal.', especialidad: 'Odontología general', especialista: 'Dr. Prueba Dos' });
+  entradaHistoria(2, { fechaAtencion: sumarDias(hoyColombia(), -3), procedimiento: 'Resina en el diente 26', notas: 'Se anotó el diente equivocado: la resina fue en el 26, no en el 16.', corrigeA: 2, estado: 'pendiente' });
   function historiaDe(pacienteId) {
     const lista = HISTORIA.filter((e) => e.pacienteId === pacienteId);
-    return lista.map((e) => ({ ...e, correcciones: lista.filter((x) => x.corrigeA === e.id).map((x) => x.id) }))
+    return lista.map((e) => ({ ...e,
+      correcciones: lista.filter((x) => x.corrigeA === e.id && x.estado === 'vigente').map((x) => x.id),
+      correccionPendiente: lista.some((x) => x.corrigeA === e.id && x.estado === 'pendiente') }))
       .sort((a, b) => b.fechaAtencion.localeCompare(a.fechaAtencion) || b.id - a.id);
   }
+
+  // Odontograma en memoria (mismo catálogo que el servidor).
+  const CATALOGO_ODONTO = {
+    caries: { nombre: 'Caries', alcance: 'cara' }, resina: { nombre: 'Resina', alcance: 'cara' },
+    amalgama: { nombre: 'Amalgama', alcance: 'cara' }, sellante: { nombre: 'Sellante', alcance: 'cara' },
+    fractura: { nombre: 'Fractura', alcance: 'ambos' }, corona: { nombre: 'Corona', alcance: 'diente' },
+    endodoncia: { nombre: 'Endodoncia', alcance: 'diente' }, extraccion: { nombre: 'Extracción', alcance: 'diente' },
+    ausente: { nombre: 'Ausente', alcance: 'diente', soloRealizado: true }, implante: { nombre: 'Implante', alcance: 'diente' },
+    protesis: { nombre: 'Prótesis', alcance: 'diente' }, otro: { nombre: 'Otro', alcance: 'ambos' },
+  };
+  const ODONTO = [];
+  function hallazgoDemo(pacienteId, diente, cara, hallazgo, estado, extra = {}) {
+    const h = { id: ODONTO.length + 1, pacienteId, diente, cara, hallazgo, estado, notas: extra.notas || null,
+      autor: extra.autor || 'Secretaria de Prueba', creadoEn: ahoraTexto(),
+      realizadoPor: estado === 'realizado' ? (extra.autor || 'Secretaria de Prueba') : null, realizadoEn: estado === 'realizado' ? ahoraTexto() : null,
+      anulacion: null, anulacionMotivo: null, anulacionPedidaPor: null, anulacionPedidaEn: null,
+      anulacionRevisadaPor: null, anulacionRevisadaEn: null, anulacionRechazo: null, ...extra.anulacion };
+    ODONTO.push(h);
+    return h;
+  }
+  [[16, 'oclusal', 'caries', 'por_hacer'], [16, 'mesial', 'caries', 'por_hacer'], [26, 'oclusal', 'resina', 'realizado'],
+    [36, 'completo', 'endodoncia', 'realizado'], [36, 'completo', 'corona', 'por_hacer'], [48, 'completo', 'ausente', 'realizado'],
+    [11, 'vestibular', 'fractura', 'por_hacer']].forEach(([d, c, h, e]) => hallazgoDemo(2, d, c, h, e));
+  hallazgoDemo(2, 46, 'distal', 'amalgama', 'realizado', { anulacion: { anulacion: 'pendiente', anulacionMotivo: 'Era el 47, no el 46.', anulacionPedidaPor: 'Secretaria de Prueba', anulacionPedidaEn: ahoraTexto() } });
+  const odontoDe = (pacienteId) => ODONTO.filter((h) => h.pacienteId === pacienteId).sort((a, b) => a.diente - b.diente || a.id - b.id).map((h) => ({ ...h }));
+  const esDienteDemo = (n) => { const q = Math.floor(n / 10); const p = n % 10; return (q >= 1 && q <= 4 && p >= 1 && p <= 8) || (q >= 5 && q <= 8 && p >= 1 && p <= 5); };
 
   // Agenda de la secretaria: citas de ayer a 6 días, en memoria (se
   // pierden al recargar). Ortodoncia la atienden los especialistas 31 y 32.
@@ -320,10 +363,12 @@
     }
 
     const usuario = token ? usuarioDelToken(token) : null;
+    // El dueño (superadmin) pasa cualquier control de rol, como en el servidor.
     const exigir = (rol) => {
       if (!usuario) throw new ErrorApi('Debes iniciar sesión', 401);
-      if (rol && usuario.rol !== rol) throw new ErrorApi('No tienes permiso para esta acción', 403);
+      if (rol && usuario.rol !== rol && usuario.rol !== 'superadmin') throw new ErrorApi('No tienes permiso para esta acción', 403);
     };
+    const esDuenoDemo = usuario?.rol === 'superadmin';
 
     if (metodo === 'POST' && url.pathname === '/auth/cambiar-contrasena') {
       exigir();
@@ -497,7 +542,125 @@
       exigir('administrador');
       const original = HISTORIA.find((e) => e.id === Number(partes[2]));
       if (!original) throw new ErrorApi('Entrada no encontrada.', 404);
-      return entradaHistoria(original.pacienteId, { ...original, ...Object.fromEntries(Object.entries(cuerpo).filter(([, v]) => v)), corrigeA: original.id, citaId: original.citaId });
+      if (original.estado !== 'vigente') throw new ErrorApi('Solo se pueden corregir entradas vigentes.', 409);
+      if (HISTORIA.some((x) => x.corrigeA === original.id && x.estado === 'pendiente')) throw new ErrorApi('Esta entrada ya tiene una corrección esperando la aprobación del dueño.', 409);
+      if (!String(cuerpo.notas || '').trim()) throw new ErrorApi('Revisa los datos de la corrección.', 400, { notas: 'Explica qué se corrige y por qué.' });
+      return entradaHistoria(original.pacienteId, { ...original, ...Object.fromEntries(Object.entries(cuerpo).filter(([, v]) => v)),
+        corrigeA: original.id, citaId: original.citaId, autor: usuario.nombre,
+        estado: esDuenoDemo ? 'vigente' : 'pendiente', revisor: esDuenoDemo ? usuario.nombre : null });
+    }
+
+    // ---- Odontograma ----
+    if (partes[0] === 'pacientes' && partes[2] === 'odontograma') {
+      exigir('administrador');
+      const pacienteId = Number(partes[1]);
+      if (!PACIENTES.some((x) => x.id === pacienteId)) throw new ErrorApi('Paciente no encontrado.', 404);
+      if (metodo === 'GET') return { catalogo: { hallazgos: CATALOGO_ODONTO, caras: ['oclusal', 'mesial', 'distal', 'vestibular', 'lingual'] }, hallazgos: odontoDe(pacienteId) };
+      if (metodo === 'POST') {
+        const tipo = CATALOGO_ODONTO[cuerpo.hallazgo];
+        const caras = Array.isArray(cuerpo.caras) ? cuerpo.caras : [];
+        const completo = caras.length === 1 && caras[0] === 'completo';
+        const errores = {};
+        if (!esDienteDemo(Number(cuerpo.diente))) errores.diente = 'Elige un diente válido.';
+        if (!tipo) errores.hallazgo = 'Elige qué se encontró o qué se hizo.';
+        if (!['por_hacer', 'realizado'].includes(cuerpo.estado)) errores.estado = 'Indica si está por hacer o ya se realizó.';
+        else if (tipo?.soloRealizado && cuerpo.estado !== 'realizado') errores.estado = `${tipo.nombre} solo se registra como existente (realizado).`;
+        if (!caras.length) errores.caras = 'Marca al menos una cara o el diente completo.';
+        else if (tipo?.alcance === 'diente' && !completo) errores.caras = `${tipo.nombre} se registra en el diente completo.`;
+        else if (tipo?.alcance === 'cara' && completo) errores.caras = `${tipo.nombre} se registra por caras: marca en cuáles.`;
+        if (Object.keys(errores).length) throw new ErrorApi('Revisa los datos del hallazgo.', 400, errores);
+        caras.forEach((c) => hallazgoDemo(pacienteId, Number(cuerpo.diente), c, cuerpo.hallazgo, cuerpo.estado, { notas: String(cuerpo.notas || '').trim() || null, autor: usuario.nombre }));
+        return { mensaje: 'Hallazgo guardado en el odontograma.', hallazgos: odontoDe(pacienteId) };
+      }
+    }
+    if (metodo === 'POST' && partes[0] === 'admin' && partes[1] === 'odontograma') {
+      exigir('administrador');
+      const h = ODONTO.find((x) => x.id === Number(partes[2]));
+      if (!h) throw new ErrorApi('Hallazgo no encontrado.', 404);
+      if (partes[3] === 'realizado') {
+        if (h.estado !== 'por_hacer' || h.anulacion === 'aprobada' || h.anulacion === 'pendiente') throw new ErrorApi('Este hallazgo ya está realizado o está anulado.', 409);
+        Object.assign(h, { estado: 'realizado', realizadoPor: usuario.nombre, realizadoEn: ahoraTexto() });
+        return { mensaje: 'Marcado como realizado.', hallazgos: odontoDe(h.pacienteId) };
+      }
+      if (partes[3] === 'anular') {
+        const motivo = String(cuerpo.motivo || '').trim();
+        if (motivo.length < 3) throw new ErrorApi('Revisa los datos.', 400, { motivo: 'Explica por qué se anula (entre 3 y 300 caracteres).' });
+        if (h.anulacion === 'pendiente' || h.anulacion === 'aprobada') throw new ErrorApi('Este hallazgo ya tiene una anulación.', 409);
+        Object.assign(h, { anulacion: esDuenoDemo ? 'aprobada' : 'pendiente', anulacionMotivo: motivo, anulacionPedidaPor: usuario.nombre,
+          anulacionPedidaEn: ahoraTexto(), anulacionRevisadaPor: esDuenoDemo ? usuario.nombre : null, anulacionRechazo: null });
+        return { mensaje: esDuenoDemo ? 'Hallazgo anulado.' : 'Anulación enviada: el hallazgo sigue vigente hasta que el dueño la apruebe.', hallazgos: odontoDe(h.pacienteId) };
+      }
+    }
+
+    // ---- Solo el dueño: solicitudes y equipo ----
+    if (partes[0] === 'superadmin') {
+      exigir('superadmin');
+      if (usuario.rol !== 'superadmin') throw new ErrorApi('No tienes permiso para esta acción', 403);
+      if (metodo === 'GET' && partes[1] === 'solicitudes') {
+        const nombre = (id) => PACIENTES.find((x) => x.id === id)?.nombreCompleto;
+        return {
+          correcciones: HISTORIA.filter((e) => e.estado === 'pendiente').map((e) => {
+            const o = HISTORIA.find((x) => x.id === e.corrigeA);
+            return { ...e, paciente: nombre(e.pacienteId), procedimientoOriginal: o.procedimiento, notasOriginal: o.notas, fechaOriginal: o.fechaAtencion };
+          }),
+          anulaciones: ODONTO.filter((h) => h.anulacion === 'pendiente').map((h) => ({ ...h, paciente: nombre(h.pacienteId) })),
+        };
+      }
+      if (metodo === 'POST' && partes[1] === 'solicitudes') {
+        const aprobar = partes[4] === 'aprobar';
+        const motivo = String(cuerpo?.motivo || '').trim();
+        if (!aprobar && motivo.length < 3) throw new ErrorApi('Revisa los datos.', 400, { motivo: 'Explica por qué se rechaza (entre 3 y 300 caracteres).' });
+        if (partes[2] === 'historia') {
+          const e = HISTORIA.find((x) => x.id === Number(partes[3]));
+          if (!e || e.estado !== 'pendiente') throw new ErrorApi('Esta solicitud ya fue revisada.', 409);
+          Object.assign(e, { estado: aprobar ? 'vigente' : 'rechazada', revisor: usuario.nombre, revisadoEn: ahoraTexto(), motivoRechazo: aprobar ? null : motivo });
+          return { mensaje: aprobar ? 'Corrección aprobada.' : 'Corrección rechazada.' };
+        }
+        const h = ODONTO.find((x) => x.id === Number(partes[3]));
+        if (!h || h.anulacion !== 'pendiente') throw new ErrorApi('Esta solicitud ya fue revisada.', 409);
+        Object.assign(h, { anulacion: aprobar ? 'aprobada' : 'rechazada', anulacionRevisadaPor: usuario.nombre, anulacionRevisadaEn: ahoraTexto(), anulacionRechazo: aprobar ? null : motivo });
+        return { mensaje: aprobar ? 'Anulación aprobada.' : 'Anulación rechazada.' };
+      }
+      if (partes[1] === 'administradores') {
+        const limpio = ({ conRegistros, ...a }) => ({ ...a });
+        if (metodo === 'GET') return ADMINISTRADORES.map(limpio);
+        const datosAdmin = () => {
+          const errores = {};
+          const nombreCompleto = String(cuerpo.nombreCompleto || '').trim();
+          const documento = String(cuerpo.documento || '').replace(/\D/g, '');
+          const correo = String(cuerpo.correo || '').trim().toLowerCase();
+          const tel = String(cuerpo.telefono || '').replace(/\D/g, '');
+          if (nombreCompleto.length < 3) errores.nombreCompleto = 'Escribe el nombre completo (entre 3 y 120 caracteres).';
+          if (!/^\d{5,20}$/.test(documento)) errores.documento = 'El documento debe tener solo números (entre 5 y 20 dígitos).';
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(correo)) errores.correo = 'Escribe un correo electrónico válido.';
+          if (!/^\d{7,15}$/.test(tel)) errores.telefono = 'Escribe un celular válido, por ejemplo 300 123 4567.';
+          if (Object.keys(errores).length) throw new ErrorApi('Revisa los datos del formulario.', 400, errores);
+          return { nombreCompleto, documento, correo, telefono: /^3\d{9}$/.test(tel) ? `57${tel}` : tel };
+        };
+        if (metodo === 'POST' && !partes[2]) {
+          const d = datosAdmin();
+          if (ADMINISTRADORES.some((a) => a.correo === d.correo) || d.correo === 'dueno@demo.co') throw new ErrorApi('Ya existe un usuario con ese correo.', 409, { correo: 'Ya existe un usuario con ese correo.' });
+          const a = { id: 20 + ADMINISTRADORES.length, ...d, activo: true, debeCambiarContrasena: true, creadoEn: ahoraTexto(), conRegistros: false };
+          ADMINISTRADORES.push(a);
+          return { mensaje: 'Administrador creado.', administrador: limpio(a), contrasenaTemporal: claveTemporalDemo() };
+        }
+        const a = ADMINISTRADORES.find((x) => x.id === Number(partes[2]));
+        if (!a) throw new ErrorApi('Administrador no encontrado.', 404);
+        if (metodo === 'PATCH') {
+          if (typeof cuerpo.activo === 'boolean' && Object.keys(cuerpo).length === 1) a.activo = cuerpo.activo;
+          else Object.assign(a, datosAdmin());
+          return { mensaje: 'Administrador actualizado.', administrador: limpio(a) };
+        }
+        if (metodo === 'POST' && partes[3] === 'restablecer') {
+          a.debeCambiarContrasena = true;
+          return { mensaje: 'Contraseña restablecida.', contrasenaTemporal: claveTemporalDemo() };
+        }
+        if (metodo === 'DELETE') {
+          if (a.conRegistros) throw new ErrorApi(`${a.nombreCompleto} ya registró pacientes, citas o historia clínica, así que no se puede borrar: esos registros deben decir quién los hizo. Desactívalo para que no pueda ingresar.`, 409);
+          ADMINISTRADORES.splice(ADMINISTRADORES.indexOf(a), 1);
+          return { mensaje: 'Administrador eliminado.' };
+        }
+      }
     }
 
     if (partes[0] === 'admin' && partes[1] === 'notificaciones') {

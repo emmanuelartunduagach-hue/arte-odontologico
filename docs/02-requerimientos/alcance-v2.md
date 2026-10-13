@@ -54,7 +54,7 @@ Hay un solo usuario administrador: la secretaria. Los especialistas no inician s
 |---|---|
 | Especialidades | Crear, editar, activar o desactivar |
 | Especialistas | Registrar por nombre, asignar una o varias especialidades, activar o desactivar |
-| Disponibilidad | Por especialista y fecha, marcar a mano las horas de atención; quitar o agregar horas; copiar a varios días. No deja quitar una hora que ya tiene cita |
+| Disponibilidad | Por especialista y fecha, marcar a mano las horas de atención; editar el horario de cada día (marcar o desmarcar horas) y usarlo en otros días y semanas. No deja quitar una hora que ya tiene cita |
 | Novedades de la web | Ver en Inicio las citas pedidas por la web en las últimas 48 horas (ya confirmadas) y los cambios de hora y cancelaciones que hizo el paciente |
 | Agenda | Ver citas por día, especialista o estado; buscar; marcar atendida o no asistió; reprogramar o cancelar sin límite |
 | Pacientes | Registrar a quien llega al consultorio, buscar por nombre, documento, celular o correo, ver la ficha con citas e historia y agendarle una cita |

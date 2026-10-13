@@ -79,7 +79,7 @@ La página lee `codigo` de la URL.
 - **Confirmación:** pide confirmar antes de cancelar con un diálogo propio de la página, no con `confirm()`.
 - **404:** "El enlace no es válido o ya no está vigente". Ocurre cuando llega un mensaje con un enlace nuevo (la secretaria reprogramó la cita).
 
-## 3. Sesión (solo la secretaria)
+## 3. Sesión (secretaria y dueño)
 
 Los pacientes no tienen cuenta. El acceso está en el pie de la página principal ("Acceso del consultorio") y lleva a `panel-secretaria.html`. La sesión se guarda en `sessionStorage` (`frontend/js/sesion.js`) y `api()` envía el token sola.
 
@@ -89,7 +89,9 @@ Los pacientes no tienen cuenta. El acceso está en el pie de la página principa
 | `POST /auth/cambiar-contrasena` `{ contrasenaActual, contrasenaNueva }` | Clave actual incorrecta → **400** (no 401) |
 | `GET /auth/perfil` | `{ id, nombreCompleto, documento, correo, telefono, rol }` |
 
-## 4. Panel de la secretaria (todo exige rol administrador)
+`rol` es `administrador` (secretaria) o `superadmin` (dueño, decisión 30). El dueño usa el mismo `panel-secretaria.html` y pasa cualquier control de rol. En cada petición el servidor confirma que el usuario sigue activo y con el mismo rol: si no, **401**.
+
+## 4. Panel de la secretaria (todo exige rol administrador o superadmin)
 
 **Especialidades**
 - `GET /admin/especialidades` → `[{ id, codigo, nombre, descripcion, activo, especialistasActivos }]`
@@ -132,10 +134,33 @@ Los pacientes no tienen cuenta. El acceso está en el pie de la página principa
 
 **Ficha del paciente e historia clínica**
 - `GET /pacientes/:id` → `{ paciente, citas: [{ id, estado, especialidadId, especialidad, especialistaId, especialista, fecha, hora }], historia: [...] }` — la pantalla de ficha en una sola petición. `citas` incluye las que pidió por la web con su documento y aún están pendientes.
-- `GET /pacientes/:id/historia` → entradas, la atención más reciente primero: `[{ id, fechaAtencion, especialidad, especialista, citaId, procedimiento, notas, corrigeA, correcciones: [ids], autor, creadoEn }]`.
+- `GET /pacientes/:id/historia` → entradas, la atención más reciente primero: `[{ id, fechaAtencion, especialidad, especialista, citaId, procedimiento, notas, corrigeA, estado, correcciones: [ids], correccionPendiente, autor, creadoEn, revisor, revisadoEn, motivoRechazo }]`. `estado`: `vigente` | `pendiente` (corrección esperando al dueño) | `rechazada`. `correcciones` solo cuenta las vigentes.
 - `POST /pacientes/:id/historia` `{ fechaAtencion, procedimiento, notas?, especialidadId?, especialistaId?, citaId? }` → 201. Con `citaId` (de ese paciente) se pueden omitir fecha, especialidad y especialista. Fecha futura → 400.
-- `POST /admin/historia/:id/correccion` `{ notas, procedimiento?, fechaAtencion? }` → 201: crea una entrada nueva que corrige a la indicada; `notas` (qué se corrige y por qué) es obligatorio.
+- `POST /admin/historia/:id/correccion` `{ notas, procedimiento?, fechaAtencion? }` → 201: crea una entrada nueva que corrige a la indicada; `notas` (qué se corrige y por qué) es obligatorio. Si la pide un administrador queda `estado: "pendiente"` hasta que el dueño la apruebe; la del dueño queda `vigente`. Entrada no vigente o con una corrección ya pendiente → **409**.
 - **No hay editar ni borrar**: la historia clínica no se modifica (Resolución 1995 de 1999). En pantalla, una entrada con `correcciones` se muestra tachada o marcada "Corregida" con enlace a su corrección; la corrección muestra "Corrige la entrada del <fecha>". Sugerencia: botón "Agregar a la historia" junto a cada cita marcada como atendida, con `citaId` ya puesto.
+
+**Odontograma** (FDI: 11–48 permanentes, 51–85 temporales)
+- `GET /pacientes/:id/odontograma` → `{ catalogo: { hallazgos: { codigo: { nombre, alcance: "cara" | "diente" | "ambos", soloRealizado? } }, caras }, hallazgos: [{ id, diente, cara, hallazgo, estado, notas, autor, creadoEn, realizadoPor, realizadoEn, anulacion, anulacionMotivo, anulacionPedidaPor, anulacionPedidaEn, anulacionRevisadaPor, anulacionRevisadaEn, anulacionRechazo }] }`. `cara`: `completo` | `oclusal` | `mesial` | `distal` | `vestibular` | `lingual`. `anulacion`: `null` | `pendiente` | `aprobada` | `rechazada` (los `aprobada` no se dibujan).
+- `POST /pacientes/:id/odontograma` `{ diente, caras: ["oclusal", "mesial"] | ["completo"], hallazgo, estado: "por_hacer" | "realizado", notas? }` → 201 `{ mensaje, hallazgos }` (un hallazgo por cara). El catálogo dice si va por caras o en el diente completo.
+- `POST /admin/odontograma/:id/realizado` → `{ mensaje, hallazgos }`. Ya realizado o anulado → **409**.
+- `POST /admin/odontograma/:id/anular` `{ motivo }` → `{ mensaje, hallazgos }`. Del administrador queda `pendiente`; del dueño, `aprobada`.
+
+## 5. Solo el dueño (`superadmin`)
+
+Cualquier otro rol → **403**.
+
+**Solicitudes**
+- `GET /superadmin/solicitudes` → `{ correcciones: [{ ...entrada, pacienteId, paciente, procedimientoOriginal, notasOriginal, fechaOriginal }], anulaciones: [{ ...hallazgo, paciente }] }`, las más antiguas primero.
+- `POST /superadmin/solicitudes/historia/:id/aprobar` · `POST .../rechazar` `{ motivo }` (3 a 300 caracteres).
+- `POST /superadmin/solicitudes/odontograma/:id/aprobar` · `POST .../rechazar` `{ motivo }`.
+- Ya revisada → **409**.
+
+**Administradores**
+- `GET /superadmin/administradores` → `[{ id, nombreCompleto, documento, correo, telefono, activo, debeCambiarContrasena, creadoEn }]` (el dueño no aparece).
+- `POST /superadmin/administradores` `{ nombreCompleto, documento, correo, telefono }` → 201 `{ mensaje, administrador, contrasenaTemporal }`. La clave temporal se muestra **una sola vez**. Correo o documento repetido → **409**.
+- `PATCH /superadmin/administradores/:id` `{ nombreCompleto?, documento?, correo?, telefono?, activo? }`.
+- `POST /superadmin/administradores/:id/restablecer` → `{ mensaje, contrasenaTemporal }`.
+- `DELETE /superadmin/administradores/:id`. Si ya registró pacientes, citas o historia → **409** (se sugiere desactivarlo).
 
 ## Aún no existe
 

@@ -50,6 +50,8 @@
   --ambar-50:  #fffbf3;  /* Fondo de una solicitud por confirmar */
   --rosa-700:  #a32d44;  /* Cancelada   */
   --rosa-100:  #fadfe4;
+  --azul-700:  #2457a6;  /* Odontograma: realizado (por hacer usa --rosa-700) */
+  --azul-100:  #dfe9f8;
 
   --whatsapp: #1faa5a;
 
@@ -158,6 +160,8 @@
   --ambar-50:  #2a2116;
   --rosa-700:  #f39cb0;
   --rosa-100:  #45212b;
+  --azul-700:  #8db4f2;
+  --azul-100:  #1b2b45;
 
   --papel: #241d29;          /* tarjetas */
   --lienzo: #1b1520;
