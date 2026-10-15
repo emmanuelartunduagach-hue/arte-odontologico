@@ -981,3 +981,92 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
   .fila-cita { padding: var(--e-3) var(--e-4); }
   .fila-paciente-panel { padding: var(--e-3) var(--e-4); }
 }
+
+/* ============================================================
+   Identidad del panel: lavanda y arco
+   El mismo lenguaje de la página pública, en dosis menores:
+   una franja lavanda al inicio de cada sección, el sello de arco
+   en el título y los datos de Inicio en lavanda.
+   ============================================================ */
+
+/* Menú lateral dentro de una tarjeta propia */
+@media (min-width: 761px) {
+  .panel-nav {
+    padding: var(--e-3);
+    background: var(--papel);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-xl);
+    box-shadow: var(--sombra-sutil);
+  }
+  .panel-nav a:hover { transform: none; background: var(--lavanda-100); box-shadow: none; }
+}
+
+/* Franja lavanda arriba del contenido */
+.panel-contenido {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    linear-gradient(180deg, var(--lavanda-100) 0, var(--papel) 240px);
+}
+
+/* Sello de arco en el título de cada sección */
+.seccion-panel__titulo {
+  position: relative;
+  padding-left: 1.45em;
+}
+.seccion-panel__titulo::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 1.05em;
+  height: 1.05em;
+  transform: translateY(-50%);
+  background: var(--acento-texto);
+  -webkit-mask: var(--diente-logo) center / contain no-repeat;
+  mask: var(--diente-logo) center / contain no-repeat;
+}
+.seccion-panel__subtitulo { padding-left: calc(1.45 * clamp(1.75rem, 4vw, 2.25rem)); }
+
+/* Datos de Inicio en lavanda, con un arco blanco en la esquina */
+.dato-panel {
+  background: var(--degradado-lavanda);
+  border-color: transparent;
+  isolation: isolate;
+}
+.dato-panel::before { display: none; }
+.dato-panel::after {
+  content: '';
+  position: absolute;
+  right: -8px;
+  bottom: -12px;
+  width: 90px;
+  height: 90px;
+  background: var(--papel);
+  -webkit-mask: var(--diente-logo) center / contain no-repeat;
+  mask: var(--diente-logo) center / contain no-repeat;
+  opacity: .35;
+  z-index: -1;
+}
+.dato-panel__numero { color: var(--ink-900); }
+.dato-panel__etiqueta { color: var(--ink-900); font-weight: var(--peso-medio); }
+.dato-panel:hover { border-color: var(--violeta-600); }
+.dato-panel--alerta { background: var(--rosa-100); }
+.dato-panel--alerta .dato-panel__numero { color: var(--rosa-700); }
+.dato-panel--alerta::after { background: var(--rosa-700); opacity: .1; }
+
+/* Iniciales de pacientes con forma de arco */
+.fila-paciente-panel__inicial { border-radius: 50%; }
+
+/* Agenda y bloques: barra de filtros en lavanda clara */
+.agenda__barra { background: var(--lavanda-100); border-color: var(--lavanda-300); }
+
+/* Horarios: el día de hoy con cabecera lavanda */
+.semana__dia--hoy { background: linear-gradient(180deg, var(--lavanda-100) 0, var(--papel) 90px); }
+
+/* Odontograma sobre fondo lavanda muy claro */
+.odontograma { background: linear-gradient(180deg, var(--lavanda-100), var(--papel)); }
+
+@media (max-width: 760px) {
+}

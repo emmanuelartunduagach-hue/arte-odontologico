@@ -135,9 +135,10 @@
   content: '';
   position: absolute;
   inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='76' height='76' viewBox='0 0 76 76'%3E%3Cpath d='M14 62V34a24 24 0 0 1 48 0v28' fill='none' stroke='%234a1f60' stroke-width='1.5'/%3E%3C/svg%3E");
-  background-size: 76px 76px;
-  opacity: .05;
+  background: var(--violeta-600);
+  -webkit-mask: var(--diente-patron) 0 0 / 76px 76px repeat;
+  mask: var(--diente-patron) 0 0 / 76px 76px repeat;
+  opacity: .06;
   pointer-events: none;
 }
 
@@ -154,9 +155,10 @@
   content: '';
   position: absolute;
   inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='76' height='76' viewBox='0 0 76 76'%3E%3Cpath d='M14 62V34a24 24 0 0 1 48 0v28' fill='none' stroke='%23ffffff' stroke-width='1.5'/%3E%3C/svg%3E");
-  background-size: 76px 76px;
-  opacity: .16;
+  background: var(--papel);
+  -webkit-mask: var(--diente-patron) 0 0 / 76px 76px repeat;
+  mask: var(--diente-patron) 0 0 / 76px 76px repeat;
+  opacity: .22;
   pointer-events: none;
 }
 
@@ -632,4 +634,188 @@
   .gestion { padding-block: var(--e-6); }
   .gestion__tarjeta { padding: var(--e-5); }
   .acciones .btn { width: 100%; }
+}
+
+/* ============================================================
+   Identidad: el arco
+   La forma de arco (la corona de un diente y el recorte de la
+   foto de portada) es el único gesto fuerte de la página. Se usa
+   en tres lugares: el portal lavanda de la portada, el panel de
+   WhatsApp en Contacto y el sello de cada título de sección.
+   Todo lo demás se mantiene sobrio.
+   ============================================================ */
+
+/* ---------- Portada: portal lavanda detrás de la foto ----------
+   Un arco lavanda que nace del borde inferior de la portada y
+   envuelve la fotografía; dentro, dos arcos finos en blanco.    */
+.portada::after { display: none; }
+.portada__figura { padding-inline: var(--e-5); align-self: stretch; display: grid; align-content: center; }
+.portada__figura::before {
+  display: block;
+  content: '';
+  position: absolute;
+  inset: -36px -8px calc(-1 * var(--e-9) - 2px) -8px;
+  border: 0;
+  opacity: 1;
+  border-radius: 999px 999px 0 0;
+  background:
+    radial-gradient(circle at 50% 100%, transparent 62%, var(--linea-arco) 62.3%, transparent 62.8%),
+    radial-gradient(circle at 50% 100%, transparent 78%, var(--linea-arco) 78.3%, transparent 78.8%),
+    var(--degradado-lavanda);
+  z-index: -1;
+}
+.portada__imagen { border: 6px solid var(--papel); }
+
+/* ---------- Títulos de sección con sello de arco ---------- */
+.seccion__intro h2,
+.contacto h2 {
+  position: relative;
+  padding-left: 1.45em;
+}
+.seccion__intro h2::before,
+.contacto h2::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 1.05em;
+  height: 1.05em;
+  transform: translateY(-50%);
+  background: var(--violeta-600);
+  -webkit-mask: var(--diente-logo) center / contain no-repeat;
+  mask: var(--diente-logo) center / contain no-repeat;
+}
+.seccion--lavanda .seccion__intro h2::before { background: var(--ink-900); }
+
+/* ---------- Especialidades: de nuevo en lavanda ----------
+   El lavanda sólido de la portada, como lo prefería el equipo.
+   Texto en --ink-900 (único con AA sobre lavanda). El ícono va en
+   una pastilla blanca y se rellena de morado al interactuar.   */
+#especialidades {
+  position: relative;
+  background: var(--papel);
+}
+.servicios { gap: var(--e-4); }
+.servicio {
+  align-items: center;
+  padding: var(--e-5);
+  background: var(--lavanda-500);
+  border: 1px solid transparent;
+  border-radius: var(--radio-lg);
+  box-shadow: none;
+  overflow: hidden;
+  isolation: isolate;
+}
+/* Arco blanco tenue en la esquina: eco de la portada. */
+/* Diente del logo como marca de agua en la esquina. */
+.servicio::after {
+  content: '';
+  position: absolute;
+  right: -10px;
+  bottom: -14px;
+  width: 78px;
+  height: 78px;
+  background: var(--papel);
+  -webkit-mask: var(--diente-logo) center / contain no-repeat;
+  mask: var(--diente-logo) center / contain no-repeat;
+  opacity: .3;
+  z-index: -1;
+  transition: transform var(--transicion-lenta), opacity var(--transicion);
+}
+.servicio:hover,
+.servicio:focus-visible {
+  border-color: var(--violeta-600);
+  transform: translateY(-3px);
+  box-shadow: var(--sombra-realce);
+}
+.servicio:hover::after { transform: translateY(-4px) rotate(-6deg); opacity: .5; }
+.servicio__icono {
+  width: 52px;
+  height: 52px;
+  background: var(--papel);
+  color: var(--acento-texto);
+  border-radius: var(--radio-md);
+  box-shadow: var(--sombra-sutil);
+}
+.servicio:hover .servicio__icono,
+.servicio:focus-visible .servicio__icono { background: var(--degradado-marca); color: var(--sobre-marca); transform: none; }
+.servicio__nombre { font-size: var(--txt-md); }
+.servicio__desc { color: var(--ink-900); }
+
+/* ---------- Nuestros espacios ---------- */
+.seccion--lavanda { padding-block: var(--e-7); }
+.seccion__cierre {
+  font-style: italic;
+  font-size: var(--txt-lg);
+  line-height: 1.35;
+  max-width: 34ch;
+}
+
+/* ---------- Contacto: datos + portal de WhatsApp ---------- */
+#contacto { background: var(--lienzo); }
+.contacto {
+  grid-template-columns: 1.15fr 1fr;
+  align-items: stretch;
+  padding: var(--e-7);
+  gap: var(--e-7);
+  background: var(--papel);
+  border-radius: var(--radio-xl);
+}
+.contacto__lista li { padding-block: var(--e-4); font-size: var(--txt-base); }
+.contacto__lista svg { width: 44px; height: 44px; padding: 11px; background: var(--lavanda-100); border-radius: var(--radio-pill); }
+
+.aviso-wa {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 300px;
+  padding: var(--e-7) var(--e-6) var(--e-6);
+  background: var(--degradado-marca);
+  border-radius: 999px 999px var(--radio-lg) var(--radio-lg);
+  box-shadow: var(--sombra-realce);
+  text-align: center;
+}
+.aviso-wa::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 28px;
+  width: 120px;
+  height: 120px;
+  transform: translateX(-50%);
+  background: var(--sobre-marca);
+  -webkit-mask: var(--diente-logo) center / contain no-repeat;
+  mask: var(--diente-logo) center / contain no-repeat;
+  opacity: .14;
+  z-index: -1;
+}
+.aviso-wa h3 {
+  font-family: var(--fuente-titular);
+  font-size: var(--txt-lg);
+  font-weight: var(--peso-titular);
+  color: var(--sobre-marca);
+  margin-bottom: var(--e-2);
+}
+.aviso-wa p { color: var(--pie-texto); margin-inline: auto; margin-bottom: var(--e-5); }
+
+/* ---------- Pie ---------- */
+.pie h4 { font-family: var(--fuente-titular); font-weight: var(--peso-titular); font-size: var(--txt-md); }
+
+/* ---------- Diálogo de agendar ---------- */
+.modal__cabecera h2 { letter-spacing: -.01em; }
+.dia--libre { background: var(--lavanda-500); }
+
+/* ---------- Responsive de la capa de identidad ---------- */
+@media (max-width: 960px) {
+  .portada__figura { margin-top: var(--e-4); align-self: auto; }
+  .portada__figura::before { inset: -28px -8px -36px -8px; border-radius: 999px 999px var(--radio-xl) var(--radio-xl); }
+  .contacto { grid-template-columns: 1fr; padding: var(--e-5); gap: var(--e-5); }
+  .aviso-wa { min-height: 260px; }
+}
+@media (max-width: 620px) {
+  .portada__figura { padding-inline: var(--e-4); }
+  .servicio { padding: var(--e-4); }
 }

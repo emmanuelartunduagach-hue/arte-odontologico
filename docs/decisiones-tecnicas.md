@@ -578,3 +578,25 @@ color en línea del pie de `index.html`); ningún archivo `.js`.
   las ayudas pasan de `--ink-400` a `--ink-600`.
 - **Regla vigente:** los colores (incluidos los de las sombras) viven solo
   en `tokens.css`; el resto del CSS usa variables.
+
+**Ajuste del mismo día (identidad con el arco).** Tras revisarlo, el equipo
+prefirió las tarjetas de especialidades en lavanda y pidió secciones con más
+carácter. Se volvió al lavanda sólido en Especialidades y se tomó el **arco**
+(la corona del diente y el recorte de la foto de portada) como único gesto
+fuerte: un portal lavanda detrás de la foto de portada, el panel de WhatsApp
+de Contacto con forma de arco en morado, un sello de arco junto a cada título
+de sección (página pública y panel), arcos tenues en las esquinas de las
+tarjetas, íconos e iniciales con forma de arco, y una franja lavanda al inicio
+de cada sección del panel. Los datos de Inicio pasan a lavanda. Sigue siendo
+solo CSS.
+
+**Segundo ajuste (el diente del logo).** Los arcos decorativos se leían como
+un recurso genérico. Se reemplazaron por el diente del logo del consultorio
+(el mismo trazo de la textura del panel), definido una sola vez en
+`tokens.css` como máscara (`--diente-logo` y `--diente-patron`) para poder
+pintarlo con cualquier color del sistema en claro y oscuro: textura de fondo
+de «Nuestros espacios», sello junto a cada título de sección (página y
+panel), marca de agua en las tarjetas de especialidades, en los datos de
+Inicio y en el panel de WhatsApp. El arco se conserva solo donde repite el
+recorte de la foto de portada (el portal de la portada y el panel de
+WhatsApp).
