@@ -589,3 +589,14 @@ de sección (página pública y panel), arcos tenues en las esquinas de las
 tarjetas, íconos e iniciales con forma de arco, y una franja lavanda al inicio
 de cada sección del panel. Los datos de Inicio pasan a lavanda. Sigue siendo
 solo CSS.
+
+**Segundo ajuste (el diente del logo).** Los arcos decorativos se leían como
+un recurso genérico. Se reemplazaron por el diente del logo del consultorio
+(el mismo trazo de la textura del panel), definido una sola vez en
+`tokens.css` como máscara (`--diente-logo` y `--diente-patron`) para poder
+pintarlo con cualquier color del sistema en claro y oscuro: textura de fondo
+de «Nuestros espacios», sello junto a cada título de sección (página y
+panel), marca de agua en las tarjetas de especialidades, en los datos de
+Inicio y en el panel de WhatsApp. El arco se conserva solo donde repite el
+recorte de la foto de portada (el portal de la portada y el panel de
+WhatsApp).

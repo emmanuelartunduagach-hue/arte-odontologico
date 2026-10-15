@@ -1013,20 +1013,21 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 /* Sello de arco en el título de cada sección */
 .seccion-panel__titulo {
   position: relative;
-  padding-left: 30px;
+  padding-left: 1.45em;
 }
 .seccion-panel__titulo::before {
   content: '';
   position: absolute;
   left: 0;
-  top: .22em;
-  width: 16px;
-  height: .76em;
-  border: 2.5px solid var(--acento-texto);
-  border-bottom: 0;
-  border-radius: 999px 999px 0 0;
+  top: 50%;
+  width: 1.05em;
+  height: 1.05em;
+  transform: translateY(-50%);
+  background: var(--acento-texto);
+  -webkit-mask: var(--diente-logo) center / contain no-repeat;
+  mask: var(--diente-logo) center / contain no-repeat;
 }
-.seccion-panel__subtitulo { padding-left: 30px; }
+.seccion-panel__subtitulo { padding-left: calc(1.45 * clamp(1.75rem, 4vw, 2.25rem)); }
 
 /* Datos de Inicio en lavanda, con un arco blanco en la esquina */
 .dato-panel {
@@ -1038,14 +1039,14 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 .dato-panel::after {
   content: '';
   position: absolute;
-  right: -14px;
-  bottom: -40px;
-  width: 104px;
-  height: 104px;
-  border: 12px solid var(--papel);
-  border-bottom-color: transparent;
-  border-radius: 999px 999px 0 0;
-  opacity: .3;
+  right: -8px;
+  bottom: -12px;
+  width: 90px;
+  height: 90px;
+  background: var(--papel);
+  -webkit-mask: var(--diente-logo) center / contain no-repeat;
+  mask: var(--diente-logo) center / contain no-repeat;
+  opacity: .35;
   z-index: -1;
 }
 .dato-panel__numero { color: var(--ink-900); }
@@ -1053,10 +1054,10 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 .dato-panel:hover { border-color: var(--violeta-600); }
 .dato-panel--alerta { background: var(--rosa-100); }
 .dato-panel--alerta .dato-panel__numero { color: var(--rosa-700); }
-.dato-panel--alerta::after { border-color: var(--rosa-700); border-bottom-color: transparent; opacity: .12; }
+.dato-panel--alerta::after { background: var(--rosa-700); opacity: .1; }
 
 /* Iniciales de pacientes con forma de arco */
-.fila-paciente-panel__inicial { border-radius: 999px 999px var(--radio-sm) var(--radio-sm); }
+.fila-paciente-panel__inicial { border-radius: 50%; }
 
 /* Agenda y bloques: barra de filtros en lavanda clara */
 .agenda__barra { background: var(--lavanda-100); border-color: var(--lavanda-300); }
@@ -1068,6 +1069,4 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 .odontograma { background: linear-gradient(180deg, var(--lavanda-100), var(--papel)); }
 
 @media (max-width: 760px) {
-  .seccion-panel__titulo, .seccion-panel__subtitulo { padding-left: 26px; }
-  .seccion-panel__titulo::before { width: 14px; }
 }
