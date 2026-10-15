@@ -60,6 +60,7 @@
   --pie-texto: #d5c6de;
   --pie-texto-suave: #b3a0bf;
   --pie-filete: rgba(255, 255, 255, .12);
+  --linea-arco: rgba(255, 255, 255, .32);
 
   --papel: #ffffff;
   --lienzo: #fcfafd;    /* Fondo de página */
