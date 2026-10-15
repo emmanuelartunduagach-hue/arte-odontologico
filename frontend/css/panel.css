@@ -572,7 +572,6 @@ a.fila-cita__nombre:hover { color: var(--acento-texto); }
     padding: var(--e-1) var(--e-1) calc(var(--e-1) + env(safe-area-inset-bottom));
     background: var(--papel);
     border-top: 1px solid var(--borde);
-    box-shadow: 0 -6px 20px -12px rgba(31, 18, 51, 0.25);
   }
   .panel-nav a {
     position: relative;
@@ -791,4 +790,194 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
   .diente-detalle > div:last-child { justify-self: stretch; }
   .diente__caras--grande { width: 120px; height: 120px; }
   .diente { width: 40px; }
+}
+
+/* ============================================================
+   Capa visual del panel — profundidad y ritmo
+   Solo presentación: superficies con relieve, estados al pasar el
+   cursor y un menú más cuidado. No altera estructura ni
+   comportamiento. Todos los colores salen de tokens.css.
+   ============================================================ */
+
+/* Velo de color fijo detrás de todo el panel: da profundidad al
+   fondo sin competir con el contenido. */
+.pagina-panel::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--degradado-pagina);
+  pointer-events: none;
+}
+
+/* ---------- Superficie principal ---------- */
+.panel-contenido {
+  padding: var(--e-6);
+  border-radius: var(--radio-xl);
+  box-shadow: var(--sombra-media);
+}
+
+.seccion-panel__cabecera { margin-bottom: var(--e-6); }
+.seccion-panel__titulo { letter-spacing: -.02em; }
+.seccion-panel__subtitulo { font-size: var(--txt-md); }
+
+.bloque-panel { margin-top: var(--e-7); }
+.bloque-panel__titulo { font-size: var(--txt-lg); margin-bottom: var(--e-4); letter-spacing: -.01em; }
+
+/* ---------- Menú lateral ---------- */
+.panel-nav { gap: var(--e-2); }
+.panel-nav a {
+  border-radius: var(--radio-md);
+  transition: background var(--transicion), color var(--transicion), transform var(--transicion), box-shadow var(--transicion);
+}
+.panel-nav a:hover { transform: translateX(3px); background: var(--papel); box-shadow: var(--sombra-sutil); }
+.panel-nav a[aria-current="page"] {
+  background: var(--degradado-marca);
+  box-shadow: var(--brillo-interior), var(--sombra-media);
+  transform: none;
+}
+.panel-nav a[aria-current="page"]:hover { background: var(--degradado-marca); }
+
+/* ---------- Menú de la cuenta ---------- */
+.menu-cuenta__boton {
+  box-shadow: var(--sombra-sutil);
+  transition: border-color var(--transicion), box-shadow var(--transicion);
+}
+.menu-cuenta__boton:hover { box-shadow: var(--sombra-media); }
+.menu-cuenta__inicial { background: var(--degradado-marca); box-shadow: var(--brillo-interior); }
+.menu-cuenta__lista, .menu-acciones__lista {
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-flotante);
+  padding: var(--e-2);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .menu-cuenta[open] .menu-cuenta__lista,
+  .menu-acciones[open] .menu-acciones__lista { animation: aparecer-menu 160ms cubic-bezier(.2, .7, .3, 1); transform-origin: top right; }
+}
+@keyframes aparecer-menu { from { opacity: 0; transform: translateY(-4px) scale(.98); } to { opacity: 1; transform: none; } }
+
+/* ---------- Datos de Inicio ---------- */
+.datos-panel { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: var(--e-4); margin-bottom: var(--e-6); }
+.dato-panel {
+  position: relative;
+  overflow: hidden;
+  padding: var(--e-5) var(--e-6);
+  border-radius: var(--radio-lg);
+  background: var(--degradado-tarjeta);
+  box-shadow: var(--sombra-sutil);
+  transition: transform var(--transicion), box-shadow var(--transicion), border-color var(--transicion);
+}
+/* Filete de color en el borde izquierdo: marca cada dato sin ruido. */
+.dato-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--degradado-marca);
+}
+.dato-panel:hover { transform: translateY(-2px); box-shadow: var(--sombra-media); }
+.dato-panel__numero { font-size: var(--txt-2xl); letter-spacing: -.02em; }
+.dato-panel--alerta { background: var(--rosa-100); border-color: var(--rosa-100); }
+.dato-panel--alerta::before { background: var(--rosa-700); }
+
+/* ---------- Filas de citas ---------- */
+.lista-filas {
+  overflow: hidden;
+  border-radius: var(--radio-lg);
+  background: var(--papel);
+  box-shadow: var(--sombra-sutil);
+}
+.lista-filas--destacada { box-shadow: var(--anillo-foco), var(--sombra-media); }
+.fila-cita { padding: var(--e-4); gap: var(--e-2) var(--e-3); transition: background var(--transicion); }
+.fila-cita:hover { background: var(--violeta-50); }
+.fila-cita--cerrada:hover { background: var(--lienzo); }
+.fila-cita--pendiente:hover { background: var(--ambar-50); }
+
+/* Estado con un punto de color: refuerza el texto, no lo sustituye. */
+.estado, .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px var(--e-3); }
+.estado::before, .chip::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* ---------- Agenda ---------- */
+.agenda__barra {
+  padding: var(--e-4);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  background: var(--degradado-tarjeta);
+  box-shadow: var(--sombra-sutil);
+}
+.agenda__titulo-lista h2 { font-size: var(--txt-lg); }
+
+/* ---------- Pacientes y ficha ---------- */
+.lista-pacientes {
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  overflow: hidden;
+  background: var(--papel);
+  box-shadow: var(--sombra-sutil);
+}
+.fila-paciente-panel { padding: var(--e-3) var(--e-5); transition: background var(--transicion), padding var(--transicion); }
+.fila-paciente-panel:hover { padding-left: calc(var(--e-5) + 4px); }
+.fila-paciente-panel__inicial { background: var(--degradado-lavanda); color: var(--ink-900); box-shadow: var(--brillo-interior); }
+.ficha__bloque { border-radius: var(--radio-xl); box-shadow: var(--sombra-sutil); background: var(--degradado-tarjeta); }
+.nota-hc { border-radius: var(--radio-lg); box-shadow: var(--sombra-sutil); transition: box-shadow var(--transicion); }
+.nota-hc:hover { box-shadow: var(--sombra-media); }
+.ficha__motivo { border-radius: 0 var(--radio-md) var(--radio-md) 0; }
+
+/* ---------- Horarios ---------- */
+.semana__dia { border-radius: var(--radio-lg); box-shadow: var(--sombra-sutil); transition: box-shadow var(--transicion), border-color var(--transicion); }
+.semana__dia:hover { box-shadow: var(--sombra-media); border-color: var(--violeta-300); }
+.semana__dia--hoy { box-shadow: var(--anillo-foco); }
+.hora-toggle { border-radius: var(--radio-md); transition: border-color var(--transicion), background var(--transicion), transform var(--transicion); }
+.hora-toggle:hover:not(:disabled) { transform: translateY(-1px); }
+.casilla-opcion { border-radius: var(--radio-md); transition: background var(--transicion), border-color var(--transicion); }
+.casilla-opcion:hover { border-color: var(--violeta-300); }
+
+/* ---------- Pestañas y selector segmentado ---------- */
+.pestanas__item { transition: color var(--transicion), border-color var(--transicion); }
+.pestanas__item:hover { color: var(--acento-texto); }
+.segmentado { box-shadow: var(--sombra-sutil); }
+.segmentado__opcion { transition: background var(--transicion), color var(--transicion), box-shadow var(--transicion); }
+.segmentado__opcion[aria-pressed="true"] { background: var(--degradado-marca); box-shadow: var(--brillo-interior), var(--sombra-sutil); }
+
+/* ---------- Solicitudes y equipo ---------- */
+.solicitud { border-radius: var(--radio-lg); box-shadow: var(--sombra-sutil); transition: box-shadow var(--transicion); }
+.solicitud:hover { box-shadow: var(--sombra-media); }
+.solicitud__lado { border-radius: var(--radio-md); }
+.equipo { border: 1px solid var(--borde); border-radius: var(--radio-lg); overflow: hidden; background: var(--papel); box-shadow: var(--sombra-sutil); }
+.fila-equipo { transition: background var(--transicion); }
+.fila-equipo:hover { background: var(--violeta-50); }
+
+/* ---------- Mensajes, vacíos y odontograma ---------- */
+.mensaje { border-radius: var(--radio-lg); box-shadow: var(--sombra-sutil); }
+.vacio { border-radius: var(--radio-lg); background: var(--degradado-tarjeta); }
+.odontograma { border-radius: var(--radio-xl); box-shadow: var(--sombra-sutil); }
+.diente { transition: background var(--transicion), transform var(--transicion); }
+.diente:hover { transform: translateY(-2px); }
+.diente-detalle__vista { border-radius: var(--radio-lg); }
+
+/* ---------- Celular ---------- */
+@media (max-width: 760px) {
+  .panel-contenido { padding: var(--e-4); border-radius: var(--radio-lg); }
+  .panel-nav {
+    background: var(--fondo-encabezado);
+    backdrop-filter: saturate(1.6) blur(14px);
+    -webkit-backdrop-filter: saturate(1.6) blur(14px);
+    border-top: 1px solid var(--borde);
+    box-shadow: var(--sombra-barra);
+  }
+  .panel-nav a:hover { transform: none; box-shadow: none; background: none; }
+  .panel-nav a[aria-current="page"] { background: var(--violeta-100); color: var(--acento-texto); box-shadow: none; }
+  .panel-nav a[aria-current="page"]:hover { background: var(--violeta-100); }
+  .datos-panel { grid-template-columns: minmax(0, 1fr); }
+  .dato-panel { padding: var(--e-3) var(--e-5); }
+  .dato-panel__numero { font-size: var(--txt-xl); }
+  .fila-cita { padding: var(--e-3) var(--e-4); }
+  .fila-paciente-panel { padding: var(--e-3) var(--e-4); }
 }

@@ -546,3 +546,35 @@ odontograma en la historia clínica.
 - Rutas nuevas: `/api/superadmin/...` (solo el dueño),
   `GET/POST /api/pacientes/:id/odontograma`,
   `POST /api/admin/odontograma/:id/realizado` y `.../anular`.
+
+## 31. Rediseño visual con más profundidad (15 de octubre)
+
+Pedido: que la página se vea más moderna, limpia y dinámica, sin cambiar
+el contenido ni el funcionamiento ni mezclar colores. Solo se tocaron
+estilos (`css/*.css`, el bloque de estilos de `politica-datos.html` y un
+color en línea del pie de `index.html`); ningún archivo `.js`.
+
+- **Un solo color de marca.** Se mantiene el morado del logo y sus
+  lavandas. La sensación de «menos plano» sale de la profundidad, no de
+  más colores: degradados muy suaves del mismo matiz
+  (`--degradado-marca`, `--degradado-tarjeta`, `--degradado-lavanda`) y un
+  velo de color fijo detrás de cada página (`--degradado-pagina`).
+- **Elevación en cuatro niveles** (`--sombra-sutil`, `--sombra-media`,
+  `--sombra-realce`, `--sombra-flotante`), siempre con sombras en capas
+  teñidas de morado. Reposo → hover → menús y diálogos.
+- **Radios más amplios** (`--radio-sm` 8, `md` 12, `lg` 20, `xl` 28 px) y
+  controles de al menos 44–46 px de alto, cómodos para el pulgar.
+- **Movimiento discreto y con propósito:** botones y tarjetas suben 1–3 px
+  al pasar el cursor, el diálogo y los menús aparecen con un fundido
+  corto, el encabezado es de cristal esmerilado. La entrada de la portada
+  ya existente se conserva. `prefers-reduced-motion` lo apaga todo.
+- **Portada:** datos del consultorio en piezas de cristal, arco de la
+  foto con un contorno desplazado detrás y sombra flotante.
+- **Panel:** menú lateral con el elemento activo en degradado, datos de
+  Inicio con filete de color y distribución automática, listas dentro de
+  tarjetas con hover, estados con un punto de color además del texto.
+- **Accesibilidad:** se mantienen los contrastes medidos; el texto sobre
+  lavanda sigue en `--ink-900`; foco visible con halo (`--anillo-foco`);
+  las ayudas pasan de `--ink-400` a `--ink-600`.
+- **Regla vigente:** los colores (incluidos los de las sombras) viven solo
+  en `tokens.css`; el resto del CSS usa variables.

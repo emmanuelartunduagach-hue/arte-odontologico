@@ -13,25 +13,45 @@
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/base.css">
   <style>
-    .documento { max-width: 70ch; margin-inline: auto; }
-    .documento h1 { font-size: var(--txt-xl); }
-    .documento h2 { margin-top: var(--e-7); margin-bottom: var(--e-3); font-size: var(--txt-lg); }
+    /* Documento legal: tarjeta de lectura con márgenes amplios,
+       jerarquía clara y líneas de ancho cómodo. */
+    body { background-color: var(--lienzo); background-image: var(--degradado-pagina); background-attachment: fixed; }
+    .documento {
+      max-width: 780px;
+      margin-inline: auto;
+      padding: var(--e-8) var(--e-8);
+      background: var(--papel);
+      border: 1px solid var(--borde);
+      border-radius: var(--radio-xl);
+      box-shadow: var(--sombra-media);
+    }
+    .documento h1 { font-size: clamp(var(--txt-lg), 5.5vw, var(--txt-xl)); letter-spacing: -.02em; }
+    .documento h2 {
+      margin-top: var(--e-8);
+      margin-bottom: var(--e-3);
+      padding-top: var(--e-5);
+      border-top: 1px solid var(--borde);
+      font-size: var(--txt-lg);
+      scroll-margin-top: 96px;
+    }
     .documento h3 { margin-top: var(--e-5); margin-bottom: var(--e-2); font-size: var(--txt-md); }
     .documento p, .documento li { color: var(--ink-600); margin-bottom: var(--e-3); line-height: var(--alto-suelto); }
     .documento ul, .documento ol { padding-left: var(--e-5); }
     .documento ul { list-style: disc; }
     .documento ol { list-style: decimal; }
+    .documento li::marker { color: var(--violeta-300); }
     .documento strong { color: var(--ink-900); }
-    .documento table { width: 100%; border-collapse: collapse; margin-bottom: var(--e-4); font-size: var(--txt-sm); }
-    .documento th, .documento td { text-align: left; vertical-align: top; padding: var(--e-2) var(--e-3); border-bottom: 1px solid var(--borde); color: var(--ink-600); }
-    .documento th { color: var(--ink-900); font-weight: var(--peso-semi); }
+    .documento table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: var(--e-4); font-size: var(--txt-sm); border: 1px solid var(--borde); border-radius: var(--radio-md); overflow: hidden; }
+    .documento th, .documento td { text-align: left; vertical-align: top; padding: var(--e-3) var(--e-4); border-bottom: 1px solid var(--borde); color: var(--ink-600); }
+    .documento tbody tr:last-child td { border-bottom: 0; }
+    .documento th { background: var(--violeta-50); color: var(--ink-900); font-weight: var(--peso-semi); }
     .tabla-desplazable { overflow-x: auto; }
-    .indice { padding: var(--e-4) var(--e-5); background: var(--violeta-50); border-radius: var(--radio-md); margin-block: var(--e-5); }
-    .indice ol { margin: 0; }
-    .indice li { margin-bottom: var(--e-1); }
+    .indice { padding: var(--e-5) var(--e-6); background: var(--degradado-tarjeta); border: 1px solid var(--borde); border-radius: var(--radio-lg); margin-block: var(--e-6); }
+    .indice ol { margin: 0; columns: 2; column-gap: var(--e-6); }
+    .indice li { margin-bottom: var(--e-2); break-inside: avoid; }
     .vigencia { font-size: var(--txt-sm); color: var(--ink-600); margin-top: var(--e-3); }
     .borrador {
-      padding: var(--e-4);
+      padding: var(--e-4) var(--e-5);
       background: var(--ambar-100);
       color: var(--ambar-700);
       border-radius: var(--radio-md);
@@ -40,6 +60,11 @@
     }
     /* Dato que debe confirmar el consultorio antes de publicar. */
     .pendiente { background: var(--ambar-100); color: var(--ambar-700); padding: 0 4px; border-radius: 4px; font-weight: var(--peso-semi); }
+    @media (max-width: 760px) {
+      .documento { padding: var(--e-5); border-radius: var(--radio-lg); }
+      .indice { padding: var(--e-4); }
+      .indice ol { columns: 1; }
+    }
   </style>
 </head>
 <body>

@@ -181,7 +181,7 @@ Detalle en `docs/06-pruebas/pruebas.md`.
 - **Ramas:** `main` solo recibe cambios por Pull Request revisado por el otro integrante. Una rama por tarea: `feature/B-XX-descripcion`, `fix/…` o `docs/…`.
 - **Commits:** Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`).
 - **Base de datos:** todo cambio de esquema va en `schema.sql` (instalación nueva) **y** en una migración numerada (bases existentes). Se verifica que ambos caminos produzcan el mismo esquema.
-- **Estilos:** solo valores de `tokens.css`; sin colores sueltos.
+- **Estilos:** solo valores de `tokens.css`; sin colores sueltos. Desde la decisión 31 incluye tokens de elevación (`--sombra-*`), degradados (`--degradado-*`) y radios (`--radio-sm/md/lg/xl`); úsalos en lugar de escribir sombras o degradados nuevos.
 - **Código:** nombres en español, comentarios que explican el porqué, SQL con parámetros.
 - **Hora de las conexiones:** `config/db.js` pone `SET time_zone = '-05:00'` en cada conexión, para que `NOW()` y los `DEFAULT CURRENT_TIMESTAMP` guarden la hora de Colombia aunque el servidor esté en UTC.
 - **Modo oscuro del panel:** `js/tema.js` se carga en el `<head>` de las páginas con sesión y pone `data-tema="oscuro"` en `<html>`. Los colores oscuros son las mismas variables de `css/tokens.css` redefinidas bajo `:root[data-tema="oscuro"]`. Para el morado usado como texto se usa `--acento-texto` y para el texto sobre botones morados, `--sobre-marca`; no usar `--violeta-600` ni `--papel` como color de texto.
