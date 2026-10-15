@@ -14,7 +14,8 @@
 
 .portada {
   position: relative;
-  background: var(--papel);
+  background-color: var(--papel);
+  background-image: var(--degradado-pagina);
   border-bottom: 1px solid var(--borde);
   overflow: hidden;
 }
@@ -24,12 +25,12 @@
 .portada::after {
   content: '';
   position: absolute;
-  top: -18%;
-  right: -12%;
-  width: 46%;
+  top: -10%;
+  right: -10%;
+  width: 52%;
   aspect-ratio: 1;
-  background: radial-gradient(circle, var(--violeta-100) 0%, transparent 68%);
-  opacity: .75;
+  background: radial-gradient(circle, var(--lavanda-300) 0%, transparent 66%);
+  opacity: .55;
   pointer-events: none;
 }
 
@@ -51,8 +52,8 @@
    cursiva: es el recurso más repetido y no aporta jerarquía. */
 .portada__titulo {
   font-size: clamp(2.75rem, 5.6vw, 4.5rem);
-  line-height: 1.06;
-  letter-spacing: -.01em;
+  line-height: 1.04;
+  letter-spacing: -.02em;
   margin-bottom: var(--e-5);
   text-wrap: balance;
 }
@@ -78,17 +79,39 @@
 .portada__datos {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--e-6);
-  padding-top: var(--e-5);
-  border-top: 1px solid var(--borde);
+  gap: var(--e-3);
 }
 
-.dato__clave { font-size: var(--txt-xs); color: var(--ink-400); margin-bottom: 2px; }
-.dato__valor { font-size: var(--txt-sm); font-weight: var(--peso-semi); color: var(--ink-900); }
+/* Cada dato es una pieza pequeña de cristal: separa la
+   información sin recurrir a un divisor ni a iconos extra. */
+.portada__datos li {
+  padding: var(--e-3) var(--e-4);
+  background: var(--cristal);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-md);
+  box-shadow: var(--sombra-sutil);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.dato__clave { font-size: var(--txt-xs); color: var(--ink-600); margin-bottom: 2px; }
+.dato__valor { font-size: var(--txt-sm); font-weight: var(--peso-semi); color: var(--ink-900); white-space: nowrap; }
 
 /* ---------- Figura de portada ---------- */
 
-.portada__figura { position: relative; }
+.portada__figura { position: relative; isolation: isolate; }
+
+/* Anillo desplazado detrás del arco: eco de la forma de la
+   foto que da sensación de capas. Es solo contorno, no relleno. */
+.portada__figura::before {
+  content: '';
+  position: absolute;
+  inset: 18px -18px -18px 18px;
+  border: 1.5px solid var(--violeta-300);
+  border-radius: 170px 170px var(--radio-lg) var(--radio-lg);
+  opacity: .55;
+  z-index: -1;
+}
 
 /* La foto se muestra completa (sin recorte): lleva texto
    incrustado y el rostro debe verse entero. La altura sale de
@@ -98,6 +121,7 @@
   height: auto;
   border-radius: 170px 170px var(--radio-lg) var(--radio-lg);
   background: var(--violeta-100);
+  box-shadow: var(--sombra-flotante);
 }
 
 /* ---------- Textura de sección ----------
@@ -124,7 +148,7 @@
    en --ink-900: es el único color de texto que mantiene contraste
    AA sobre este fondo. La textura de arcos pasa a blanco.      */
 
-.seccion--lavanda { position: relative; background-color: var(--lavanda-500); }
+.seccion--lavanda { position: relative; background: var(--degradado-lavanda); }
 
 .seccion--lavanda::before {
   content: '';
@@ -151,6 +175,7 @@
   font-family: var(--fuente-titular);
   font-size: var(--txt-md);
   color: var(--ink-900);
+  text-wrap: balance;
 }
 
 /* ---------- Especialidades ----------
@@ -159,52 +184,61 @@
    Sin sombra por tarjeta: el color delimita. El texto va en
    --ink-900 (único con contraste AA sobre lavanda).          */
 
-.servicios { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--e-3); }
+.servicios { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--e-4); }
 
 /* Compacta para que, al pulsar "Agendar mi cita", se vean las nueve
    especialidades sin desplazarse. La sección queda justo debajo del
    encabezado fijo (≈73px). */
-#especialidades { padding-block: var(--e-6); scroll-margin-top: 73px; }
+#especialidades { padding-block: var(--e-7); scroll-margin-top: 77px; }
 #especialidades .seccion__intro { margin-bottom: var(--e-5); }
 #especialidades .seccion__intro h2 { font-size: clamp(var(--txt-lg), 3.6vw, var(--txt-xl)); }
 
 .servicio {
+  position: relative;
   display: flex;
-  gap: var(--e-3);
-  padding: var(--e-4);
-  background: var(--lavanda-500);
-  border: 1px solid transparent;
+  align-items: flex-start;
+  gap: var(--e-4);
+  padding: var(--e-5);
+  background: var(--degradado-tarjeta);
+  border: 1px solid var(--borde);
   border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-sutil);
   text-align: left;
   color: var(--ink-900);
   cursor: pointer;
   width: 100%;
-  transition: border-color var(--transicion), transform var(--transicion);
+  transition: border-color var(--transicion), transform var(--transicion), box-shadow var(--transicion);
 }
 
 .servicio:hover,
-.servicio:focus-visible { border-color: var(--violeta-600); transform: translateY(-2px); }
+.servicio:focus-visible {
+  border-color: var(--violeta-300);
+  transform: translateY(-3px);
+  box-shadow: var(--sombra-realce);
+}
+.servicio:active { transform: translateY(-1px); }
 
 .servicio__icono {
   flex-shrink: 0;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   display: grid;
   place-items: center;
-  background: var(--papel);
+  background: var(--degradado-lavanda);
   border-radius: var(--radio-md);
-  color: var(--acento-texto);
-  transition: background var(--transicion), color var(--transicion);
+  color: var(--ink-900);
+  box-shadow: var(--brillo-interior);
+  transition: background var(--transicion), color var(--transicion), transform var(--transicion);
 }
 .servicio__icono svg { width: 22px; height: 22px; }
 
-/* El icono se rellena al interactuar. Un solo cambio de estado,
-   sobre el elemento que identifica la tarjeta.               */
+/* El icono se rellena con el color de marca al interactuar:
+   un solo cambio de estado, sobre lo que identifica la tarjeta. */
 .servicio:hover .servicio__icono,
-.servicio:focus-visible .servicio__icono { background: var(--violeta-600); color: var(--sobre-marca); }
+.servicio:focus-visible .servicio__icono { background: var(--degradado-marca); color: var(--sobre-marca); transform: scale(1.05); }
 
-.servicio__nombre { display: block; font-size: var(--txt-base); font-weight: var(--peso-semi); margin-bottom: var(--e-1); }
-.servicio__desc { display: block; font-size: var(--txt-sm); color: var(--ink-900); line-height: var(--alto-normal); }
+.servicio__nombre { display: block; font-size: var(--txt-base); font-weight: var(--peso-semi); margin-bottom: var(--e-1); letter-spacing: -.005em; }
+.servicio__desc { display: block; font-size: var(--txt-sm); color: var(--ink-600); line-height: var(--alto-normal); }
 
 /* ---------- Carrusel ----------
    Las fotos conservan su proporción real (altura común, ancho
@@ -223,6 +257,8 @@
   overflow-x: auto;
   scrollbar-width: none;
   border-radius: var(--radio-lg);
+  padding-bottom: 14px;   /* deja ver la sombra de las fotos */
+  margin-bottom: -14px;
 }
 .carrusel__pista::-webkit-scrollbar { display: none; }
 
@@ -239,6 +275,7 @@
   max-width: none;
   border-radius: var(--radio-lg);
   background: var(--violeta-100);
+  box-shadow: var(--sombra-foto);
 }
 
 .carrusel--auto .carrusel__pista { overflow: hidden; }
@@ -259,9 +296,10 @@
   gap: var(--e-7);
   align-items: start;
   padding: var(--e-7);
-  background: var(--papel);
+  background: var(--degradado-tarjeta);
   border: 1px solid var(--borde);
-  border-radius: var(--radio-lg);
+  border-radius: var(--radio-xl);
+  box-shadow: var(--sombra-media);
 }
 
 .contacto__lista { margin-top: var(--e-5); }
@@ -273,11 +311,18 @@
   font-size: var(--txt-sm);
 }
 .contacto__lista li:last-child { border-bottom: 0; }
-.contacto__lista svg { width: 18px; height: 18px; color: var(--acento-texto); flex-shrink: 0; margin-top: 3px; }
+.contacto__lista svg {
+  width: 36px; height: 36px; padding: 9px;
+  color: var(--acento-texto);
+  background: var(--violeta-100);
+  border-radius: var(--radio-md);
+  flex-shrink: 0;
+}
+.contacto__lista li { align-items: center; }
 
-.aviso-wa { padding: var(--e-5); background: var(--violeta-50); border-radius: var(--radio-md); }
+.aviso-wa { padding: var(--e-5); background: var(--degradado-lavanda); border-radius: var(--radio-lg); box-shadow: var(--sombra-sutil); }
 .aviso-wa h3 { font-family: var(--fuente-ui); font-size: var(--txt-base); font-weight: var(--peso-semi); margin-bottom: var(--e-2); }
-.aviso-wa p { font-size: var(--txt-sm); color: var(--ink-600); margin-bottom: var(--e-4); }
+.aviso-wa p { font-size: var(--txt-sm); color: var(--ink-900); margin-bottom: var(--e-4); }
 
 /* ---------- Modal ---------- */
 
@@ -290,8 +335,15 @@
   display: grid;
   place-items: center;
   padding: var(--e-4);
-  background: rgba(31, 18, 51, .45);
+  background: var(--velo-modal);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  .modal:not([hidden]) { animation: aparecer-velo 200ms ease-out; }
+}
+@keyframes aparecer-velo { from { opacity: 0; } to { opacity: 1; } }
 
 .modal__panel {
   width: 100%;
@@ -299,7 +351,8 @@
   max-height: 90vh;
   overflow-y: auto;
   background: var(--papel);
-  border-radius: var(--radio-lg);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-xl);
   box-shadow: var(--sombra-flotante);
   padding: var(--e-6);
 }
@@ -329,8 +382,13 @@
   border: 0;
   cursor: pointer;
   color: var(--ink-400);
-  padding: var(--e-1);
-  border-radius: var(--radio-sm);
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: var(--radio-pill);
+  transition: background var(--transicion), color var(--transicion);
 }
 .modal__cerrar:hover { background: var(--violeta-100); color: var(--ink-900); }
 
@@ -363,7 +421,7 @@
    y .rejilla-2 de base/landing. */
 
 .seccion[id] { scroll-margin-top: 80px; }
-#especialidades.seccion[id] { scroll-margin-top: 73px; }
+#especialidades.seccion[id] { scroll-margin-top: 77px; }
 
 .modal__panel--ancho { max-width: 600px; }
 
@@ -387,9 +445,10 @@
   gap: var(--e-2);
   padding: var(--e-4);
   margin-bottom: var(--e-5);
-  background: var(--violeta-50);
+  background: var(--degradado-tarjeta);
   border: 1px solid var(--borde);
-  border-radius: var(--radio-md);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra-sutil);
 }
 .resumen__item { display: flex; flex-wrap: wrap; gap: var(--e-1) var(--e-3); align-items: baseline; font-size: var(--txt-sm); }
 .resumen dt { min-width: 8em; color: var(--ink-600); }
@@ -413,15 +472,16 @@
   align-items: center;
   padding: var(--e-4);
   background: var(--papel);
-  border: 1px solid var(--borde-fuerte);
+  border: 1px solid var(--borde);
   border-radius: var(--radio-md);
+  box-shadow: var(--sombra-sutil);
   font-weight: var(--peso-semi);
   text-align: left;
   cursor: pointer;
-  transition: border-color var(--transicion), background var(--transicion);
+  transition: border-color var(--transicion), background var(--transicion), transform var(--transicion), box-shadow var(--transicion);
 }
 .opcion:hover,
-.opcion:focus-visible { border-color: var(--violeta-600); background: var(--violeta-50); }
+.opcion:focus-visible { border-color: var(--violeta-300); background: var(--violeta-50); transform: translateX(3px); box-shadow: var(--sombra-media); }
 
 /* Calendario: los días con horas libres van en lavanda; el resto, apagado y sin acción */
 .calendario { margin-bottom: var(--e-4); }
@@ -437,7 +497,10 @@
   border: 1px solid var(--borde-fuerte);
   border-radius: var(--radio-pill);
   cursor: pointer;
+  box-shadow: var(--sombra-sutil);
+  transition: background var(--transicion), border-color var(--transicion), transform var(--transicion);
 }
+.calendario__nav:hover:not(:disabled) { background: var(--violeta-50); border-color: var(--violeta-300); transform: scale(1.06); }
 .calendario__nav svg { width: 18px; height: 18px; }
 .calendario__nav:disabled { opacity: .4; cursor: not-allowed; }
 .calendario__rejilla { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--e-1); }
@@ -454,9 +517,10 @@
   font-size: var(--txt-sm);
   cursor: default;
 }
-.dia--libre { background: var(--lavanda-500); color: var(--ink-900); font-weight: var(--peso-semi); cursor: pointer; }
-.dia--libre:hover { background: var(--violeta-600); color: var(--sobre-marca); }
-.dia[aria-pressed="true"] { background: var(--violeta-600); color: var(--sobre-marca); }
+.dia { transition: background var(--transicion), color var(--transicion), transform var(--transicion), box-shadow var(--transicion); }
+.dia--libre { background: var(--degradado-lavanda); color: var(--ink-900); font-weight: var(--peso-semi); cursor: pointer; }
+.dia--libre:hover { background: var(--degradado-marca); color: var(--sobre-marca); transform: translateY(-1px); box-shadow: var(--sombra-media); }
+.dia[aria-pressed="true"] { background: var(--degradado-marca); color: var(--sobre-marca); box-shadow: var(--sombra-media); }
 .calendario__ayuda { margin-top: var(--e-3); font-size: var(--txt-xs); color: var(--ink-600); }
 
 /* Horas */
@@ -465,15 +529,16 @@
   padding: var(--e-2) var(--e-4);
   background: var(--papel);
   color: var(--acento-texto);
-  border: 1px solid var(--violeta-600);
+  border: 1px solid var(--violeta-300);
   border-radius: var(--radio-pill);
   font-size: var(--txt-sm);
   font-weight: var(--peso-semi);
   cursor: pointer;
-  transition: background var(--transicion), color var(--transicion);
+  box-shadow: var(--sombra-sutil);
+  transition: background var(--transicion), color var(--transicion), border-color var(--transicion), transform var(--transicion), box-shadow var(--transicion);
 }
 .hora:hover,
-.hora:focus-visible { background: var(--violeta-600); color: var(--sobre-marca); }
+.hora:focus-visible { background: var(--degradado-marca); border-color: transparent; color: var(--sobre-marca); transform: translateY(-1px); box-shadow: var(--sombra-media); }
 
 /* Avisos */
 .alerta {
@@ -483,6 +548,7 @@
   border-radius: var(--radio-md);
   color: var(--rosa-700);
   font-size: var(--txt-sm);
+  line-height: var(--alto-normal);
 }
 .alerta[hidden] { display: none; }
 .alerta--info { background: var(--violeta-50); color: var(--ink-900); }
@@ -537,7 +603,9 @@
 @media (max-width: 620px) {
   .servicios { grid-template-columns: 1fr; }
   .rejilla-2 { grid-template-columns: 1fr; }
-  .portada__datos { gap: var(--e-5); }
+  .portada__datos { display: grid; grid-template-columns: 1fr 1fr; }
+  .portada__datos li:first-child { grid-column: 1 / -1; }
+  .dato__valor { white-space: normal; }
   .encabezado__acciones .btn { padding-inline: var(--e-4); }
 }
 
@@ -545,14 +613,15 @@
 /* ---------- Gestionar mi cita (gestionar-cita.html) ---------- */
 
 /* El fondo lila cubre toda la pantalla, también en celulares altos. */
-.pagina-gestion { background: var(--violeta-50); }
-.gestion { padding-block: var(--e-8); min-height: calc(100vh - 72px); min-height: calc(100dvh - 72px); background: var(--violeta-50); }
+.pagina-gestion { background-color: var(--violeta-50); background-image: var(--degradado-pagina); background-attachment: fixed; }
+.gestion { padding-block: var(--e-8); min-height: calc(100vh - 72px); min-height: calc(100dvh - 76px); background: transparent; }
 .gestion__tarjeta {
   max-width: 640px;
   margin-inline: auto;
   padding: var(--e-6);
   background: var(--papel);
-  border-radius: var(--radio-lg);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-xl);
   box-shadow: var(--sombra-flotante);
 }
 .gestion__titulo { font-size: clamp(var(--txt-lg), 5vw, var(--txt-xl)); line-height: 1.15; margin-bottom: var(--e-5); }
