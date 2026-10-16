@@ -78,7 +78,11 @@ async function montarDisponibilidad(cuerpo) {
     }
   }
   if (!disponibilidad.especialistas.length) {
-    pintarEn(contenido, el('div', { class: 'vacio' }, el('p', { texto: 'Aún no hay especialistas activos. Regístralos primero.' })));
+    pintarEn(contenido, el('div', { class: 'vacio' },
+      el('p', { texto: esDueno(sesion?.usuario)
+        ? 'Aún no hay especialistas activos. Regístralos primero en Especialistas.'
+        : 'Aún no hay especialistas activos. Pídele a la dueña que los registre.' }),
+      esDueno(sesion?.usuario) && el('a', { class: 'btn btn--primario btn--compacto', href: '#especialistas', texto: 'Ir a Especialistas' })));
     return;
   }
   if (!disponibilidad.especialistas.some((e) => e.id === disponibilidad.especialistaId)) {

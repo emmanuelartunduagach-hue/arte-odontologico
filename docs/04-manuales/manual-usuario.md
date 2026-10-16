@@ -72,6 +72,7 @@ Al iniciar sesión se abre el panel. En computador el menú está a la izquierda
 | **Pacientes** | Buscar, registrar y abrir la ficha de cada paciente. |
 | **Horarios** | Publicar las horas en que cada especialista atiende. |
 | **Solicitudes** (solo el dueño) | Aprobar o rechazar las correcciones a la historia clínica y las anulaciones del odontograma que piden los administradores. Un número rojo indica cuántas hay. |
+| **Especialistas** (solo el dueño) | Registrar a los odontólogos que atienden, con foto, título y las especialidades que cubren. |
 | **Equipo** (solo el dueño) | Agregar, editar, desactivar y eliminar administradores. |
 
 Arriba a la derecha está el **menú de la cuenta**: modo oscuro o claro, cambiar contraseña y cerrar sesión.
@@ -287,9 +288,30 @@ En **Opciones** de cada persona:
 
 La cuenta del dueño no aparece aquí: solo la crea o la modifica el equipo técnico.
 
-## 5.13 Especialidades y especialistas
+## 5.13 Especialistas (dueño)
 
-En esta versión las especialidades y los especialistas **los configura el equipo técnico** al poner el sistema en marcha o cuando el consultorio lo pida (por ejemplo, para agregar un nuevo especialista o cambiar la descripción de una especialidad). El panel de la secretaria solo administra citas, pacientes y horarios. Una pantalla para que el consultorio los edite por sí mismo está prevista para una versión posterior.
+En **Especialistas** el dueño registra a los odontólogos que atienden en el consultorio. Cada uno aparece en una tarjeta con su foto (o la inicial de su nombre), su título y las especialidades que cubre. Este perfil **solo lo ve el dueño**: al paciente, cuando agenda, solo le aparece el nombre.
+
+![Especialistas del consultorio.](../capturas/manual/s21-especialistas.png){width=90%}
+
+**Agregar un especialista:**
+
+1. Toque **Agregar especialista**.
+2. Con **Elegir foto** escoja una imagen del computador o del celular (JPG, PNG o WEBP de hasta 5 MB). El sistema la recorta en cuadrado y la reduce sola; con **Quitar foto** se descarta.
+3. Escriba el **nombre completo** y, si quiere, el **título o cargo** (por ejemplo, «Odontóloga · Ortodoncista»).
+4. Marque las **especialidades que atiende** (al menos una).
+5. Toque **Agregar especialista**.
+
+![Agregar o editar un especialista.](../capturas/manual/s22-especialista-formulario.png){width=60%}
+
+Para que aparezca al agendar, después hay que **publicar sus horas** en **Horarios** (sección 5.9).
+
+En **Opciones** de cada especialista:
+
+- **Editar perfil:** cambiar foto, nombre, título o especialidades.
+- **Desactivar / Activar:** un especialista desactivado deja de aparecer para agendar, pero sus citas y su historial se conservan. No se borra, porque las citas antiguas lo necesitan.
+
+Las **especialidades** (los servicios de la página principal) las sigue configurando el equipo técnico cuando el consultorio lo pida.
 
 # 6. Gestión de usuarios
 

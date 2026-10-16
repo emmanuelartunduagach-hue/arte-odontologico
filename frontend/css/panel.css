@@ -1070,3 +1070,111 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 
 @media (max-width: 760px) {
 }
+
+/* ============================================================
+   Especialistas (solo la dueña): tarjetas con foto y su formulario
+   ============================================================ */
+.especialistas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: var(--e-4);
+}
+.especialista {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--e-4);
+  padding: var(--e-5);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  background: var(--degradado-tarjeta);
+  box-shadow: var(--sombra-sutil);
+  transition: box-shadow var(--transicion), border-color var(--transicion);
+}
+.especialista:hover { box-shadow: var(--sombra-media); border-color: var(--violeta-300); }
+.especialista--inactivo { opacity: .72; }
+.especialista__datos { display: grid; gap: var(--e-1); min-width: 0; }
+.especialista__nombre { font-weight: var(--peso-semi); font-size: var(--txt-md); color: var(--ink-900); overflow-wrap: anywhere; }
+.especialista__titulo { font-size: var(--txt-sm); color: var(--ink-600); }
+.especialista__especialidades { list-style: none; margin: var(--e-2) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--e-1); }
+.especialista__nombre { padding-right: 84px; }   /* deja libre la esquina de "Opciones" */
+.especialista__menu { position: absolute; top: var(--e-3); right: var(--e-3); }
+.especialista__menu .menu-acciones__lista { min-width: 160px; }
+.chip-especialidad {
+  padding: 2px var(--e-3);
+  border-radius: var(--radio-pill);
+  background: var(--lavanda-100);
+  border: 1px solid var(--lavanda-300);
+  color: var(--ink-900);
+  font-size: var(--txt-xs);
+  font-weight: var(--peso-medio);
+  white-space: nowrap;
+}
+.chip-especialidad--vacia { background: var(--rosa-100); border-color: var(--rosa-100); color: var(--rosa-700); }
+
+/* Retrato: foto redonda o la inicial sobre lavanda */
+.retrato {
+  width: 64px;
+  height: 64px;
+  max-width: none;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--lavanda-100);
+  box-shadow: 0 0 0 3px var(--papel), 0 0 0 4px var(--lavanda-300);
+}
+.retrato--inicial {
+  display: grid;
+  place-items: center;
+  background: var(--degradado-lavanda);
+  color: var(--ink-900);
+  font-family: var(--fuente-titular);
+  font-size: var(--txt-lg);
+}
+.retrato--grande { width: 112px; height: 112px; font-size: var(--txt-2xl); }
+.retrato--inicial svg { width: 55%; height: 55%; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; opacity: .7; }
+.foto-editor [hidden] { display: none; }
+
+/* Formulario: la foto arriba, con sus botones al lado */
+.foto-editor {
+  display: flex;
+  align-items: center;
+  gap: var(--e-5);
+  margin-bottom: var(--e-5);
+  padding: var(--e-4);
+  border: 1px dashed var(--borde-fuerte);
+  border-radius: var(--radio-lg);
+  background: var(--lavanda-100);
+}
+.foto-editor__vista { flex-shrink: 0; }
+.foto-editor__acciones { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2); min-width: 0; }
+.foto-editor__acciones .campo__ayuda,
+.foto-editor__acciones .campo__error { flex-basis: 100%; margin: 0; }
+.foto-editor__acciones label.btn { cursor: pointer; }
+.foto-editor__acciones label.btn:focus-visible { outline: 2px solid var(--violeta-600); outline-offset: 3px; }
+.form-especialista fieldset.campo { margin-top: var(--e-2); }
+
+@media (max-width: 560px) {
+  .especialista { padding: var(--e-4); }
+  .foto-editor { flex-direction: column; text-align: center; }
+  .foto-editor__acciones { justify-content: center; }
+}
+
+/* Celular: con Especialistas el menú de la dueña tiene 7 opciones; la
+   barra se desliza de lado (mostrarSeccion deja visible la activa). */
+@media (max-width: 760px) {
+  .pagina-panel--dueno .panel-nav {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(64px, 1fr);
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+  .pagina-panel--dueno .panel-nav::-webkit-scrollbar { display: none; }
+  .pagina-panel--dueno .panel-nav a { scroll-snap-align: start; padding-inline: var(--e-1); }
+}

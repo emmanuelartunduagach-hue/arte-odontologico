@@ -18,9 +18,8 @@ router.get('/especialidades', especialidades.listarTodas);
 router.post('/especialidades', especialidades.crear);
 router.patch('/especialidades/:id', especialidades.actualizar);
 
+// Crear y editar especialistas es solo de la dueña (/superadmin/especialistas).
 router.get('/especialistas', especialistas.listarTodos);
-router.post('/especialistas', especialistas.crear);
-router.patch('/especialistas/:id', especialistas.actualizar);
 router.get('/especialistas/:id/franjas', especialistas.listarFranjas);
 router.post('/especialistas/:id/franjas', especialistas.publicarFranjas);
 router.delete('/franjas/:id', especialistas.quitarFranja);

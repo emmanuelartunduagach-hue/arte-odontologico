@@ -1,7 +1,8 @@
 /* Especialistas y su disponibilidad.
    Públicos: calendario del mes y horas libres de un día.
-   Secretaria: registrar especialistas, asignar especialidades y
-   publicar o quitar horas a mano. */
+   Secretaria: ver los especialistas y publicar o quitar horas a mano.
+   Dueña (superadmin): registrar y editar especialistas, con su perfil
+   interno (título y foto) y sus especialidades. */
 const especialistaModelo = require('../models/especialista.model');
 const servicioModelo = require('../models/servicio.model');
 const franjaModelo = require('../models/franja.model');
@@ -59,6 +60,11 @@ async function validarEspecialista(cuerpo, { parcial }) {
     }
     datos.nombre = nombre;
   }
+  if (cuerpo.titulo !== undefined) {
+    const titulo = cuerpo.titulo === null ? '' : normalizarNombre(cuerpo.titulo);
+    if (titulo.length > 120) errores.titulo = 'El título puede tener hasta 120 caracteres.';
+    datos.titulo = titulo || null;
+  }
   if (cuerpo.activo !== undefined) {
     if (typeof cuerpo.activo !== 'boolean') errores.activo = 'Debe ser verdadero o falso.';
     datos.activo = cuerpo.activo;
@@ -96,14 +102,14 @@ async function crear(req, res, next) {
   try {
     const datos = await validarEspecialista(req.body || {}, { parcial: false });
     const id = await especialistaModelo.crear(datos);
-    const creado = (await especialistaModelo.listarTodos()).find((e) => e.id === id);
+    const creado = (await especialistaModelo.listarPerfiles()).find((e) => e.id === id);
     res.status(201).json(creado);
   } catch (error) {
     next(error);
   }
 }
 
-/* PATCH /api/admin/especialistas/:id   { nombre?, activo?, especialidadIds? } */
+/* PATCH /api/superadmin/especialistas/:id   { nombre?, titulo?, activo?, especialidadIds? } */
 async function actualizar(req, res, next) {
   try {
     const id = aId(req.params.id);
@@ -112,7 +118,7 @@ async function actualizar(req, res, next) {
     }
     const datos = await validarEspecialista(req.body || {}, { parcial: true });
     await especialistaModelo.actualizar(id, datos);
-    res.json((await especialistaModelo.listarTodos()).find((e) => e.id === id));
+    res.json((await especialistaModelo.listarPerfiles()).find((e) => e.id === id));
   } catch (error) {
     next(error);
   }
@@ -201,7 +207,68 @@ async function quitarFranja(req, res, next) {
   }
 }
 
+/* ---------- Dueña: perfil ---------- */
+
+/* GET /api/superadmin/especialistas   todos, con título y foto */
+async function listarPerfiles(req, res, next) {
+  try {
+    res.json(await especialistaModelo.listarPerfiles());
+  } catch (error) {
+    next(error);
+  }
+}
+
+const TIPOS_FOTO = {
+  'image/jpeg': (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff,
+  'image/png': (b) => b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])),
+  'image/webp': (b) => b.subarray(0, 4).toString('latin1') === 'RIFF' && b.subarray(8, 12).toString('latin1') === 'WEBP',
+};
+const MAX_FOTO_BYTES = 300 * 1024;   // el panel la manda reducida (≈ 30–60 KB)
+
+/* PUT /api/superadmin/especialistas/:id/foto   { imagen: 'data:image/jpeg;base64,…' }
+   Se aceptan JPG, PNG y WEBP. Además del tipo declarado se revisan los
+   primeros bytes del archivo, para no guardar algo que no sea una imagen. */
+async function subirFoto(req, res, next) {
+  try {
+    const id = aId(req.params.id);
+    if (!id || !(await especialistaModelo.buscarPorId(id))) {
+      throw new ErrorHttp(404, 'Especialista no encontrado.');
+    }
+    const texto = typeof req.body?.imagen === 'string' ? req.body.imagen : '';
+    const partes = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(texto);
+    if (!partes) throw new ErrorHttp(400, 'La foto debe ser una imagen JPG, PNG o WEBP.');
+    const contenido = Buffer.from(partes[2], 'base64');
+    if (contenido.length === 0 || !TIPOS_FOTO[partes[1]](contenido)) {
+      throw new ErrorHttp(400, 'El archivo no es una imagen válida.');
+    }
+    if (contenido.length > MAX_FOTO_BYTES) {
+      throw new ErrorHttp(413, 'La foto es demasiado grande. Prueba con otra imagen.');
+    }
+    await especialistaModelo.guardarFoto(id, contenido, partes[1]);
+    res.json((await especialistaModelo.listarPerfiles()).find((e) => e.id === id));
+  } catch (error) {
+    next(error);
+  }
+}
+
+/* DELETE /api/superadmin/especialistas/:id/foto */
+async function quitarFoto(req, res, next) {
+  try {
+    const id = aId(req.params.id);
+    if (!id || !(await especialistaModelo.buscarPorId(id))) {
+      throw new ErrorHttp(404, 'Especialista no encontrado.');
+    }
+    await especialistaModelo.quitarFoto(id);
+    res.json((await especialistaModelo.listarPerfiles()).find((e) => e.id === id));
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
+  listarPerfiles,
+  subirFoto,
+  quitarFoto,
   calendario,
   horas,
   listarTodos,

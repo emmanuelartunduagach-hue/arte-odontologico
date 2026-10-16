@@ -61,6 +61,8 @@ Ficha de cada paciente, sin usuario ni contraseña. Se crea sola cuando pide su 
 ### `especialistas` y `especialista_especialidad`
 Odontólogos que atienden. No tienen usuario. La tabla intermedia (llave primaria compuesta) permite que un especialista atienda varias especialidades.
 
+Perfil interno, que solo ve la dueña (migración 007): `titulo` (opcional, hasta 120 caracteres), `foto` (`MEDIUMBLOB`, JPG de 400×400 px que reduce el panel) y `foto_tipo` (`image/jpeg`, `image/png` o `image/webp`). La foto vive en la base y no como archivo porque el servidor publicado borra los archivos en cada despliegue. `actualizado_en` registra el último cambio.
+
 ### `sedes`
 Una fila activa: Rivera (Carrera 7 No. 3-61). La tabla se conserva por si el consultorio abre otra sede.
 

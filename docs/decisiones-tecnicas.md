@@ -600,3 +600,32 @@ panel), marca de agua en las tarjetas de especialidades, en los datos de
 Inicio y en el panel de WhatsApp. El arco se conserva solo donde repite el
 recorte de la foto de portada (el portal de la portada y el panel de
 WhatsApp).
+
+## 32. La dueña administra a los especialistas, con perfil y foto (16 de octubre)
+
+Al publicar el sistema se vio que no había forma de registrar especialistas
+desde el panel: la API existía (`/admin/especialistas`), pero nunca se hizo
+la pantalla, y la decisión anterior dejaba esa tarea al equipo técnico.
+
+- **Solo la dueña.** Crear y editar especialistas pasa a `/superadmin/especialistas`
+  y sale de `/admin`. La secretaria sigue viendo la lista (la usa en Agenda y
+  Horarios) pero ya no la modifica.
+- **Sección nueva «Especialistas»** en el menú de la dueña, entre Solicitudes y
+  Equipo: tarjetas con foto, nombre, título y especialidades; agregar, editar
+  y desactivar (nunca borrar: las citas antiguas lo necesitan).
+- **Perfil interno, sin datos de más.** Se agregan solo **título o cargo**
+  (opcional) y **foto**. Se descartaron presentación, registro profesional,
+  teléfono y correo: nadie fuera de la dueña los vería y no se usan para nada;
+  entre menos datos personales, menos obligaciones (Ley 1581 de 2012). Nada del
+  perfil se muestra al paciente: la parte pública sigue entregando solo
+  `{ id, nombre }`.
+- **La foto va en la base de datos** (`MEDIUMBLOB`, migración 007), no como
+  archivo: el servidor publicado borra los archivos subidos en cada despliegue,
+  y así además entra en los respaldos. El navegador la recorta en cuadrado (un
+  poco hacia arriba si es vertical, donde suele estar la cara) y la reduce a
+  400×400 px en JPG antes de subirla (unos 20–60 KB). El servidor acepta solo
+  JPG, PNG o WEBP, revisa los primeros bytes del archivo además del tipo
+  declarado y rechaza más de 300 KB. Solo esa ruta acepta cuerpos de hasta
+  500 KB; el resto de la API sigue limitada a 100 KB.
+- Si no hay especialistas activos, Horarios lo explica y a la dueña le ofrece
+  ir a Especialistas.

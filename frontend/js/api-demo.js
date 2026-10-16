@@ -11,7 +11,7 @@
    Para probar el error de "ya tiene una cita activa" usa el documento
    999999999.
    Cuentas (clave Demo1234): secretaria@demo.co (administrador) y
-   dueno@demo.co (dueño, superadmin: Solicitudes y Equipo). */
+   dueno@demo.co (dueño, superadmin: Solicitudes, Especialistas y Equipo). */
 
 (function () {
   const esLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
@@ -209,10 +209,12 @@
   // Agenda de la secretaria: citas de ayer a 6 días, en memoria (se
   // pierden al recargar). Ortodoncia la atienden los especialistas 31 y 32.
   const ESPECIALISTAS_ADMIN = [
-    { id: 31, nombre: 'Dra. Prueba Uno', activo: true, especialidades: [{ id: 3, nombre: 'Ortodoncia' }] },
-    { id: 32, nombre: 'Dr. Prueba Dos', activo: true, especialidades: [{ id: 3, nombre: 'Ortodoncia' }, { id: 1, nombre: 'Odontología general' }] },
-    { id: 11, nombre: 'Dra. Prueba Tres', activo: false, especialidades: [{ id: 1, nombre: 'Odontología general' }] },
+    { id: 31, nombre: 'Dra. Prueba Uno', titulo: 'Odontóloga · Ortodoncista', foto: null, activo: true, especialidades: [{ id: 3, nombre: 'Ortodoncia' }] },
+    { id: 32, nombre: 'Dr. Prueba Dos', titulo: null, foto: null, activo: true, especialidades: [{ id: 3, nombre: 'Ortodoncia' }, { id: 1, nombre: 'Odontología general' }] },
+    { id: 11, nombre: 'Dra. Prueba Tres', titulo: 'Odontóloga general', foto: null, activo: false, especialidades: [{ id: 1, nombre: 'Odontología general' }] },
   ];
+  // Lo que ve la secretaria: sin perfil (título y foto son de la dueña).
+  const especialistaSinPerfil = ({ titulo, foto, ...resto }) => ({ ...resto, especialidades: resto.especialidades.map((x) => ({ ...x })) });
   let AGENDA = null;
   function agendaDemo() {
     if (AGENDA) return AGENDA;
@@ -439,7 +441,12 @@
 
     if (metodo === 'GET' && url.pathname === '/admin/especialistas') {
       exigir('administrador');
-      return ESPECIALISTAS_ADMIN;
+      return ESPECIALISTAS_ADMIN.map(especialistaSinPerfil);
+    }
+
+    if (metodo === 'GET' && url.pathname === '/admin/especialidades') {
+      exigir('administrador');
+      return ESPECIALIDADES.map((x) => ({ ...x, activo: true }));
     }
 
     // Agendar a un paciente desde su ficha: queda confirmada.
@@ -620,6 +627,41 @@
         if (!h || h.anulacion !== 'pendiente') throw new ErrorApi('Esta solicitud ya fue revisada.', 409);
         Object.assign(h, { anulacion: aprobar ? 'aprobada' : 'rechazada', anulacionRevisadaPor: usuario.nombre, anulacionRevisadaEn: ahoraTexto(), anulacionRechazo: aprobar ? null : motivo });
         return { mensaje: aprobar ? 'Anulación aprobada.' : 'Anulación rechazada.' };
+      }
+      if (partes[1] === 'especialistas') {
+        const copia = (e) => ({ ...e, especialidades: e.especialidades.map((x) => ({ ...x })) });
+        if (metodo === 'GET' && !partes[2]) return ESPECIALISTAS_ADMIN.map(copia);
+        const datosEspecialista = (parcial) => {
+          const errores = {};
+          const datos = {};
+          if (!parcial || cuerpo.nombre !== undefined) {
+            datos.nombre = String(cuerpo.nombre || '').trim().replace(/\s+/g, ' ');
+            if (datos.nombre.length < 3) errores.nombre = 'Escribe el nombre del especialista (entre 3 y 120 caracteres).';
+          }
+          if (cuerpo.titulo !== undefined) datos.titulo = String(cuerpo.titulo || '').trim().replace(/\s+/g, ' ') || null;
+          if (cuerpo.activo !== undefined) datos.activo = cuerpo.activo;
+          if (!parcial || cuerpo.especialidadIds !== undefined) {
+            const ids = [...new Set((cuerpo.especialidadIds || []).map(Number))];
+            if (!ids.length) errores.especialidadIds = 'Elige al menos una especialidad.';
+            datos.especialidades = ids.map((id) => ({ id, nombre: ESPECIALIDADES.find((x) => x.id === id)?.nombre }));
+          }
+          if (Object.keys(errores).length) throw new ErrorApi('Revisa los datos del formulario.', 400, errores);
+          return datos;
+        };
+        if (metodo === 'POST' && !partes[2]) {
+          const nuevo = { id: Math.max(...ESPECIALISTAS_ADMIN.map((e) => e.id)) + 1, titulo: null, foto: null, activo: true, ...datosEspecialista(false) };
+          ESPECIALISTAS_ADMIN.push(nuevo);
+          return copia(nuevo);
+        }
+        const esp = ESPECIALISTAS_ADMIN.find((e) => e.id === Number(partes[2]));
+        if (!esp) throw new ErrorApi('Especialista no encontrado.', 404);
+        if (metodo === 'PATCH' && !partes[3]) { Object.assign(esp, datosEspecialista(true)); return copia(esp); }
+        if (partes[3] === 'foto' && metodo === 'PUT') {
+          if (!/^data:image\/(jpeg|png|webp);base64,/.test(cuerpo?.imagen || '')) throw new ErrorApi('La foto debe ser una imagen JPG, PNG o WEBP.', 400);
+          esp.foto = cuerpo.imagen;
+          return copia(esp);
+        }
+        if (partes[3] === 'foto' && metodo === 'DELETE') { esp.foto = null; return copia(esp); }
       }
       if (partes[1] === 'administradores') {
         const limpio = ({ conRegistros, ...a }) => ({ ...a });

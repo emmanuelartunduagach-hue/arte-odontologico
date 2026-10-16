@@ -139,11 +139,17 @@ CREATE TABLE sedes (
 --  Odontólogos que atienden. No inician sesión: solo los
 --  registra y administra la secretaria (rol administrador).
 -- ------------------------------------------------------------
+-- Perfil interno (solo lo ve la dueña): título y foto. La foto va en
+-- la base, reducida a 400×400 px por el panel (migración 007).
 CREATE TABLE especialistas (
-  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-  nombre     VARCHAR(120) NOT NULL,
-  activo     BOOLEAN NOT NULL DEFAULT TRUE,
-  creado_en  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  nombre         VARCHAR(120) NOT NULL,
+  titulo         VARCHAR(120) NULL,
+  foto           MEDIUMBLOB   NULL,
+  foto_tipo      VARCHAR(20)  NULL,
+  activo         BOOLEAN NOT NULL DEFAULT TRUE,
+  creado_en      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  actualizado_en DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
 -- Un especialista puede atender varias especialidades y una
