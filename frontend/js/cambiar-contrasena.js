@@ -90,10 +90,11 @@ function pintarFormulario() {
     }
   });
 
-  cuerpo.replaceChildren(
+  // Sin el filtro, el `false` de un aviso que no aplica se pintaba como texto.
+  cuerpo.replaceChildren(...[
     el('h1', { class: 'gestion__titulo', texto: obligado ? 'Crea tu contraseña' : 'Cambiar contraseña' }),
     obligado && el('p', { class: 'gestion__intro', texto: 'Ingresaste con una contraseña temporal. Antes de continuar, elige una contraseña propia.' }),
-    form);
+    form].filter(Boolean));
   form.contrasenaActual.focus();
 }
 
