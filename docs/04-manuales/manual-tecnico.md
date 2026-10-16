@@ -98,7 +98,8 @@ Todas las rutas cuelgan de `/api` y responden JSON. El contrato completo con eje
 | Pacientes | `POST /pacientes` · `GET /pacientes?q=` · `GET /pacientes/:id` | Rol administrador |
 | Historia clínica | `GET/POST /pacientes/:id/historia` · `POST /admin/historia/:id/correccion` | Rol administrador |
 | Especialidades | `GET/POST /admin/especialidades` · `PATCH /admin/especialidades/:id` | Rol administrador |
-| Especialistas | `GET/POST /admin/especialistas` · `PATCH /admin/especialistas/:id` | Rol administrador |
+| Especialistas | `GET /admin/especialistas` (lista) | Rol administrador |
+| Especialistas: crear, editar y foto | `GET/POST /superadmin/especialistas` · `PATCH /superadmin/especialistas/:id` · `PUT/DELETE /superadmin/especialistas/:id/foto` | Solo la dueña (superadmin) |
 | Disponibilidad | `GET/POST /admin/especialistas/:id/franjas` · `DELETE /admin/franjas/:id` | Rol administrador |
 | Agenda | `GET /admin/citas` · `PATCH /admin/citas/:id/estado` · `POST /admin/citas/:id/reprogramar` | Rol administrador |
 | Mensajes | `GET /admin/notificaciones` · `PATCH /admin/notificaciones/:id` · `POST /admin/recordatorios` | Rol administrador |

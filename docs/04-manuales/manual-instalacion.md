@@ -72,6 +72,7 @@ Si la base se creó con una versión anterior del proyecto, ejecutar **una sola 
 | `004_datos_paciente_y_hora_anterior.sql` | Nombres y apellidos por separado, tipo de documento, teléfono fijo y motivo de consulta; hora anterior de las citas que el paciente reprograma. Conserva los datos: parte el nombre que ya existía y deja el tipo de documento en CC |
 | `005_citas_confirmadas_al_pedir.sql` | Las citas de la web nacen confirmadas: columna `origen` (web o consultorio) y estado por defecto `confirmada`. Las pendientes que existan se mantienen para aceptarlas o rechazarlas |
 | `006_superadmin_y_odontograma.sql` | Rol del dueño (`superadmin`), estado de las correcciones de la historia (pendiente, vigente, rechazada) y tabla `odontograma`. Conserva los datos: las entradas existentes quedan vigentes |
+| `007_perfil_especialistas.sql` | Título y foto de los especialistas (los administra la dueña desde su panel). Solo agrega columnas: no toca los datos |
 
 Antes de una migración, saca un respaldo. En PowerShell de Windows (ajusta la versión de la carpeta si no es 8.0):
 
@@ -271,7 +272,7 @@ Plan **Hobby**: USD 5 al mes, que incluyen USD 5 de consumo; una app pequeña co
    & "$bin\mysql.exe" -h HOST_PUBLICO -P PUERTO_PUBLICO -u root -p -e "source backend/database/schema.sql"
    ```
 
-   `schema.sql` crea la base `arte_odontologico` con todas las tablas hasta la migración 006 y el catálogo inicial.
+   `schema.sql` crea la base `arte_odontologico` con todas las tablas hasta la migración 007 y el catálogo inicial.
 6. **Dominio:** en el servicio de la app → **Settings → Networking → Generate Domain** (queda algo como `arte-odontologico.up.railway.app`), o **Custom Domain** si el consultorio tiene uno. Copiarlo en `URL_PUBLICA`.
 7. **Crear la cuenta de la secretaria** contra la base publicada. En `backend/`, crear un archivo `.env.railway` (no se sube: `.env.*` está en `.gitignore`) con `DB_HOST`, `DB_PORT`, `DB_USER` y `DB_PASSWORD` públicos del paso 5 y `DB_NAME=arte_odontologico`, y ejecutar:
 

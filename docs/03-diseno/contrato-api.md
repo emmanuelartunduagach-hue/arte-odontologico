@@ -99,9 +99,7 @@ Los pacientes no tienen cuenta. El acceso está en el pie de la página principa
 - `PATCH /admin/especialidades/:id` `{ nombre?, descripcion?, activo? }`
 
 **Especialistas**
-- `GET /admin/especialistas` → `[{ id, nombre, activo, especialidades: [{ id, nombre }] }]`
-- `POST /admin/especialistas` `{ nombre, especialidadIds: [1, 3] }` (al menos una) → 201
-- `PATCH /admin/especialistas/:id` `{ nombre?, activo?, especialidadIds? }`
+- `GET /admin/especialistas` → `[{ id, nombre, activo, especialidades: [{ id, nombre }] }]` (sin perfil). Crearlos y editarlos es solo de la dueña (sección 5).
 
 **Disponibilidad**
 - **Ver:** `GET /admin/especialistas/:id/franjas?desde=&hasta=` (por defecto hoy + 30 días) → `[{ id, fecha, hora, cita: null | { id, paciente, estado } }]`. Pinta cada hora libre u ocupada con el nombre del paciente.
@@ -161,6 +159,13 @@ Cualquier otro rol → **403**.
 - `PATCH /superadmin/administradores/:id` `{ nombreCompleto?, documento?, correo?, telefono?, activo? }`.
 - `POST /superadmin/administradores/:id/restablecer` → `{ mensaje, contrasenaTemporal }`.
 - `DELETE /superadmin/administradores/:id`. Si ya registró pacientes, citas o historia → **409** (se sugiere desactivarlo).
+
+**Especialistas (perfil interno, decisión 32)**
+- `GET /superadmin/especialistas` → `[{ id, nombre, titulo, foto, activo, especialidades: [{ id, nombre }] }]`. `foto` es un data URL (`data:image/jpeg;base64,…`) o `null`.
+- `POST /superadmin/especialistas` `{ nombre, titulo?, especialidadIds: [1, 3] }` (al menos una) → 201 con el perfil.
+- `PATCH /superadmin/especialistas/:id` `{ nombre?, titulo?, activo?, especialidadIds? }`. `titulo: ""` lo borra.
+- `PUT /superadmin/especialistas/:id/foto` `{ imagen: "data:image/jpeg;base64,…" }` → el perfil. JPG, PNG o WEBP; se revisan los primeros bytes; más de 300 KB → **413**. El panel la manda ya reducida a 400×400 px.
+- `DELETE /superadmin/especialistas/:id/foto` → el perfil sin foto.
 
 ## Aún no existe
 
