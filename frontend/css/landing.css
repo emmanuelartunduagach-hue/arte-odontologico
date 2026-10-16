@@ -419,7 +419,7 @@
 .calendario__nav:hover:not(:disabled) { background: var(--violeta-50); border-color: var(--violeta-300); transform: scale(1.06); }
 .calendario__nav svg { width: 18px; height: 18px; }
 .calendario__nav:disabled { opacity: .4; cursor: not-allowed; }
-.calendario__rejilla { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--e-1); }
+.calendario__rejilla { display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: auto repeat(6, 40px); gap: var(--e-1); }
 .calendario__sem { padding-block: var(--e-1); text-align: center; font-size: var(--txt-xs); color: var(--ink-600); }
 .dia {
   display: grid;
@@ -438,6 +438,7 @@
 .dia--libre:hover { background: var(--degradado-marca); color: var(--sobre-marca); transform: translateY(-1px); box-shadow: var(--sombra-media); }
 .dia[aria-pressed="true"] { background: var(--degradado-marca); color: var(--sobre-marca); box-shadow: var(--sombra-media); }
 .calendario__ayuda { margin-top: var(--e-3); font-size: var(--txt-xs); color: var(--ink-600); }
+.calendario--cargando .calendario__rejilla { opacity: .45; cursor: progress; }
 
 .horas { display: flex; flex-wrap: wrap; gap: var(--e-2); margin-bottom: var(--e-4); }
 .hora {

@@ -61,12 +61,15 @@ function dato(etiqueta, valor, cambiar) {
       cambiar && el('button', { type: 'button', class: 'resumen__cambiar', 'aria-label': `Cambiar ${etiqueta.toLowerCase()}`, onclick: cambiar, texto: 'Cambiar' })));
 }
 
+const CELDAS_CALENDARIO = 6 * 7;
+
 function calendarioMes({ mes, dias, fecha, alElegirDia, alCambiarMes }) {
   const [anio, m] = mes.split('-').map(Number);
   const hueco = (new Date(Date.UTC(anio, m - 1, 1)).getUTCDay() + 6) % 7;
   const total = new Date(Date.UTC(anio, m, 0)).getUTCDate();
   const esMesActual = mes <= hoyColombia().slice(0, 7);
 
+  const cargando = dias === null;
   const celdas = [];
   for (let i = 0; i < hueco; i++) celdas.push(el('span', { 'aria-hidden': 'true' }));
   for (let d = 1; d <= total; d++) {
@@ -82,25 +85,24 @@ function calendarioMes({ mes, dias, fecha, alElegirDia, alCambiarMes }) {
       onclick: () => alElegirDia(f),
     }, String(d)));
   }
+  while (celdas.length < CELDAS_CALENDARIO) celdas.push(el('span', { 'aria-hidden': 'true' }));
 
   const nav = (delta, etiqueta, trazo, bloqueado) => el('button', {
     type: 'button', class: 'calendario__nav', 'aria-label': etiqueta, disabled: bloqueado,
     'data-id-foco': `mes-${delta}`, onclick: () => alCambiarMes(delta),
   }, icono(trazo));
 
-  return el('div', { class: 'calendario' },
+  return el('div', { class: 'calendario' + (cargando ? ' calendario--cargando' : ''), 'aria-busy': cargando ? 'true' : null },
     el('div', { class: 'calendario__cabecera' },
       nav(-1, 'Mes anterior', '<path d="m15 18-6-6 6-6"/>', esMesActual),
       el('p', { class: 'calendario__mes', 'aria-live': 'polite', texto: `${MESES[m - 1]} ${anio}` }),
       nav(1, 'Mes siguiente', '<path d="m9 18 6-6-6-6"/>', false)),
-    dias === null
-      ? el('p', { class: 'estado-carga', role: 'status', texto: 'Cargando disponibilidad…' })
-      : [
-        el('div', { class: 'calendario__rejilla' }, DIAS_CORTOS.map((c) => el('span', { class: 'calendario__sem', 'aria-hidden': 'true', texto: c })), celdas),
-        el('p', { class: 'calendario__ayuda', texto: dias.size
-          ? 'Los días resaltados tienen horas disponibles.'
-          : 'No hay días con horas disponibles este mes. Prueba con el mes siguiente.' }),
-      ]);
+    el('div', { class: 'calendario__rejilla' }, DIAS_CORTOS.map((c) => el('span', { class: 'calendario__sem', 'aria-hidden': 'true', texto: c })), celdas),
+    el('p', { class: 'calendario__ayuda', role: 'status', texto: cargando
+      ? 'Cargando disponibilidad…'
+      : dias.size
+        ? 'Los días resaltados tienen horas disponibles.'
+        : 'No hay días con horas disponibles este mes. Prueba con el mes siguiente.' }));
 }
 
 function listaHoras({ fecha, horas, alElegirHora }) {
