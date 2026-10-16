@@ -1,24 +1,9 @@
-/* Modo demostración — SOLO PARA DESARROLLO.
-
-   Simula la API (contrato v2) para poder ver y probar el flujo completo
-   (pedir cita, aceptarla o rechazarla en el panel, pacientes e historia
-   clínica) sin backend ni base de datos. Se activa únicamente si la
-   página se abre en localhost/127.0.0.1 con `?demo=1`; en cualquier
-   otro caso este archivo no hace nada. No guarda ningún dato.
-
-   Ejemplo: http://localhost:5500/frontend/index.html?demo=1
-   Queda activo en esa pestaña hasta cerrarla o abrir una página con ?demo=0.
-   Para probar el error de "ya tiene una cita activa" usa el documento
-   999999999.
-   Cuentas (clave Demo1234): secretaria@demo.co (administrador) y
-   dueno@demo.co (dueño, superadmin: Solicitudes, Especialistas y Equipo). */
+// Solo para desarrollo: simula la API en localhost con ?demo=1.
 
 (function () {
   const esLocal = ['localhost', '127.0.0.1'].includes(location.hostname);
   if (!esLocal) return;
 
-  // El modo se recuerda en la pestaña para que siga activo al pasar del
-  // ingreso a los paneles. `?demo=0` lo apaga.
   const parametro = new URLSearchParams(location.search).get('demo');
   try {
     if (parametro === '0') sessionStorage.removeItem('arte-demo');
@@ -43,7 +28,6 @@
     [9, 'rehabilitacion', 'Rehabilitación oral', 'Coronas, puentes y prótesis.'],
   ].map(([id, codigo, nombre, descripcion]) => ({ id, codigo, nombre, descripcion }));
 
-  // Nombres ficticios: dejan claro que son datos de prueba.
   const ESPECIALISTAS = {
     3: [{ id: 31, nombre: 'Dra. Prueba Uno' }, { id: 32, nombre: 'Dr. Prueba Dos' }],
     7: [],
@@ -54,7 +38,6 @@
     return new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10);
   }
 
-  // Lunes a sábado con horas libres desde mañana; cada 5.º día queda "lleno".
   function diasConHoras(mes) {
     const [a, m] = mes.split('-').map(Number);
     const total = new Date(Date.UTC(a, m, 0)).getUTCDate();
@@ -104,10 +87,6 @@
     return { puedeReprogramar: true, puedeCancelar: true, motivo: null };
   }
 
-  // ---- Sesión ----
-  // Solo la secretaria inicia sesión (contraseña Demo1234):
-  //   secretaria@demo.co → panel de la secretaria
-  //   nuevo@demo.co      → clave temporal: obliga a cambiarla
   const USUARIOS = {
     'secretaria@demo.co': { id: 1, nombre: 'Secretaria de Prueba', rol: 'administrador', debeCambiarContrasena: false },
     'nuevo@demo.co': { id: 3, nombre: 'Secretaria Nueva', rol: 'administrador', debeCambiarContrasena: true },
@@ -115,8 +94,6 @@
   };
   const CLAVE_DEMO = 'Demo1234';
 
-  // Token con la forma de un JWT (sin firma real) para que js/sesion.js
-  // pueda leer el vencimiento y el rol.
   function tokenDemo(usuario) {
     const b64 = (obj) => btoa(JSON.stringify(obj)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
     const exp = Math.floor(Date.now() / 1000) + 8 * 3600;
@@ -137,7 +114,6 @@
     9: { id: 9, nombreCompleto: 'Dueña de Prueba', documento: '1000000009', correo: 'dueno@demo.co', telefono: '573000000009', rol: 'superadmin' },
   };
 
-  // Administradores que gestiona el dueño (sección Equipo).
   const ADMINISTRADORES = [
     { id: 1, nombreCompleto: 'Secretaria de Prueba', documento: '1000000001', correo: 'secretaria@demo.co', telefono: '573000000001', activo: true, debeCambiarContrasena: false, creadoEn: '2026-09-01 08:00:00', conRegistros: true },
     { id: 3, nombreCompleto: 'Secretaria Nueva', documento: '1000000003', correo: 'nuevo@demo.co', telefono: '573000000003', activo: true, debeCambiarContrasena: true, creadoEn: '2026-10-10 09:00:00', conRegistros: false },
@@ -146,7 +122,6 @@
 
   const ahoraTexto = () => new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 19).replace('T', ' ');
 
-  // Pacientes (registro sin login) e historia clínica, en memoria.
   const PACIENTES = [
     ['Laura Méndez', 'web'], ['Ana Pérez', 'web'], ['Carlos Gómez', 'consultorio'], ['Luisa Rojas', 'web'],
     ['Pedro Díaz', 'consultorio'], ['Sofía Ramírez', 'web'], ['Jorge Castro', 'web'], ['Marta Ruiz', 'consultorio'],
@@ -169,7 +144,6 @@
     return e;
   }
   entradaHistoria(1, { fechaAtencion: sumarDias(hoyColombia(), -1), procedimiento: 'Control de brackets', notas: 'Se ajustó el arco superior.', especialidad: 'Ortodoncia', especialista: 'Dra. Prueba Uno' });
-  // Una corrección esperando al dueño, para que Solicitudes no arranque vacía.
   entradaHistoria(2, { fechaAtencion: sumarDias(hoyColombia(), -3), procedimiento: 'Resina en el diente 16', notas: 'Caries oclusal.', especialidad: 'Odontología general', especialista: 'Dr. Prueba Dos' });
   entradaHistoria(2, { fechaAtencion: sumarDias(hoyColombia(), -3), procedimiento: 'Resina en el diente 26', notas: 'Se anotó el diente equivocado: la resina fue en el 26, no en el 16.', corrigeA: 2, estado: 'pendiente' });
   function historiaDe(pacienteId) {
@@ -180,7 +154,6 @@
       .sort((a, b) => b.fechaAtencion.localeCompare(a.fechaAtencion) || b.id - a.id);
   }
 
-  // Odontograma en memoria (mismo catálogo que el servidor).
   const CATALOGO_ODONTO = {
     caries: { nombre: 'Caries', alcance: 'cara' }, resina: { nombre: 'Resina', alcance: 'cara' },
     amalgama: { nombre: 'Amalgama', alcance: 'cara' }, sellante: { nombre: 'Sellante', alcance: 'cara' },
@@ -206,14 +179,11 @@
   const odontoDe = (pacienteId) => ODONTO.filter((h) => h.pacienteId === pacienteId).sort((a, b) => a.diente - b.diente || a.id - b.id).map((h) => ({ ...h }));
   const esDienteDemo = (n) => { const q = Math.floor(n / 10); const p = n % 10; return (q >= 1 && q <= 4 && p >= 1 && p <= 8) || (q >= 5 && q <= 8 && p >= 1 && p <= 5); };
 
-  // Agenda de la secretaria: citas de ayer a 6 días, en memoria (se
-  // pierden al recargar). Ortodoncia la atienden los especialistas 31 y 32.
   const ESPECIALISTAS_ADMIN = [
     { id: 31, nombre: 'Dra. Prueba Uno', titulo: 'Odontóloga · Ortodoncista', foto: null, activo: true, especialidades: [{ id: 3, nombre: 'Ortodoncia' }] },
     { id: 32, nombre: 'Dr. Prueba Dos', titulo: null, foto: null, activo: true, especialidades: [{ id: 3, nombre: 'Ortodoncia' }, { id: 1, nombre: 'Odontología general' }] },
     { id: 11, nombre: 'Dra. Prueba Tres', titulo: 'Odontóloga general', foto: null, activo: false, especialidades: [{ id: 1, nombre: 'Odontología general' }] },
   ];
-  // Lo que ve la secretaria: sin perfil (título y foto son de la dueña).
   const especialistaSinPerfil = ({ titulo, foto, ...resto }) => ({ ...resto, especialidades: resto.especialidades.map((x) => ({ ...x })) });
   let AGENDA = null;
   function agendaDemo() {
@@ -224,7 +194,6 @@
       [0, '09:30', 'Carlos Gómez', 'confirmada', 32], [0, '11:00', 'Luisa Rojas', 'cancelada', 31],
       [0, '17:30', 'Pedro Díaz', 'confirmada', 31], [1, '08:30', 'Sofía Ramírez', 'confirmada', 32],
       [3, '15:00', 'Jorge Castro', 'confirmada', 31], [6, '09:00', 'Marta Ruiz', 'confirmada', 32],
-      // Pedidas por la web en las últimas horas (salen en "Novedades de la web").
       [1, '10:30', 'Valentina Torres', 'confirmada', 31], [4, '14:00', 'Andrés Mejía', 'confirmada', 32],
     ].map(([dias, hora, paciente, estado, especialistaId], i) => {
       const ficha = PACIENTES.find((x) => x.nombreCompleto === paciente);
@@ -240,8 +209,6 @@
         creadoEn: `${sumarDias(hoy, -10)} 09:00:00`, actualizadoEn: `${sumarDias(hoy, -10)} 09:00:00`,
       };
     });
-    // Novedades de la web: Valentina pidió hoy, Andrés cambió la hora desde
-    // su enlace y Luisa canceló.
     Object.assign(AGENDA.find((c) => c.paciente === 'Valentina Torres'),
       { creadoEn: `${hoy} 08:15:00`, actualizadoEn: `${hoy} 08:15:00` });
     Object.assign(AGENDA.find((c) => c.paciente === 'Andrés Mejía'),
@@ -249,12 +216,10 @@
     Object.assign(AGENDA.find((c) => c.paciente === 'Luisa Rojas'), { actualizadoEn: `${hoy} 07:30:00` });
     try {
       AGENDA.push(...JSON.parse(sessionStorage.getItem('arte-demo-solicitudes') || '[]'));
-    } catch { /* nada guardado */ }
+    } catch {  }
     return AGENDA;
   }
-  // Disponibilidad en memoria: horas publicadas por especialista. Se
-  // arranca con las horas de ejemplo de horasDe() de lunes a sábado.
-  const FRANJAS = new Map();          // clave "esp|fecha|hora" → { id, especialistaId, fecha, hora, activa }
+  const FRANJAS = new Map();
   const FRANJA_POR_ID = new Map();
   function franja(especialistaId, fecha, hora) {
     const clave = `${especialistaId}|${fecha}|${hora}`;
@@ -285,13 +250,11 @@
     return lista;
   }
 
-  // Mensajes de WhatsApp en memoria (modo manual: quedan por enviar).
   const TEXTOS_TIPO = {
     confirmacion: 'quedó confirmada', reprogramacion: 'fue reprogramada', cancelacion: 'fue cancelada', recordatorio: 'es en 24 horas',
     rechazo: 'no se pudo confirmar; pide otra hora en la página',
   };
   const NOTIFICACIONES = [];
-  // Como en producción (WHATSAPP_MODO=api), el mensaje se da por enviado.
   function notificacionDemo(cita, tipo) {
     const mensaje = `Hola ${cita.paciente.split(' ')[0]}, tu cita en Arte Odontológico del ${cita.fecha} a las ${cita.hora} con ${cita.especialista} ${TEXTOS_TIPO[tipo]}.`;
     const n = {
@@ -304,7 +267,6 @@
   }
   let RECORDATORIOS_HECHOS = false;
 
-  /** Datos de una persona (pedir cita o registrar paciente), normalizados. */
   function personaDe(c) {
     const nombres = String(c.nombres || '').trim().replace(/\s+/g, ' ');
     const apellidos = String(c.apellidos || '').trim().replace(/\s+/g, ' ');
@@ -326,7 +288,6 @@
     return errores;
   }
 
-  /** Cita nueva en la agenda en memoria a partir de un franjaId "esp|fecha|hora". */
   function nuevaCita(cuerpo, persona, estado) {
     const [especialistaId, fecha, hora] = String(cuerpo.franjaId).split('|');
     const esp = ESPECIALIDADES.find((e) => e.id === Number(cuerpo.especialidadId));
@@ -343,12 +304,10 @@
     };
     agendaDemo().push(cita);
     if (cita.origen === 'web') {
-      // Se recuerda en la pestaña para verla al pasar al panel de la secretaria.
       try {
         const guardadas = JSON.parse(sessionStorage.getItem('arte-demo-solicitudes') || '[]');
-        // Sin pacienteId: la ficha creada aquí no existe en la otra página.
         sessionStorage.setItem('arte-demo-solicitudes', JSON.stringify([...guardadas, { ...cita, pacienteId: null }]));
-      } catch { /* sin almacenamiento: solo dura en esta página */ }
+      } catch {  }
     }
     return cita;
   }
@@ -365,7 +324,6 @@
     }
 
     const usuario = token ? usuarioDelToken(token) : null;
-    // El dueño (superadmin) pasa cualquier control de rol, como en el servidor.
     const exigir = (rol) => {
       if (!usuario) throw new ErrorApi('Debes iniciar sesión', 401);
       if (rol && usuario.rol !== rol && usuario.rol !== 'superadmin') throw new ErrorApi('No tienes permiso para esta acción', 403);
@@ -386,7 +344,6 @@
       return { ...PERFILES[usuario.id] };
     }
 
-    // Novedades de la web (Inicio): pedidas, cambiadas o canceladas por el paciente.
     if (metodo === 'GET' && url.pathname === '/admin/citas/novedades') {
       exigir('administrador');
       const limite = new Date(Date.now() - 5 * 3600 * 1000 - Number(url.searchParams.get('horas') || 48) * 3600 * 1000)
@@ -422,7 +379,7 @@
       }
       if (metodo === 'POST') {
         cuerpo.fechas.forEach((fecha) => {
-          franjasDe(especialistaId, fecha, fecha);  // siembra el día antes de sumar horas
+          franjasDe(especialistaId, fecha, fecha);
           cuerpo.horas.forEach((h) => { franja(especialistaId, fecha, h).activa = true; });
         });
         return { mensaje: 'Horas publicadas.', total: cuerpo.fechas.length * cuerpo.horas.length };
@@ -449,7 +406,6 @@
       return ESPECIALIDADES.map((x) => ({ ...x, activo: true }));
     }
 
-    // Agendar a un paciente desde su ficha: queda confirmada.
     if (metodo === 'POST' && url.pathname === '/admin/citas') {
       exigir('administrador');
       const paciente = PACIENTES.find((x) => x.id === Number(cuerpo.pacienteId));
@@ -507,7 +463,6 @@
       }
     }
 
-    // ---- Pacientes e historia clínica ----
     if (partes[0] === 'pacientes') {
       exigir('administrador');
       if (metodo === 'GET' && !partes[1]) {
@@ -557,7 +512,6 @@
         estado: esDuenoDemo ? 'vigente' : 'pendiente', revisor: esDuenoDemo ? usuario.nombre : null });
     }
 
-    // ---- Odontograma ----
     if (partes[0] === 'pacientes' && partes[2] === 'odontograma') {
       exigir('administrador');
       const pacienteId = Number(partes[1]);
@@ -599,7 +553,6 @@
       }
     }
 
-    // ---- Solo el dueño: solicitudes y equipo ----
     if (partes[0] === 'superadmin') {
       exigir('superadmin');
       if (usuario.rol !== 'superadmin') throw new ErrorApi('No tienes permiso para esta acción', 403);
@@ -708,7 +661,6 @@
     if (partes[0] === 'admin' && partes[1] === 'notificaciones') {
       exigir('administrador');
       if (!NOTIFICACIONES.length) {
-        // Uno de ejemplo para que la sección no arranque vacía.
         notificacionDemo(agendaDemo().find((c) => c.paciente === 'Sofía Ramírez'), 'confirmacion');
       }
       if (metodo === 'GET') return NOTIFICACIONES.filter((n) => n.estado === (url.searchParams.get('estado') || 'pendiente')).map((n) => ({ ...n }));
@@ -722,7 +674,6 @@
 
     if (metodo === 'POST' && url.pathname === '/admin/recordatorios') {
       exigir('administrador');
-      // Confirmadas que empiezan en las próximas 24 horas.
       const ahora = new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 16);
       const limite = new Date(Date.now() + 19 * 3600 * 1000).toISOString().slice(0, 16);
       const fecha = limite.slice(0, 10);
@@ -749,15 +700,12 @@
       return horasDe(fecha).map((hora) => ({ franjaId: `${partes[1]}|${fecha}|${hora}`, hora }));
     }
 
-    // Pedir cita desde la web: queda confirmada de una vez y aparece en el
-    // panel de la secretaria (en esta misma pestaña del navegador).
     if (metodo === 'POST' && url.pathname === '/citas') {
       if (cuerpo.documento === '999999999') {
         throw new ErrorApi('Ya tienes una cita confirmada. Para pedir otra, primero asiste a esa cita o cancélala desde el enlace que te llegó por WhatsApp.', 409);
       }
       const errores = erroresPersona(cuerpo);
       if (Object.keys(errores).length) throw new ErrorApi('Revisa los datos del formulario.', 400, errores);
-      // Queda confirmada y con ficha, como en el servidor (decisión 27).
       const persona = personaDe(cuerpo);
       let paciente = PACIENTES.find((x) => x.documento === persona.documento);
       if (!paciente) {
@@ -770,11 +718,7 @@
       return { mensaje: 'Tu cita quedó confirmada. Te enviamos los datos por WhatsApp.', cita: { ...cita } };
     }
 
-    // ---- Gestionar cita (gestionar-cita.html?codigo=…) ----
-    // Códigos de prueba: DEMO-0000 (se puede todo), DEMO-REPROGRAMADA
-    // (ya reprogramó una vez), DEMO-CERCA (faltan menos de 24 h),
-    // DEMO-CANCELADA, DEMO-PENDIENTE (cambio esperando confirmación).
-    // Cualquier otro devuelve 404.
+    // Códigos de prueba: DEMO-0000, DEMO-REPROGRAMADA, DEMO-CERCA, DEMO-CANCELADA y DEMO-PENDIENTE.
     if (partes[0] === 'citas' && partes[1] === 'gestion' && partes[2]) {
       const cita = citaDemo(partes[2]);
       if (!cita) throw new ErrorApi('El enlace no es válido o ya no está vigente.', 404);

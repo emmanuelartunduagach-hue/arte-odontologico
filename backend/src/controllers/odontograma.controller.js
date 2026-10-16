@@ -1,22 +1,9 @@
-/* Odontograma del paciente: hallazgos por diente y por cara.
-
-   Numeración FDI: permanentes 11–18, 21–28, 31–38, 41–48 y temporales
-   51–55, 61–65, 71–75, 81–85. Cada hallazgo se registra en una cara
-   (oclusal, mesial, distal, vestibular, lingual) o en el diente
-   completo, como "por hacer" o "realizado".
-
-   Igual que la historia clínica, no se borra nada: un hallazgo
-   registrado por error se anula. Si lo pide un administrador, la
-   anulación espera la aprobación del dueño; si lo pide el dueño,
-   queda aprobada de una vez. */
 const pacienteModelo = require('../models/paciente.model');
 const odontogramaModelo = require('../models/odontograma.model');
 const { ErrorHttp } = require('../utils/errores');
 const { aId } = require('../utils/validaciones');
 const { esSuperadmin } = require('../middleware/autenticacion');
 
-/* alcance: 'cara' (se marca en caras), 'diente' (diente completo) o 'ambos'.
-   soloRealizado: no tiene sentido como "por hacer" (un diente ausente). */
 const HALLAZGOS = {
   caries:     { nombre: 'Caries', alcance: 'cara' },
   resina:     { nombre: 'Resina', alcance: 'cara' },
@@ -57,10 +44,6 @@ async function hallazgoPorId(idTexto) {
   return hallazgo;
 }
 
-/* GET /api/pacientes/:id/odontograma
-   { catalogo: { hallazgos, caras }, hallazgos: [...] }
-   Incluye los anulados (anulacion = 'aprobada') para el historial; el
-   dibujo del odontograma solo usa los demás. */
 async function listar(req, res, next) {
   try {
     const paciente = await pacientePorId(req.params.id);
@@ -73,9 +56,6 @@ async function listar(req, res, next) {
   }
 }
 
-/* POST /api/pacientes/:id/odontograma
-   { diente, caras: ['oclusal', ...] | ['completo'], hallazgo, estado, notas? }
-   Crea un hallazgo por cara. Responde la lista actualizada. */
 async function crear(req, res, next) {
   try {
     const paciente = await pacientePorId(req.params.id);
@@ -120,8 +100,6 @@ async function crear(req, res, next) {
   }
 }
 
-/* POST /api/admin/odontograma/:id/realizado
-   Un hallazgo "por hacer" pasa a "realizado" (queda quién y cuándo). */
 async function marcarRealizado(req, res, next) {
   try {
     const hallazgo = await hallazgoPorId(req.params.id);
@@ -134,8 +112,6 @@ async function marcarRealizado(req, res, next) {
   }
 }
 
-/* POST /api/admin/odontograma/:id/anular { motivo }
-   Administrador: queda esperando al dueño. Dueño: queda anulado. */
 async function anular(req, res, next) {
   try {
     const hallazgo = await hallazgoPorId(req.params.id);

@@ -1,7 +1,3 @@
-/* Manejo de modales accesibles: apertura por [data-abrir],
-   cierre por [data-cerrar], clic en el fondo o tecla Escape.
-   Devuelve el foco al elemento que lo abrió.               */
-
 let elementoQueAbrio = null;
 
 function abrirModal(id) {
@@ -37,7 +33,6 @@ document.addEventListener('click', (e) => {
     return;
   }
 
-  // Clic en el fondo oscuro, fuera del panel.
   if (e.target.classList.contains('modal')) cerrarModal(e.target);
 });
 

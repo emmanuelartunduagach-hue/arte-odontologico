@@ -1,7 +1,3 @@
-/* Catálogo base de especialidades.
-   Las especialidades reales vienen de GET /especialidades (js/agendar.js).
-   Esta lista solo sirve como respaldo si la API no responde y como
-   fuente de los íconos, que se asocian por `id` == `codigo`. */
 const SERVICIOS = [
   { id: 'general',        nombre: 'Odontología general',  desc: 'Limpieza, resinas y control preventivo.',        icono: 'diente' },
   { id: 'sonrisa',        nombre: 'Diseño de sonrisa',    desc: 'Carillas y blanqueamiento estético.',            icono: 'brillo' },
@@ -14,8 +10,6 @@ const SERVICIOS = [
   { id: 'rehabilitacion', nombre: 'Rehabilitación oral',  desc: 'Coronas, puentes y prótesis.',                   icono: 'renovar' },
 ];
 
-/* Iconos en línea. Se retiró lucide-react (dependencia de React
-   del boceto) porque el proyecto ya no usa React. */
 const ICONOS = {
   diente:  '<path d="M12 5.5C10.5 4.3 8.8 3.7 7.2 4.1 5 4.7 3.8 6.6 4 9c.2 2.3 1 4.4 1.6 6.5.4 1.4.7 2.9 1.1 4.2.3.9 1.5 1 1.9.2.6-1.2.8-2.6 1.1-3.9.2-1 .5-2 1.3-2h.2c.8 0 1.1 1 1.3 2 .3 1.3.5 2.7 1.1 3.9.4.8 1.6.7 1.9-.2.4-1.3.7-2.8 1.1-4.2.6-2.1 1.4-4.2 1.6-6.5.2-2.4-1-4.3-3.2-4.9-1.6-.4-3.3.2-4.8 1.4Z"/>',
   brillo:  '<path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/><circle cx="12" cy="12" r="3.5"/>',

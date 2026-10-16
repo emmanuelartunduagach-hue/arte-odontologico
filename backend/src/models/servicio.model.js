@@ -1,9 +1,5 @@
-/* Acceso a la tabla `servicios`, que el sistema muestra como
-   "especialidades". La columna duracion_minutos se conserva pero ya
-   no se usa: el consultorio no maneja duración de citas. */
 const { pool } = require('../config/db');
 
-/* Públicas: solo las activas. */
 async function listarActivos() {
   const [filas] = await pool.execute(
     `SELECT id, codigo, nombre, descripcion
@@ -14,7 +10,6 @@ async function listarActivos() {
   return filas;
 }
 
-/* Para la secretaria: todas, con cuántos especialistas activos tiene cada una. */
 async function listarTodos() {
   const [filas] = await pool.execute(
     `SELECT s.id, s.codigo, s.nombre, s.descripcion, s.activo,
@@ -49,7 +44,6 @@ async function crear({ codigo, nombre, descripcion }) {
   return r.insertId;
 }
 
-/* Actualiza solo los campos presentes en `cambios`. */
 async function actualizar(id, cambios) {
   const columnas = { nombre: 'nombre', descripcion: 'descripcion', activo: 'activo' };
   const sets = [];
@@ -64,7 +58,6 @@ async function actualizar(id, cambios) {
   await pool.execute(`UPDATE servicios SET ${sets.join(', ')} WHERE id = ?`, [...valores, id]);
 }
 
-/* Ids de servicios que existen (para validar listas). */
 async function idsExistentes(ids) {
   if (ids.length === 0) return [];
   const [filas] = await pool.query(`SELECT id FROM servicios WHERE id IN (?)`, [ids]);

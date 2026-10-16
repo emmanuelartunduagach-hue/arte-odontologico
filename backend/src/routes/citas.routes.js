@@ -1,12 +1,9 @@
-/* Pedir y gestionar citas sin iniciar sesión.
-   Tienen límite de peticiones por IP para frenar bots. */
 const { Router } = require('express');
 const controlador = require('../controllers/citas.controller');
 const { limitePeticiones } = require('../middleware/limitePeticiones');
 
 const router = Router();
 
-// Por IP, cada 15 minutos. Ajustables en .env.
 const limiteEscritura = limitePeticiones({
   maximo: Number(process.env.LIMITE_ESCRITURAS_POR_IP) || 15,
   ventanaMinutos: 15,

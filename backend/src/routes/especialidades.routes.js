@@ -1,4 +1,3 @@
-/* Públicas: el paciente elige especialidad y luego especialista. */
 const { Router } = require('express');
 const controlador = require('../controllers/especialidades.controller');
 

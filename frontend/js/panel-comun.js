@@ -1,9 +1,3 @@
-/* Utilidades del panel de la secretaria, compartidas por sus secciones
-   (panel-agenda.js, panel-disponibilidad.js, panel-pacientes.js, panel-mensajes.js). Se carga después de comun.js y
-   modales.js, y antes de las secciones y de panel-secretaria.js.
-
-   Todo el texto de la API se inserta con textContent (vía `el()`). */
-
 const NOMBRE_ESTADO = {
   pendiente: 'Por confirmar',
   confirmada: 'Confirmada',
@@ -13,9 +7,6 @@ const NOMBRE_ESTADO = {
   no_asistio: 'No asistió',
 };
 
-/* Estado compartido del panel.
-   - aviso: resultado de la última acción; la sección lo muestra arriba una vez.
-   - refrescar: vuelve a cargar la sección actual (lo define panel-secretaria.js). */
 const panel = {
   aviso: null,
   refrescar: () => {},
@@ -27,12 +18,10 @@ function tomarAviso() {
   return aviso;
 }
 
-/** Reemplaza el contenido de `nodo`; acepta nodos, listas y valores falsos (se omiten). */
 function pintarEn(nodo, ...hijos) {
   nodo.replaceChildren(...hijos.flat(3).filter(Boolean));
 }
 
-/** Fecha y hora actuales en Colombia, 'AAAA-MM-DDTHH:MM'. */
 function ahoraColombia() {
   return new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 16);
 }
@@ -42,7 +31,6 @@ function sumarDiasA(fecha, dias) {
   return new Date(Date.UTC(a, m - 1, d + dias)).toISOString().slice(0, 10);
 }
 
-/** '573001234567' → '300 123 4567'. */
 function telefonoLegible(telefono) {
   const local = String(telefono || '').replace(/^57(?=\d{10}$)/, '');
   return /^\d{10}$/.test(local) ? `${local.slice(0, 3)} ${local.slice(3, 6)} ${local.slice(6)}` : telefono;
@@ -61,7 +49,6 @@ function avisoDemo() {
     && el('p', { class: 'alerta alerta--info', texto: 'Modo demostración: los datos son de prueba y no se guarda nada.' });
 }
 
-/** Encabezado de sección: título (recibe el foco al cambiar de sección) y una línea opcional. */
 function encabezadoSeccion(titulo, subtitulo, ...acciones) {
   return el('header', { class: 'seccion-panel__cabecera' },
     el('div', {},
@@ -80,9 +67,6 @@ function errorConReintento(err, reintentar) {
     el('button', { type: 'button', class: 'btn btn--secundario alerta__accion', onclick: reintentar, texto: 'Reintentar' }));
 }
 
-/** Aviso tras una acción que generó un WhatsApp. En modo manual el
-    mensaje queda pendiente: se ofrece enviarlo y marcarlo como enviado
-    sin salir de la pantalla. */
 function avisoAccion(mensaje, notificacion) {
   const caja = el('div', { class: 'alerta alerta--exito aviso-accion', role: 'status' });
   const partes = [el('p', { class: 'aviso-accion__titulo', texto: mensaje })];
@@ -90,7 +74,6 @@ function avisoAccion(mensaje, notificacion) {
   if (notificacion?.estado === 'enviada') {
     partes.push(el('p', { texto: 'Se avisó al paciente por WhatsApp.' }));
   } else if ((notificacion?.estado === 'pendiente' || notificacion?.estado === 'fallida') && notificacion.enlaceWhatsApp) {
-    // Pendiente: modo manual. Fallida: el envío automático no funcionó.
     const fallida = notificacion.estado === 'fallida';
     const marcar = el('button', { type: 'button', class: 'btn btn--secundario', texto: 'Ya lo envié' });
     marcar.addEventListener('click', async () => {
@@ -117,14 +100,11 @@ function avisoAccion(mensaje, notificacion) {
   return caja;
 }
 
-/* ---------- Diálogo del panel (#modal-panel) ---------- */
-
 const dialogo = {
   modal: () => document.getElementById('modal-panel'),
 
-  /** Abre el diálogo con un título y devuelve el nodo donde va el contenido. */
   abrir(titulo) {
-    elementoQueAbrio = document.activeElement;  // de modales.js: recibe el foco al cerrar
+    elementoQueAbrio = document.activeElement;
     document.getElementById('titulo-modal-panel').textContent = titulo;
     const cuerpo = document.getElementById('modal-panel-cuerpo');
     cuerpo.replaceChildren();
@@ -140,8 +120,6 @@ const dialogo = {
   abierto: () => !dialogo.modal().hidden,
 };
 
-/** Pide confirmación y ejecuta `accion`. Si falla, muestra el error en el
-    mismo diálogo para que la secretaria pueda reintentar o desistir. */
 function confirmarAccion({ titulo, texto, si, no = 'Volver', accion }) {
   const cuerpo = dialogo.abrir(titulo);
   const error = el('p', { class: 'alerta', role: 'alert', hidden: true });
@@ -165,8 +143,6 @@ function confirmarAccion({ titulo, texto, si, no = 'Volver', accion }) {
   botonSi.focus();
 }
 
-/* Menús "Más" de las filas (<details class="menu-acciones">): se cierran
-   al hacer clic fuera, al elegir una opción o con Escape. */
 document.addEventListener('click', (e) => {
   document.querySelectorAll('details.menu-acciones[open], details.menu-cuenta[open]').forEach((menu) => {
     if (!menu.contains(e.target) || e.target.closest('.menu-acciones__lista button')) menu.open = false;

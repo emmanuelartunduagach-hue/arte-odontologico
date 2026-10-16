@@ -1,34 +1,8 @@
--- ============================================================
---  Migración 004: datos completos del paciente y hora anterior
---  (9 de octubre de 2026)
---
---  - Pacientes y citas guardan nombres y apellidos por separado,
---    el tipo de documento y un teléfono fijo opcional. El nombre
---    completo pasa a ser una columna calculada (nombres + apellidos),
---    así todo lo que ya lo leía sigue funcionando igual.
---  - `pacientes.motivo_consulta`: a qué vino la persona cuando la
---    secretaria la registra en el consultorio.
---  - `citas.franja_anterior_id`: la hora que tenía la cita antes de
---    que el paciente la reprogramara, para que la secretaria vea qué
---    cambio está aprobando.
---
---  Para bases YA creadas que tienen aplicadas la 001, 002 y 003.
---  Si creas la base desde cero con el schema.sql actual, NO la
---  necesitas. Ejecutar UNA sola vez.
---
---  Conserva los datos: el nombre completo que ya existía se parte
---  así: con 4 palabras o más, las 2 primeras son los nombres; con
---  2 o 3, la primera; el resto son los apellidos. El tipo de
---  documento queda en CC.
--- ============================================================
-
+-- Migración 004: datos completos del paciente y hora anterior
 SET NAMES utf8mb4;
 
 USE arte_odontologico;
 
--- ------------------------------------------------------------
---  Pacientes
--- ------------------------------------------------------------
 ALTER TABLE pacientes
   ADD COLUMN nombres         VARCHAR(60)  NOT NULL DEFAULT '' AFTER id,
   ADD COLUMN apellidos       VARCHAR(60)  NOT NULL DEFAULT '' AFTER nombres,
@@ -51,9 +25,6 @@ ALTER TABLE pacientes
   MODIFY nombre_completo VARCHAR(121)
     AS (CONCAT_WS(' ', nombres, NULLIF(apellidos, ''))) STORED NOT NULL;
 
--- ------------------------------------------------------------
---  Citas
--- ------------------------------------------------------------
 ALTER TABLE citas
   ADD COLUMN franja_anterior_id      INT UNSIGNED NULL AFTER franja_id,
   ADD COLUMN nombres_paciente        VARCHAR(60) NOT NULL DEFAULT '' AFTER notas,

@@ -1,6 +1,3 @@
-/* Ingreso y cambio de contraseña de la secretaria (administrador) y
-   del dueño (superadmin). Los pacientes no tienen cuenta (ver
-   controllers/pacientes.controller.js). */
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const usuarioModelo = require('../models/usuario.model');
@@ -9,18 +6,12 @@ const { ErrorHttp } = require('../utils/errores');
 
 const RONDAS_BCRYPT = 10;
 
-// Hash de relleno: se compara cuando el correo no existe para que
-// la respuesta tarde lo mismo y no revele qué correos están registrados.
+// Se compara aunque el correo no exista, para que el tiempo de respuesta no revele qué correos están registrados.
 const HASH_FALSO = bcrypt.hashSync('relleno-sin-uso', RONDAS_BCRYPT);
 
 const MENSAJE_CREDENCIALES = 'Correo o contraseña incorrectos.';
 const ROLES_CON_INGRESO = ['administrador', 'superadmin'];
 
-/* POST /api/auth/ingreso
-   Cuerpo: { correo, contrasena }
-   Respuesta: { token, usuario: { id, nombre, rol, debeCambiarContrasena } }
-   Si debeCambiarContrasena es true, el frontend debe llevar al usuario a
-   cambiar su contraseña antes de dejarlo usar el sistema. */
 async function ingresar(req, res, next) {
   try {
     if (!process.env.JWT_SECRET) {
@@ -40,9 +31,6 @@ async function ingresar(req, res, next) {
       usuario ? usuario.contrasena_hash : HASH_FALSO
     );
 
-    // Mismo mensaje si el correo no existe, la clave es incorrecta o la
-    // cuenta está desactivada. Solo inician sesión la secretaria y el
-    // dueño: los pacientes no tienen cuenta.
     if (!usuario || !coincide || !usuario.activo || !ROLES_CON_INGRESO.includes(usuario.rol)) {
       throw new ErrorHttp(401, MENSAJE_CREDENCIALES);
     }
@@ -67,10 +55,6 @@ async function ingresar(req, res, next) {
   }
 }
 
-/* POST /api/auth/cambiar-contrasena   (requiere sesión)
-   Cuerpo: { contrasenaActual, contrasenaNueva }
-   Una contraseña actual incorrecta responde 400 (no 401) a propósito:
-   el frontend trata el 401 como "sesión vencida" y cierra la sesión. */
 async function cambiarContrasena(req, res, next) {
   try {
     const actual = typeof req.body?.contrasenaActual === 'string' ? req.body.contrasenaActual : '';
@@ -95,6 +79,7 @@ async function cambiarContrasena(req, res, next) {
 
     if (!(await bcrypt.compare(actual, usuario.contrasena_hash))) {
       const mensaje = 'La contraseña actual no es correcta.';
+      // 400 y no 401: el frontend trata el 401 como sesión vencida.
       throw new ErrorHttp(400, mensaje, { contrasenaActual: mensaje });
     }
 
@@ -107,8 +92,6 @@ async function cambiarContrasena(req, res, next) {
   }
 }
 
-/* GET /api/auth/perfil   (requiere sesión)
-   Datos propios de quien tiene la sesión. */
 async function perfil(req, res, next) {
   try {
     const datos = await usuarioModelo.perfil(req.usuario.id);

@@ -1,18 +1,7 @@
-/* Límite de peticiones por IP, en memoria.
-   Frena bots que intenten llenar la agenda desde el formulario
-   público. Es sencillo a propósito: se reinicia si se reinicia el
-   servidor y no se comparte entre varias instancias, lo cual basta
-   para un consultorio con un solo servidor.
-
-   Al publicar detrás de un proxy (Render, Railway, Nginx...) hay que
-   activar `app.set('trust proxy', 1)` para que req.ip sea la IP real;
-   ver PROXY_CONFIABLE en .env.example. */
-
 function limitePeticiones({ maximo, ventanaMinutos, mensaje }) {
   const ventanaMs = ventanaMinutos * 60 * 1000;
-  const registros = new Map(); // ip -> { cuenta, inicio }
+  const registros = new Map();
 
-  // Limpieza periódica para que el mapa no crezca sin control.
   const limpieza = setInterval(() => {
     const ahora = Date.now();
     for (const [ip, r] of registros) {

@@ -1,35 +1,18 @@
-/* Panel de la secretaria · Horarios de atención (B-21, B-22, B-23 y decisión 29).
-
-   La secretaria marca a mano las horas en que atiende cada especialista.
-   Contrato API v2, sección 4 ("Disponibilidad"):
-     GET    /admin/especialistas/:id/franjas?desde=&hasta=  → [{ id, fecha, hora, cita }]
-     POST   /admin/especialistas/:id/franjas  { fechas: [...], horas: [...] }  → { total }
-     DELETE /admin/franjas/:id   (409 si la hora tiene cita)
-
-   Se ve una semana a la vez. Cada día tiene un botón «Editar» que abre el
-   horario de ese día: las horas marcadas son las que los pacientes pueden
-   elegir; se marcan o desmarcan con un toque y al guardar se agregan o se
-   quitan solo las diferencias. El mismo horario se puede usar en otros días
-   de la semana y repetir varias semanas. Las horas con cita y las que ya
-   pasaron no se tocan. */
-
 const disponibilidad = {
   especialistaId: null,
-  lunes: null,            // lunes de la semana que se ve (AAAA-MM-DD)
-  especialistas: null,    // solo activos
-  franjas: [],            // horas de la semana que se ve
+  lunes: null,
+  especialistas: null,
+  franjas: [],
   turno: 0,
 };
 
 const DIAS_SEMANA = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-// Horas que se pueden marcar: de 7:00 a. m. a 7:00 p. m., cada 30 minutos.
 const HORAS_PUBLICABLES = Array.from({ length: 25 }, (_, i) => {
   const minutos = 7 * 60 + i * 30;
   return `${String(Math.floor(minutos / 60)).padStart(2, '0')}:${String(minutos % 60).padStart(2, '0')}`;
 });
 
-// Bloques del editor y atajos (inicio incluido, fin excluido).
 const BLOQUES_DIA = [
   { nombre: 'Mañana', desde: '00:00', hasta: '12:00' },
   { nombre: 'Tarde', desde: '12:00', hasta: '18:00' },
@@ -44,7 +27,7 @@ const ATAJOS_HORARIO = [
 
 function lunesDe(fecha) {
   const [a, m, d] = fecha.split('-').map(Number);
-  const diaSemana = (new Date(Date.UTC(a, m - 1, d)).getUTCDay() + 6) % 7;  // 0 = lunes
+  const diaSemana = (new Date(Date.UTC(a, m - 1, d)).getUTCDay() + 6) % 7;
   return sumarDiasA(fecha, -diaSemana);
 }
 
@@ -54,8 +37,6 @@ function fechaCorta(fecha) {
 }
 
 const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
-
-/* ---------- Sección ---------- */
 
 async function montarDisponibilidad(cuerpo) {
   disponibilidad.lunes ??= lunesDe(hoyColombia());
@@ -175,8 +156,6 @@ function chipHora(franja, pasada) {
   return el('span', { class: `chip-hora ${pasada ? 'chip-hora--pasada' : 'chip-hora--libre'}`, texto });
 }
 
-/* ---------- Editor del horario de un día ---------- */
-
 function abrirEditorDia(fecha) {
   const especialista = disponibilidad.especialistas.find((e) => e.id === disponibilidad.especialistaId);
   const cuerpo = dialogo.abrir(`Horario del ${fechaLarga(fecha)}`);
@@ -185,7 +164,6 @@ function abrirEditorDia(fecha) {
   const indiceDia = DIAS_SEMANA.findIndex((_, i) => sumarDiasA(disponibilidad.lunes, i) === fecha);
   const delDia = new Map(disponibilidad.franjas.filter((f) => f.fecha === fecha).map((f) => [f.hora, f]));
 
-  // Horas del editor: las de siempre más cualquier otra que ya estuviera publicada.
   const horasEditor = [...new Set([...HORAS_PUBLICABLES, ...delDia.keys()])].sort();
   const marcadas = new Set(delDia.keys());
   const bloqueada = (h) => Boolean(delDia.get(h)?.cita) || `${fecha}T${h}` <= ahora;
@@ -194,7 +172,6 @@ function abrirEditorDia(fecha) {
   const resumen = el('p', { class: 'editor-dia__resumen', 'aria-live': 'polite' });
   const boton = el('button', { type: 'submit', class: 'btn btn--primario', texto: 'Guardar horario' });
 
-  // Botones de hora (aria-pressed = publicada).
   const botones = new Map();
   function botonHora(h) {
     const franja = delDia.get(h);
@@ -230,7 +207,6 @@ function abrirEditorDia(fecha) {
       },
     })));
 
-  // Usar el mismo horario en otros días y repetirlo varias semanas.
   const otrosDias = el('div', { class: 'publicar__opciones' },
     DIAS_SEMANA.map((nombre, i) => el('label', { class: 'casilla-opcion' + (i === indiceDia ? ' casilla-opcion--inactiva' : '') },
       el('input', { type: 'checkbox', name: 'dia', value: String(i), checked: i === indiceDia, disabled: i === indiceDia }),
@@ -255,7 +231,6 @@ function abrirEditorDia(fecha) {
     error,
     el('div', { class: 'acciones' }, boton, el('button', { type: 'button', class: 'btn btn--secundario', 'data-cerrar': true, texto: 'Cancelar' })));
 
-  /** Fechas a las que se aplica el horario (siempre incluye la del día). */
   function fechasDestino() {
     const indices = [...otrosDias.querySelectorAll('input:checked')].map((c) => Number(c.value));
     const fechas = new Set([fecha]);
@@ -268,7 +243,6 @@ function abrirEditorDia(fecha) {
     return [...fechas].sort();
   }
 
-  // Horas ya publicadas en las fechas destino (se piden una vez por rango).
   let cache = { clave: '', franjas: null };
   async function franjasDe(fechas) {
     if (fechas.length === 1 && fechas[0] === fecha) return disponibilidad.franjas.filter((f) => f.fecha === fecha);
@@ -280,13 +254,12 @@ function abrirEditorDia(fecha) {
     return cache.franjas;
   }
 
-  /** Qué hay que agregar y quitar en cada fecha para que quede igual al día editado. */
   async function calcularCambios() {
     const fechas = fechasDestino();
     const existentes = await franjasDe(fechas);
-    const agregar = new Map();   // fecha → [horas]
-    const quitar = [];           // franjas libres que sobran
-    let conCita = 0;             // horas con cita que se conservan
+    const agregar = new Map();
+    const quitar = [];
+    let conCita = 0;
     fechas.forEach((f) => {
       const delaFecha = existentes.filter((x) => x.fecha === f);
       const publicadas = new Set(delaFecha.map((x) => x.hora));
@@ -341,7 +314,6 @@ function abrirEditorDia(fecha) {
         dialogo.cerrar();
         return;
       }
-      // Agrupa las fechas que reciben las mismas horas: una petición por grupo.
       const grupos = new Map();
       c.agregar.forEach((horas, f) => {
         const clave = horas.join(',');
@@ -352,7 +324,6 @@ function abrirEditorDia(fecha) {
         await api(`/admin/especialistas/${especialista.id}/franjas`, { metodo: 'POST', cuerpo: { fechas, horas } });
         agregadas += horas.length * fechas.length;
       }
-      // Quita de a cuatro a la vez; si alguna falla (p. ej., le acaban de agendar una cita) se informa.
       for (let i = 0; i < c.quitar.length; i += 4) {
         const lote = c.quitar.slice(i, i + 4);
         const resultados = await Promise.allSettled(lote.map((f) => api(`/admin/franjas/${f.id}`, { metodo: 'DELETE' })));

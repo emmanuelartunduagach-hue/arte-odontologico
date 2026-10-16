@@ -1,33 +1,14 @@
-/* Panel de la secretaria · Agenda (B-24 y B-25).
-
-   Contrato API v2, sección 4 ("Agenda"):
-     GET   /admin/citas?desde=&hasta=&especialistaId=&estado=&q=
-     POST  /admin/citas/:id/aceptar      pendiente → confirmada (+ WhatsApp)
-     POST  /admin/citas/:id/rechazar     pendiente → rechazada (+ WhatsApp)
-     PATCH /admin/citas/:id/estado       { estado: atendida | no_asistio | cancelada }
-     POST  /admin/citas/:id/reprogramar  { franjaId }  (sin límite; puede cambiar de especialista)
-   Para reprogramar se usan el calendario y las horas públicas del especialista:
-     GET /especialistas/:id/calendario?mes=   GET /especialistas/:id/horas?fecha=
-
-   La agenda se ve por día (‹ Hoy ›). Al buscar un paciente se buscan sus
-   citas de 3 meses atrás a 3 meses adelante. Atendida y no asistió solo
-   se ofrecen cuando ya llegó la hora (el servidor lo exige igual). */
-
 const agenda = {
-  fecha: null,             // día que se está viendo
+  fecha: null,
   especialistaId: '',
   estado: '',
-  q: '',                   // búsqueda de paciente (cambia la vista a "resultados")
-  especialistas: null,     // GET /admin/especialistas (filtro y reprogramar)
-  turno: 0,                // descarta respuestas de una consulta anterior
+  q: '',
+  especialistas: null,
+  turno: 0,
 };
 
 const DIAS_BUSQUEDA = 90;
 
-/* ---------- Fila de cita (también la usa Inicio) ---------- */
-
-/** Acciones de una cita: las primeras van a la vista y el resto, en "Más".
-    Una solicitud por confirmar muestra Aceptar y Rechazar juntos. */
 function accionesDe(cita) {
   const llegoLaHora = `${cita.fecha}T${cita.hora}` <= ahoraColombia();
   if (cita.estado === 'pendiente') {
@@ -44,7 +25,6 @@ function accionesDe(cita) {
 
 const TEXTO_NOVEDAD = { cambio: 'El paciente cambió la hora', cancelada: 'El paciente la canceló' };
 
-/** '2026-10-09 15:05:00' → 'hoy, 3:05 p. m.' / 'ayer, …' / '7 de octubre, …' */
 function cuandoPaso(fechaHora) {
   if (!fechaHora) return '';
   const [fecha, hora] = fechaHora.split(' ');
@@ -68,8 +48,6 @@ function filaCita(cita, { conFecha = false, conNovedad = false } = {}) {
       conFecha && el('span', { class: 'fila-cita__fecha', texto: capitalizar(fechaLarga(cita.fecha)) }),
       el('span', { class: 'fila-cita__reloj', texto: `${h % 12 || 12}:${String(m).padStart(2, '0')}` }),
       el('span', { class: 'fila-cita__meridiano', texto: h >= 12 ? 'p. m.' : 'a. m.' })),
-    // Solo el nombre: el documento y el teléfono ya no se muestran en la fila
-    // (están en la ficha) y la búsqueda por documento o celular sigue funcionando.
     el('div', { class: 'fila-cita__paciente' },
       cita.pacienteId
         ? el('a', { class: 'fila-cita__nombre', href: `#pacientes/${cita.pacienteId}`, title: 'Ver ficha del paciente', texto: cita.paciente })
@@ -79,13 +57,9 @@ function filaCita(cita, { conFecha = false, conNovedad = false } = {}) {
       el('p', { class: 'fila-cita__detalle', texto: cita.especialidad })),
     el('div', { class: 'fila-cita__estado' },
       chipEstado(cita.estado),
-      // Novedades de la web (Inicio): cambios y cancelaciones del paciente.
-      // La cita nueva no lleva etiqueta ("Pedida por la web" ni la hora en
-      // que se pidió): ya queda confirmada sola y no hay nada que decidir.
       conNovedad && cita.novedad && cita.novedad !== 'nueva' && el('span', { class: `fila-cita__novedad fila-cita__novedad--${cita.novedad}` },
         el('strong', { texto: TEXTO_NOVEDAD[cita.novedad] }),
         ` · ${cuandoPaso(cita.actualizadoEn)}`),
-      // El paciente reprogramó desde su enlace: se muestra qué hora tenía.
       cambioDeHora && el('span', { class: 'fila-cita__cambio' },
         el('strong', { texto: conNovedad ? 'Antes' : 'Cambió la hora' }),
         ` · ${conNovedad ? '' : 'antes: '}${fechaLarga(cita.fechaAnterior)}, ${horaLarga(cita.horaAnterior)}`),
@@ -110,8 +84,6 @@ function ordenarPorHora(citas) {
   return [...citas].sort((a, b) => `${a.fecha} ${a.hora}`.localeCompare(`${b.fecha} ${b.hora}`));
 }
 
-/* ---------- Sección ---------- */
-
 async function montarAgenda(cuerpo) {
   agenda.fecha ??= hoyColombia();
   const resultados = el('div', { class: 'agenda__resultados' });
@@ -128,7 +100,7 @@ async function montarAgenda(cuerpo) {
       agenda.especialistas = await api('/admin/especialistas');
       const select = cuerpo.querySelector('select[name="especialistaId"]');
       if (select) llenarEspecialistas(select);
-    } catch { /* el filtro queda solo con "Todos"; la agenda carga igual */ }
+    } catch {  }
   }
   cargarAgenda(resultados);
 }
@@ -221,13 +193,10 @@ async function cargarAgenda(resultados) {
           && el('button', { type: 'button', class: 'btn btn--secundario btn--compacto', onclick: () => { agenda.fecha = hoyColombia(); panel.refrescar(); }, texto: 'Volver a hoy' })));
 }
 
-/* ---------- Acciones ---------- */
-
 function nombreCita(cita) {
   return `${cita.paciente}, ${fechaLarga(cita.fecha)} a las ${horaLarga(cita.hora)}`;
 }
 
-/** Cierra una frase con punto sin duplicarlo ("9:00 a. m." ya termina en punto). */
 function conPunto(texto) {
   return texto.endsWith('.') ? texto : `${texto}.`;
 }
@@ -246,8 +215,6 @@ function marcarCita(cita, estado) {
   });
 }
 
-/* Aceptar: un clic. La cita queda confirmada, se crea la ficha del
-   paciente si no existía y se prepara el WhatsApp con el enlace. */
 async function aceptarCita(cita) {
   const boton = document.activeElement?.tagName === 'BUTTON' ? document.activeElement : null;
   if (boton) { boton.disabled = true; boton.textContent = 'Aceptando…'; }
@@ -291,7 +258,6 @@ function cancelarCita(cita) {
   });
 }
 
-/* Reprogramar: especialista (de la misma especialidad) → día → hora → confirmar. */
 async function reprogramarCita(cita) {
   const cuerpo = dialogo.abrir('Reprogramar cita');
   if (!agenda.especialistas) {
@@ -356,7 +322,6 @@ async function reprogramarCita(cita) {
       panel.refrescar();
     } catch (err) {
       estado.enviando = false;
-      // La hora pudo tomarse mientras tanto: se vuelven a pedir las del día.
       if (err.estado === 409 && estado.fecha) {
         await elegirDia(estado.fecha);
       }

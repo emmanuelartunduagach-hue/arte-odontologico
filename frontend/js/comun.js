@@ -1,14 +1,9 @@
-/* Utilidades compartidas por las pantallas públicas (agendar y
-   gestionar cita). Se carga antes que agendar.js y gestionar.js.
-
-   Todo el texto que llega de la API se inserta con textContent
-   (a través de `el()`), nunca con innerHTML. */
+// El texto que llega de la API se agrega como texto, nunca como HTML.
 
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const DIAS = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'];
 const DIAS_CORTOS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
-/* Tipos de documento (los mismos que acepta el servidor). */
 const TIPOS_DOCUMENTO = {
   CC: 'Cédula de ciudadanía',
   TI: 'Tarjeta de identidad',
@@ -18,7 +13,6 @@ const TIPOS_DOCUMENTO = {
   PPT: 'Permiso por protección temporal',
 };
 
-/** Crea un nodo. Los hijos de tipo texto se agregan como texto, no como HTML. */
 function el(etiqueta, props = {}, ...hijos) {
   const nodo = document.createElement(etiqueta);
   for (const [clave, valor] of Object.entries(props)) {
@@ -32,7 +26,6 @@ function el(etiqueta, props = {}, ...hijos) {
   return nodo;
 }
 
-/** Icono SVG a partir de un trazo estático (nunca de datos de la API). */
 function icono(trazo) {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('viewBox', '0 0 24 24');
@@ -46,7 +39,6 @@ function icono(trazo) {
   return svg;
 }
 
-/** Fecha de hoy en Colombia (UTC-5, sin horario de verano), AAAA-MM-DD. */
 function hoyColombia() {
   return new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10);
 }
@@ -62,7 +54,6 @@ function horaLarga(hora) {
   return `${h % 12 || 12}:${String(min).padStart(2, '0')} ${h >= 12 ? 'p. m.' : 'a. m.'}`;
 }
 
-/** Fila del resumen de una cita: <div><dt/><dd/></div>. */
 function dato(etiqueta, valor, cambiar) {
   return el('div', { class: 'resumen__item' },
     el('dt', { texto: etiqueta }),
@@ -70,9 +61,6 @@ function dato(etiqueta, valor, cambiar) {
       cambiar && el('button', { type: 'button', class: 'resumen__cambiar', 'aria-label': `Cambiar ${etiqueta.toLowerCase()}`, onclick: cambiar, texto: 'Cambiar' })));
 }
 
-/** Calendario mensual (lunes primero). Solo los días de `dias` (Set de
-    AAAA-MM-DD) se pueden elegir; los demás quedan bloqueados.
-    `dias === null` muestra "Cargando disponibilidad…". */
 function calendarioMes({ mes, dias, fecha, alElegirDia, alCambiarMes }) {
   const [anio, m] = mes.split('-').map(Number);
   const hueco = (new Date(Date.UTC(anio, m - 1, 1)).getUTCDay() + 6) % 7;
@@ -115,7 +103,6 @@ function calendarioMes({ mes, dias, fecha, alElegirDia, alCambiarMes }) {
       ]);
 }
 
-/** Lista de horas de un día. `horas === null` muestra "Cargando horas…". */
 function listaHoras({ fecha, horas, alElegirHora }) {
   return el('div', { class: 'agendar__horas' },
     el('h3', { class: 'agendar__subtitulo', texto: `Horas disponibles · ${fechaLarga(fecha)}` }),

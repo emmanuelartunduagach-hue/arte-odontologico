@@ -1,8 +1,3 @@
-/* Especialistas y su disponibilidad.
-   Públicos: calendario del mes y horas libres de un día.
-   Secretaria: ver los especialistas y publicar o quitar horas a mano.
-   Dueña (superadmin): registrar y editar especialistas, con su perfil
-   interno (título y foto) y sus especialidades. */
 const especialistaModelo = require('../models/especialista.model');
 const servicioModelo = require('../models/servicio.model');
 const franjaModelo = require('../models/franja.model');
@@ -18,9 +13,6 @@ async function especialistaActivo(idTexto) {
   return especialista;
 }
 
-/* GET /api/especialistas/:id/calendario?mes=YYYY-MM
-   Días del mes con al menos una hora libre. El frontend resalta
-   esos días y bloquea los demás. */
 async function calendario(req, res, next) {
   try {
     const especialista = await especialistaActivo(req.params.id);
@@ -35,7 +27,6 @@ async function calendario(req, res, next) {
   }
 }
 
-/* GET /api/especialistas/:id/horas?fecha=YYYY-MM-DD */
 async function horas(req, res, next) {
   try {
     const especialista = await especialistaActivo(req.params.id);
@@ -46,8 +37,6 @@ async function horas(req, res, next) {
     next(error);
   }
 }
-
-/* ---------- Secretaria ---------- */
 
 async function validarEspecialista(cuerpo, { parcial }) {
   const errores = {};
@@ -88,7 +77,6 @@ async function validarEspecialista(cuerpo, { parcial }) {
   return datos;
 }
 
-/* GET /api/admin/especialistas */
 async function listarTodos(req, res, next) {
   try {
     res.json(await especialistaModelo.listarTodos());
@@ -97,7 +85,6 @@ async function listarTodos(req, res, next) {
   }
 }
 
-/* POST /api/admin/especialistas   { nombre, especialidadIds: [..] } */
 async function crear(req, res, next) {
   try {
     const datos = await validarEspecialista(req.body || {}, { parcial: false });
@@ -109,7 +96,6 @@ async function crear(req, res, next) {
   }
 }
 
-/* PATCH /api/superadmin/especialistas/:id   { nombre?, titulo?, activo?, especialidadIds? } */
 async function actualizar(req, res, next) {
   try {
     const id = aId(req.params.id);
@@ -124,8 +110,6 @@ async function actualizar(req, res, next) {
   }
 }
 
-/* GET /api/admin/especialistas/:id/franjas?desde=YYYY-MM-DD&hasta=YYYY-MM-DD
-   Por defecto: desde hoy hasta dentro de 30 días. */
 async function listarFranjas(req, res, next) {
   try {
     const id = aId(req.params.id);
@@ -144,9 +128,6 @@ async function listarFranjas(req, res, next) {
   }
 }
 
-/* POST /api/admin/especialistas/:id/franjas
-   { fechas: ['2026-10-15', ...], horas: ['08:00', '08:30', ...] }
-   Publica cada hora en cada fecha. Varias fechas = "copiar a varios días". */
 async function publicarFranjas(req, res, next) {
   try {
     const especialista = await especialistaActivo(req.params.id);
@@ -186,9 +167,6 @@ async function publicarFranjas(req, res, next) {
   }
 }
 
-/* DELETE /api/admin/franjas/:id
-   Quita una hora. Si tiene una cita viva, no se quita: primero hay
-   que reprogramar o cancelar esa cita. */
 async function quitarFranja(req, res, next) {
   try {
     const id = aId(req.params.id);
@@ -207,9 +185,6 @@ async function quitarFranja(req, res, next) {
   }
 }
 
-/* ---------- Dueña: perfil ---------- */
-
-/* GET /api/superadmin/especialistas   todos, con título y foto */
 async function listarPerfiles(req, res, next) {
   try {
     res.json(await especialistaModelo.listarPerfiles());
@@ -223,11 +198,8 @@ const TIPOS_FOTO = {
   'image/png': (b) => b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])),
   'image/webp': (b) => b.subarray(0, 4).toString('latin1') === 'RIFF' && b.subarray(8, 12).toString('latin1') === 'WEBP',
 };
-const MAX_FOTO_BYTES = 300 * 1024;   // el panel la manda reducida (≈ 30–60 KB)
+const MAX_FOTO_BYTES = 300 * 1024;
 
-/* PUT /api/superadmin/especialistas/:id/foto   { imagen: 'data:image/jpeg;base64,…' }
-   Se aceptan JPG, PNG y WEBP. Además del tipo declarado se revisan los
-   primeros bytes del archivo, para no guardar algo que no sea una imagen. */
 async function subirFoto(req, res, next) {
   try {
     const id = aId(req.params.id);
@@ -251,7 +223,6 @@ async function subirFoto(req, res, next) {
   }
 }
 
-/* DELETE /api/superadmin/especialistas/:id/foto */
 async function quitarFoto(req, res, next) {
   try {
     const id = aId(req.params.id);

@@ -1,13 +1,8 @@
-/* Acceso a `citas`.
-   La regla "una hora, una sola cita viva" la garantiza el índice
-   único sobre `franja_ocupada`: si dos personas piden la misma hora
-   a la vez, una de las dos recibe ER_DUP_ENTRY. Una cita pendiente
-   ya aparta la hora; una cancelada o rechazada la libera. */
+// Una hora, una sola cita viva: lo garantiza el índice único sobre franja_ocupada.
 const { pool } = require('../config/db');
 
-const VERSION_POLITICA_DATOS = '1.1';  // debe coincidir con frontend/politica-datos.html
+const VERSION_POLITICA_DATOS = '1.1';  // Debe coincidir con frontend/politica-datos.html.
 
-/* Detalle completo de una cita, para respuestas y mensajes. */
 const SELECT_DETALLE = `
   SELECT c.id, c.estado, c.origen, c.reprogramaciones, c.paciente_id AS pacienteId,
          c.nombre_paciente AS nombrePaciente, c.nombres_paciente AS nombres, c.apellidos_paciente AS apellidos,
@@ -43,10 +38,6 @@ async function buscarPorCodigoHash(hash) {
   return filas[0] || null;
 }
 
-/* Toda cita nace confirmada (desde el 9 de octubre la secretaria ya no
-   aprueba las de la web). `origen`: 'web' si la pidió el paciente o
-   'consultorio' si la agendó la secretaria.
-   El nombre completo lo calcula la base (nombres + apellidos). */
 async function crear({
   pacienteId, servicioId, franjaId, estado = 'confirmada', origen,
   nombres, apellidos, tipoDocumento, documento, telefono, telefonoFijo = null, correo, codigoHash = null,
@@ -65,9 +56,6 @@ async function crear({
   return r.insertId;
 }
 
-/* Citas pendientes o confirmadas que aún no pasan, de un documento,
-   contadas por estado: { pendientes, confirmadas }. Se usa para
-   limitar cuántas puede pedir a la vez una persona. */
 async function contarActivasPorDocumento(documento, ahora) {
   const [filas] = await pool.execute(
     `SELECT COALESCE(SUM(c.estado = 'pendiente'), 0) AS pendientes,
@@ -81,15 +69,6 @@ async function contarActivasPorDocumento(documento, ahora) {
   return { pendientes: Number(filas[0].pendientes), confirmadas: Number(filas[0].confirmadas) };
 }
 
-/* Mueve la cita a otra franja. Devuelve true si se cambió.
-   - Si la reprograma el paciente (`porPaciente`): suma 1 a sus
-     reprogramaciones, exige que aún no haya usado la suya y guarda la
-     hora anterior (la secretaria la ve en "Novedades de la web"). La
-     cita sigue confirmada; `confirmada_en` se renueva para que el
-     recordatorio no llegue pegado al aviso del cambio.
-     Las condiciones van en el WHERE para que dos clics seguidos no
-     cuenten como dos reprogramaciones.
-   - Si la reprograma la secretaria: sin límite y sin cambiar el estado. */
 async function cambiarFranja(id, nuevaFranjaId, { porPaciente }) {
   const sql = porPaciente
     ? `UPDATE citas SET franja_anterior_id = franja_id, franja_id = ?,
@@ -110,7 +89,6 @@ async function cancelar(id, canceladaPor) {
   return r.affectedRows === 1;
 }
 
-/* La secretaria acepta una cita pendiente y la enlaza con su paciente. */
 async function aceptar(id, pacienteId) {
   const [r] = await pool.execute(
     `UPDATE citas SET estado = 'confirmada', confirmada_en = NOW(), paciente_id = ?
@@ -140,9 +118,6 @@ async function actualizarCodigoHash(id, hash) {
   await pool.execute(`UPDATE citas SET codigo_gestion_hash = ? WHERE id = ?`, [hash, id]);
 }
 
-/* Asocia al paciente recién creado en el consultorio las citas que pidió antes por la web.
-   Se exige que coincidan documento Y teléfono, para no pegarle citas
-   que otra persona pidió escribiendo su documento. */
 async function vincularPaciente({ documento, telefono }, pacienteId) {
   const [r] = await pool.execute(
     `UPDATE citas SET paciente_id = ?
@@ -152,15 +127,10 @@ async function vincularPaciente({ documento, telefono }, pacienteId) {
   return r.affectedRows;
 }
 
-/* Enlaza una cita con la ficha de su paciente. */
 async function enlazarPaciente(id, pacienteId) {
   await pool.execute(`UPDATE citas SET paciente_id = ? WHERE id = ?`, [pacienteId, id]);
 }
 
-/* Novedades de la web para el Inicio del panel: citas pedidas por la
-   web en las últimas `horas`, y las que el paciente reprogramó o canceló
-   desde su enlace en ese mismo lapso. La más reciente primero. Las
-   pendientes (de antes de la decisión 27) tienen su propio bloque. */
 async function listarNovedades(horas) {
   const [filas] = await pool.execute(
     `${SELECT_DETALLE}
@@ -175,7 +145,6 @@ async function listarNovedades(horas) {
   return filas;
 }
 
-/* Agenda para la secretaria, con filtros opcionales. */
 async function listarAgenda({ desde, hasta, especialistaId, estado, busqueda }) {
   const condiciones = ['f.fecha BETWEEN ? AND ?'];
   const valores = [desde, hasta];
@@ -202,8 +171,6 @@ async function listarAgenda({ desde, hasta, especialistaId, estado, busqueda }) 
   return filas;
 }
 
-/* Citas de un paciente, la más reciente primero. Incluye las que pidió
-   por la web con su documento y aún no se le enlazan (pendientes). */
 async function listarDePaciente(pacienteId, documento) {
   const [filas] = await pool.execute(
     `${SELECT_DETALLE}
@@ -214,12 +181,6 @@ async function listarDePaciente(pacienteId, documento) {
   return filas;
 }
 
-/* Citas confirmadas que necesitan recordatorio:
-   - empiezan dentro de las próximas 24 horas (entre `ahora` y `limite`),
-   - se aceptaron hace más de `horasMinimas` horas (quien quedó
-     confirmado hace poco ya tiene su mensaje fresco),
-   - y no tienen un recordatorio posterior a su última confirmación o
-     reprogramación (si la cita se movió, el recordatorio viejo no cuenta). */
 async function pendientesDeRecordatorio(ahora, limite, horasMinimas) {
   const [filas] = await pool.execute(
     `SELECT c.id

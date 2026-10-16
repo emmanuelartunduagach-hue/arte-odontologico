@@ -1,10 +1,3 @@
--- ============================================================
---  Arte Odontológico — Esquema de base de datos
---  Motor: MySQL 8.0+
---  Modelo relacional normalizado hasta 3FN.
--- ============================================================
-
--- Tildes y eñes correctas aunque el cliente use otra codificación.
 SET NAMES utf8mb4;
 
 CREATE DATABASE IF NOT EXISTS arte_odontologico
@@ -13,18 +6,6 @@ CREATE DATABASE IF NOT EXISTS arte_odontologico
 
 USE arte_odontologico;
 
--- ------------------------------------------------------------
---  usuarios
---  Quienes inician sesión: la secretaria (rol administrador) y el
---  dueño (rol superadmin, migración 006). El dueño solo se crea con
---  el script `npm run superadmin`, protegido por una clave especial.
---  Los pacientes NO tienen usuario: están en `pacientes`. El
---  valor 'paciente' del rol se conserva solo por compatibilidad
---  con bases anteriores. En el boceto el rol se elegía desde un
---  menú en el formulario de ingreso, lo que permitía a
---  cualquiera entrar como administrador. Aquí el rol es un
---  atributo del registro y no viaja nunca desde el cliente.
--- ------------------------------------------------------------
 CREATE TABLE usuarios (
   id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   nombre_completo     VARCHAR(120)  NOT NULL,
@@ -34,18 +15,13 @@ CREATE TABLE usuarios (
   contrasena_hash     VARCHAR(255)  NOT NULL,  -- bcrypt, nunca texto plano
   rol                 ENUM('paciente','administrador','superadmin') NOT NULL DEFAULT 'administrador',
   activo              BOOLEAN       NOT NULL DEFAULT TRUE,
-  -- TRUE mientras el usuario use la contraseña temporal que le dio el
-  -- administrador; el frontend lo obliga a cambiarla al ingresar.
   debe_cambiar_contrasena BOOLEAN   NOT NULL DEFAULT FALSE,
 
-  -- Ley 1581 de 2012: se debe poder demostrar cuándo y bajo qué
-  -- versión de la política el titular autorizó el tratamiento.
   autorizacion_datos      BOOLEAN   NOT NULL DEFAULT FALSE,
   fecha_autorizacion      DATETIME  NULL,
   version_politica_datos  VARCHAR(10) NULL,
   autorizacion_registrada_por INT UNSIGNED NULL,  -- administrador que la recogió
 
-  -- Administrador que creó este usuario (si aplica).
   creado_por          INT UNSIGNED  NULL,
 
   creado_en           DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -60,23 +36,12 @@ CREATE TABLE usuarios (
   INDEX idx_usuarios_rol (rol)
 ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------
---  pacientes
---  Registro de cada paciente con su historia clínica. No tienen
---  usuario ni contraseña: gestionan su cita con el enlace que les
---  llega por WhatsApp. Se crean solos cuando la secretaria acepta
---  su primera cita pedida por la web, o los crea ella si llegan
---  en persona al consultorio.
--- ------------------------------------------------------------
 CREATE TABLE pacientes (
   id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   nombres             VARCHAR(60)   NOT NULL,
   apellidos           VARCHAR(60)   NOT NULL,
-  -- Calculado: así la búsqueda y los listados siguen usando un solo campo.
   nombre_completo     VARCHAR(121)
     AS (CONCAT_WS(' ', nombres, NULLIF(apellidos, ''))) STORED NOT NULL,
-  -- CC cédula, TI tarjeta de identidad, RC registro civil,
-  -- CE cédula de extranjería, PA pasaporte, PPT permiso por protección temporal
   tipo_documento      ENUM('CC','TI','RC','CE','PA','PPT') NOT NULL DEFAULT 'CC',
   documento           VARCHAR(20)   NOT NULL,
   telefono            VARCHAR(20)   NOT NULL,   -- celular (WhatsApp) con indicativo, ej. 573001234567
@@ -85,8 +50,6 @@ CREATE TABLE pacientes (
   origen              ENUM('web','consultorio') NOT NULL,
   motivo_consulta     VARCHAR(500)  NULL,       -- a qué vino, si se registró en el consultorio
 
-  -- Ley 1581 de 2012: cuándo y bajo qué versión de la política
-  -- autorizó el tratamiento de sus datos.
   autorizacion_datos      BOOLEAN   NOT NULL DEFAULT TRUE,
   fecha_autorizacion      DATETIME  NULL,
   version_politica_datos  VARCHAR(10) NULL,
@@ -101,12 +64,6 @@ CREATE TABLE pacientes (
   INDEX idx_pacientes_nombre (nombre_completo)
 ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------
---  servicios (especialidades)
---  Catálogo de tratamientos. En el boceto estaba quemado en el
---  código; al moverlo a base de datos el consultorio puede
---  agregar o retirar tratamientos sin tocar el frontend.
--- ------------------------------------------------------------
 CREATE TABLE servicios (
   id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   codigo           VARCHAR(40)  NOT NULL,
@@ -118,11 +75,6 @@ CREATE TABLE servicios (
   CONSTRAINT uq_servicios_codigo UNIQUE (codigo)
 ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------
---  sedes
---  Hoy el consultorio atiende en una sola sede (Rivera). Se
---  conserva la tabla para no rehacer el modelo si abren otra.
--- ------------------------------------------------------------
 CREATE TABLE sedes (
   id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   nombre     VARCHAR(60)  NOT NULL,
@@ -134,13 +86,6 @@ CREATE TABLE sedes (
   CONSTRAINT uq_sedes_nombre UNIQUE (nombre)
 ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------
---  especialistas
---  Odontólogos que atienden. No inician sesión: solo los
---  registra y administra la secretaria (rol administrador).
--- ------------------------------------------------------------
--- Perfil interno (solo lo ve la dueña): título y foto. La foto va en
--- la base, reducida a 400×400 px por el panel (migración 007).
 CREATE TABLE especialistas (
   id             INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   nombre         VARCHAR(120) NOT NULL,
@@ -152,9 +97,6 @@ CREATE TABLE especialistas (
   actualizado_en DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
--- Un especialista puede atender varias especialidades y una
--- especialidad tiene varios especialistas (muchos a muchos).
--- Las especialidades son las filas de `servicios`.
 CREATE TABLE especialista_especialidad (
   especialista_id INT UNSIGNED NOT NULL,
   servicio_id     INT UNSIGNED NOT NULL,
@@ -166,15 +108,6 @@ CREATE TABLE especialista_especialidad (
     REFERENCES servicios(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------
---  franjas_horarias
---  Horas publicadas a mano por la secretaria: cada fila es una
---  fecha + hora en la que un especialista puede atender.
---  `activa` = FALSE cuando la secretaria la quita (se conserva
---  si alguna cita antigua la referencia).
---  Si una franja está libre o no lo deciden las citas: está
---  ocupada cuando tiene una cita que no está cancelada.
--- ------------------------------------------------------------
 CREATE TABLE franjas_horarias (
   id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   sede_id          INT UNSIGNED NOT NULL,
@@ -185,8 +118,6 @@ CREATE TABLE franjas_horarias (
   creado_por       INT UNSIGNED NOT NULL,
   creado_en        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-  -- Dos especialistas pueden atender a la misma hora, pero un
-  -- especialista no puede tener la misma hora dos veces.
   CONSTRAINT uq_franja_especialista UNIQUE (especialista_id, fecha, hora_inicio),
   CONSTRAINT fk_franja_sede FOREIGN KEY (sede_id)
     REFERENCES sedes(id) ON DELETE RESTRICT,
@@ -197,36 +128,17 @@ CREATE TABLE franjas_horarias (
   INDEX idx_franja_fecha (especialista_id, fecha, activa)
 ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------
---  citas
---  Cualquier persona pide su cita sin cuenta: se guardan aquí su
---  nombre, documento, teléfono y correo. La cita queda
---  'pendiente' hasta que la secretaria la acepta ('confirmada')
---  o la rechaza ('rechazada'). Al aceptarla se enlaza con el
---  paciente del mismo documento (`paciente_id`), que se crea si
---  no existía.
---
---  Sin doble reserva: `franja_ocupada` vale franja_id mientras
---  la cita no esté cancelada ni rechazada, y NULL si lo está.
---  Una cita pendiente ya aparta la hora. Su
---  índice único impide, a nivel de motor, que dos citas vivas
---  ocupen la misma hora aunque lleguen al mismo tiempo; al
---  cancelar o reprogramar, la hora queda libre sola.
--- ------------------------------------------------------------
 CREATE TABLE citas (
   id                  INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   paciente_id         INT UNSIGNED NULL,
   servicio_id         INT UNSIGNED NOT NULL,   -- especialidad
   franja_id           INT UNSIGNED NOT NULL,
   franja_anterior_id  INT UNSIGNED NULL,       -- hora que tenía antes de que el paciente la reprogramara
-  -- 'pendiente' y 'rechazada' quedan de cuando la secretaria aprobaba las
-  -- citas de la web (hasta la migración 005); hoy nacen confirmadas.
   estado              ENUM('pendiente','confirmada','rechazada','cancelada','atendida','no_asistio')
                         NOT NULL DEFAULT 'confirmada',
   origen              ENUM('web','consultorio') NOT NULL DEFAULT 'web',  -- quién la agendó
   notas               VARCHAR(300) NULL,
 
-  -- Datos de quien pide la cita
   nombres_paciente    VARCHAR(60)  NOT NULL,
   apellidos_paciente  VARCHAR(60)  NOT NULL,
   nombre_paciente     VARCHAR(121)
@@ -237,13 +149,10 @@ CREATE TABLE citas (
   telefono_fijo_paciente VARCHAR(20) NULL,
   correo_paciente     VARCHAR(160) NULL,       -- obligatorio al pedir la cita (NULL en citas antiguas)
 
-  -- Ley 1581 de 2012: autorización dada al agendar
   autorizacion_datos      BOOLEAN NOT NULL DEFAULT FALSE,
   fecha_autorizacion      DATETIME NULL,
   version_politica_datos  VARCHAR(10) NULL,
 
-  -- Enlace "Gestionar mi cita": se guarda solo el hash SHA-256
-  -- del código; el código en claro solo viaja en el enlace.
   codigo_gestion_hash CHAR(64) NULL,
   reprogramaciones    TINYINT UNSIGNED NOT NULL DEFAULT 0,  -- las del paciente (máx. 1)
   cancelada_por       ENUM('paciente','administrador') NULL,
@@ -273,12 +182,6 @@ CREATE TABLE citas (
   INDEX idx_citas_telefono (telefono_paciente)
 ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------
---  notificaciones
---  Bitácora de cada mensaje. Guarda el texto para que, si el
---  envío automático no está disponible, la secretaria lo envíe
---  desde su WhatsApp Business con un clic (estado pendiente).
--- ------------------------------------------------------------
 CREATE TABLE notificaciones (
   id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   cita_id     INT UNSIGNED NOT NULL,
@@ -298,12 +201,6 @@ CREATE TABLE notificaciones (
   INDEX idx_notif_pendientes (estado, programada_para)
 ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------
---  historia_clinica
---  Entradas por paciente. No se
---  borran ni se sobrescriben (Resolución 1995 de 1999): una
---  corrección es una entrada nueva que apunta a la corregida.
--- ------------------------------------------------------------
 CREATE TABLE historia_clinica (
   id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   paciente_id      INT UNSIGNED NOT NULL,
@@ -314,8 +211,6 @@ CREATE TABLE historia_clinica (
   procedimiento    VARCHAR(200) NOT NULL,
   notas            TEXT NULL,
   corrige_a        INT UNSIGNED NULL,
-  -- Una corrección pedida por un administrador queda 'pendiente' hasta
-  -- que el dueño la apruebe ('vigente') o la rechace ('rechazada').
   estado           ENUM('vigente','pendiente','rechazada') NOT NULL DEFAULT 'vigente',
   revisado_por     INT UNSIGNED NULL,
   revisado_en      DATETIME     NULL,
@@ -341,11 +236,6 @@ CREATE TABLE historia_clinica (
   INDEX idx_hc_paciente (paciente_id, fecha_atencion)
 ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------
---  odontograma
---  Hallazgos por diente (FDI) y por cara. No se borran: anular
---  uno lo pide un administrador y lo aprueba el dueño.
--- ------------------------------------------------------------
 CREATE TABLE odontograma (
   id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   paciente_id      INT UNSIGNED NOT NULL,
@@ -356,11 +246,8 @@ CREATE TABLE odontograma (
   notas            VARCHAR(500) NULL,
   creado_por       INT UNSIGNED NOT NULL,
   creado_en        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  -- Un hallazgo "por hacer" pasa a "realizado" una sola vez, con autor y fecha.
   realizado_por    INT UNSIGNED NULL,
   realizado_en     DATETIME     NULL,
-  -- Anulación (si se registró por error): la pide un administrador
-  -- y la decide el dueño. Mientras no se apruebe, el hallazgo sigue vigente.
   anulacion             ENUM('pendiente','aprobada','rechazada') NULL,
   anulacion_motivo      VARCHAR(300) NULL,
   anulacion_pedida_por  INT UNSIGNED NULL,
@@ -383,10 +270,6 @@ CREATE TABLE odontograma (
   INDEX idx_odo_anulacion (anulacion)
 ) ENGINE=InnoDB;
 
--- ============================================================
---  Datos iniciales
--- ============================================================
-
 INSERT INTO sedes (nombre, direccion, ciudad, telefono) VALUES
   ('Rivera', 'Carrera 7 No. 3-61', 'Rivera', '3108120241');
 
@@ -401,14 +284,6 @@ INSERT INTO servicios (codigo, nombre, descripcion, duracion_minutos) VALUES
   ('maxilofacial',    'Cirugía maxilofacial',  'Procedimientos de mayor complejidad.',          90),
   ('rehabilitacion',  'Rehabilitación oral',   'Coronas, puentes y prótesis.',                  60);
 
--- NOTA: el usuario administrador NO se inserta aquí, porque la
--- contraseña debe quedar cifrada con bcrypt. Se crea ejecutando
--- `npm run crear-admin` desde la carpeta backend.
--- Los especialistas tampoco: los registra la secretaria.
-
--- ============================================================
---  Vista de apoyo: agenda completa para el panel de la secretaria
--- ============================================================
 CREATE OR REPLACE VIEW v_agenda AS
 SELECT
   c.id                  AS cita_id,

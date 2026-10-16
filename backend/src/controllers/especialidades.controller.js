@@ -1,12 +1,8 @@
-/* Especialidades (tabla `servicios`).
-   Públicas: el paciente las ve al agendar.
-   Administración: la secretaria las crea, edita y activa/desactiva. */
 const servicioModelo = require('../models/servicio.model');
 const especialistaModelo = require('../models/especialista.model');
 const { ErrorHttp } = require('../utils/errores');
 const { aId, normalizarNombre } = require('../utils/validaciones');
 
-/* GET /api/especialidades  (también /api/servicios, por compatibilidad) */
 async function listarPublicas(req, res, next) {
   try {
     res.json(await servicioModelo.listarActivos());
@@ -15,7 +11,6 @@ async function listarPublicas(req, res, next) {
   }
 }
 
-/* GET /api/especialidades/:id/especialistas */
 async function especialistasDe(req, res, next) {
   try {
     const id = aId(req.params.id);
@@ -28,9 +23,6 @@ async function especialistasDe(req, res, next) {
   }
 }
 
-/* ---------- Secretaria ---------- */
-
-/* "Diseño de sonrisa" -> "diseno-de-sonrisa" */
 function aCodigo(nombre) {
   return nombre
     .normalize('NFD')
@@ -67,7 +59,6 @@ function validar(cuerpo, { parcial }) {
   return cambios;
 }
 
-/* GET /api/admin/especialidades */
 async function listarTodas(req, res, next) {
   try {
     res.json(await servicioModelo.listarTodos());
@@ -76,7 +67,6 @@ async function listarTodas(req, res, next) {
   }
 }
 
-/* POST /api/admin/especialidades   { nombre, descripcion? } */
 async function crear(req, res, next) {
   try {
     const datos = validar(req.body || {}, { parcial: false });
@@ -91,7 +81,6 @@ async function crear(req, res, next) {
   }
 }
 
-/* PATCH /api/admin/especialidades/:id   { nombre?, descripcion?, activo? } */
 async function actualizar(req, res, next) {
   try {
     const id = aId(req.params.id);

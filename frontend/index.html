@@ -19,7 +19,6 @@
 
 <a class="saltar-a-contenido" href="#contenido">Saltar al contenido</a>
 
-<!-- ══════════ Encabezado ══════════ -->
 <header class="encabezado">
   <div class="contenedor encabezado__fila">
     <a href="index.html" class="marca">
@@ -31,7 +30,6 @@
     </a>
 
     <div class="encabezado__acciones">
-      <!-- Acceso de la secretaria: discreto, pero a la vista. -->
       <a class="btn btn--secundario btn--candado" href="#" data-abrir="modal-ingreso" data-acceso-icono
          aria-label="Acceso del consultorio" title="Acceso del consultorio">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
@@ -43,7 +41,6 @@
 
 <main id="contenido">
 
-  <!-- ══════════ Portada ══════════ -->
   <section class="portada">
     <div class="contenedor portada__rejilla">
       <div class="entrada">
@@ -81,7 +78,6 @@
     </div>
   </section>
 
-  <!-- ══════════ Carrusel de fotos ══════════ -->
   <section class="seccion seccion--lavanda" aria-labelledby="titulo-consultorio">
     <div class="contenedor">
       <div class="seccion__intro">
@@ -130,18 +126,16 @@
     </div>
   </section>
 
-  <!-- ══════════ Servicios ══════════ -->
   <section class="seccion seccion--papel" id="especialidades" aria-labelledby="titulo-especialidades">
     <div class="contenedor">
       <div class="seccion__intro">
         <h2 id="titulo-especialidades" tabindex="-1">Especialidades</h2>
         <p>Selecciona una especialidad para empezar a agendar.</p>
       </div>
-      <div class="servicios" id="lista-especialidades"><!-- se llena desde js/agendar.js --></div>
+      <div class="servicios" id="lista-especialidades"></div>
     </div>
   </section>
 
-  <!-- ══════════ Contacto ══════════ -->
   <section class="seccion seccion--papel" id="contacto">
     <div class="contenedor">
       <div class="contacto">
@@ -180,7 +174,6 @@
 
 </main>
 
-<!-- ══════════ Pie ══════════ -->
 <footer class="pie">
   <div class="contenedor">
     <div class="pie__rejilla">
@@ -212,7 +205,6 @@
   </div>
 </footer>
 
-<!-- ══════════ Modal: ingreso ══════════ -->
 <div class="modal" id="modal-ingreso" role="dialog" aria-modal="true" aria-labelledby="titulo-ingreso" hidden>
   <div class="modal__panel">
     <div class="modal__cabecera">
@@ -240,10 +232,6 @@
 
       <button type="submit" class="btn btn--primario btn--bloque btn--grande">Ingresar</button>
 
-      <!-- NOTA: el boceto de Figma dejaba elegir el rol en un menú desplegable,
-           lo que permitía entrar como administrador simplemente eligiéndolo.
-           El rol ahora lo determina el backend a partir del usuario. -->
-
       <p class="modal__pie">
         ¿Eres paciente? No necesitas cuenta: pide tu cita desde esta página y gestiónala con el enlace que te llega por WhatsApp.
       </p>
@@ -251,8 +239,6 @@
   </div>
 </div>
 
-<!-- ══════════ Modal: agendar cita ══════════
-     El contenido de #agendar-cuerpo lo construye js/agendar.js paso a paso. -->
 <div class="modal" id="modal-agendar" role="dialog" aria-modal="true" aria-labelledby="titulo-agendar" hidden>
   <div class="modal__panel modal__panel--ancho">
     <div class="modal__cabecera">

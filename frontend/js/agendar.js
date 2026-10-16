@@ -1,18 +1,6 @@
-/* Agendar una cita sin crear cuenta.
-
-   Flujo (contrato API v2):
-     tarjeta de especialidad → especialista → día (calendario) →
-     hora → datos del paciente → cita confirmada.
-   La cita queda confirmada de una vez y al celular escrito le llega el
-   WhatsApp con los datos y el enlace para reprogramarla o cancelarla.
-
-   Las utilidades (el, calendario, fechas…) están en js/comun.js. */
-
-let especialidades = null;  // lista que devuelve GET /especialidades
-let turno = 0;              // descarta respuestas de un flujo ya abandonado
+let especialidades = null;
+let turno = 0;
 const estado = {};
-
-/* ---------- Tarjetas de especialidades ---------- */
 
 async function cargarEspecialidades() {
   if (!especialidades) especialidades = await api('/especialidades');
@@ -27,15 +15,13 @@ async function pintarEspecialidades() {
   try {
     lista = await cargarEspecialidades();
   } catch {
-    // Sin API se muestra el catálogo base para que la página no quede vacía;
-    // al tocar una tarjeta se explica que no hay conexión.
     lista = SERVICIOS.map((s) => ({ codigo: s.id, nombre: s.nombre, descripcion: s.desc }));
   }
 
   const iconoPorCodigo = Object.fromEntries(SERVICIOS.map((s) => [s.id, s.icono]));
   contenedor.replaceChildren(...lista.map((e) => {
     const marca = el('span', { class: 'servicio__icono' });
-    marca.innerHTML = svgIcono(iconoPorCodigo[e.codigo]); // SVG estático del propio proyecto
+    marca.innerHTML = svgIcono(iconoPorCodigo[e.codigo]);
     return el('button', { type: 'button', class: 'servicio', 'data-abrir': 'modal-agendar', 'data-especialidad': e.codigo },
       marca,
       el('span', {},
@@ -43,8 +29,6 @@ async function pintarEspecialidades() {
         el('span', { class: 'servicio__desc', texto: e.descripcion || '' })));
   }));
 }
-
-/* ---------- Flujo ---------- */
 
 function reiniciar() {
   Object.keys(estado).forEach((k) => delete estado[k]);
@@ -152,8 +136,6 @@ function volverA(paso) {
   }
 }
 
-/* ---------- Pintado ---------- */
-
 function pintar() {
   const cuerpo = document.getElementById('agendar-cuerpo');
   if (!cuerpo) return;
@@ -223,8 +205,6 @@ function pintarDia() {
   return [titulo('Elige el día y la hora'), resumen(false), calendario, horas];
 }
 
-/* ---------- Formulario de datos ---------- */
-
 const CAMPOS_DATOS = ['nombres', 'apellidos', 'tipoDocumento', 'documento', 'telefono', 'telefonoFijo', 'correo'];
 
 function campo(nombre, etiqueta, tipo, extra = {}) {
@@ -235,7 +215,6 @@ function campo(nombre, etiqueta, tipo, extra = {}) {
     el('p', { class: 'campo__error', id: `error-${nombre}`, hidden: true }));
 }
 
-/* Tipo de documento: la lista vive en js/comun.js (TIPOS_DOCUMENTO). */
 function campoTipoDocumento() {
   const elegido = estado.datos.tipoDocumento || 'CC';
   return el('div', { class: 'campo' },
@@ -258,8 +237,7 @@ function pintarDatos() {
       campo('telefono', 'Celular (WhatsApp)', 'tel', { autocomplete: 'tel', placeholder: '300 123 4567', 'aria-required': 'true' }),
       campo('telefonoFijo', 'Teléfono fijo (opcional)', 'tel', { autocomplete: 'off', placeholder: '608 837 0000' })),
 
-    // Campo trampa contra bots: oculto con CSS (no con type="hidden"), fuera del
-    // orden de tabulación y de los lectores de pantalla. Debe viajar vacío.
+    // Campo trampa contra bots: oculto con CSS, debe viajar vacío.
     el('div', { class: 'trampa', 'aria-hidden': 'true' },
       el('label', { for: 'agendar-sitioWeb', texto: 'Sitio web' }),
       el('input', { id: 'agendar-sitioWeb', type: 'text', name: 'sitioWeb', tabindex: '-1', autocomplete: 'off' })),
@@ -287,8 +265,6 @@ function guardarBorrador(e) {
   estado.datos = leerDatos(e.currentTarget);
 }
 
-/* Mismas reglas que el servidor (utils/validaciones.js); el servidor
-   vuelve a validar todo. */
 function validar(d) {
   const errores = {};
   const nombres = d.nombres.trim();
@@ -376,8 +352,6 @@ async function enviar(e) {
   } catch (error) {
     if (error.campos) mostrarErrores(form, error.campos);
     else if (error.estado === 409) {
-      // La hora pudo haberse ocupado, o la persona ya tiene una cita activa:
-      // se muestra el mensaje del servidor y se ofrece volver a elegir.
       mostrarAlerta(form, error.message, el('button', { type: 'button', class: 'btn btn--secundario', onclick: () => volverA('dia'), texto: 'Elegir otra hora' }));
     } else mostrarAlerta(form, error.message);
   } finally {
@@ -387,12 +361,8 @@ async function enviar(e) {
   }
 }
 
-/* ---------- Confirmación ---------- */
-
 function pintarListo() {
-  // La cita queda confirmada. El enlace para reprogramar o cancelar llega
-  // por WhatsApp al número que se escribió (así solo lo tiene el dueño de
-  // ese teléfono); no se muestra aquí.
+  // El enlace de gestión solo llega por WhatsApp; no se muestra aquí.
   const { cita } = estado.cita;
 
   return [
@@ -410,12 +380,9 @@ function pintarListo() {
   ];
 }
 
-/* ---------- Arranque ---------- */
-
 document.addEventListener('DOMContentLoaded', () => {
   pintarEspecialidades();
 
-  // "Agendar mi cita" baja a las especialidades y deja el foco en su título.
   document.querySelectorAll('[data-ir-especialidades]').forEach((enlace) => {
     enlace.addEventListener('click', () => {
       setTimeout(() => document.getElementById('titulo-especialidades')?.focus({ preventScroll: true }), 450);

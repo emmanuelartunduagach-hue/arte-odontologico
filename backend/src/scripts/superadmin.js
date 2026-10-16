@@ -1,19 +1,3 @@
-/* Crea o edita la cuenta del dueño del consultorio (rol superadmin).
-
-     cd backend
-     npm run superadmin
-
-   Solo lo puede usar el equipo técnico: pide la clave especial guardada
-   en la variable SUPERADMIN_CLAVE del servidor (no es la contraseña del
-   dueño) y el correo del dueño.
-   - Si el correo no existe, crea la cuenta del dueño.
-   - Si ya es la cuenta del dueño, permite cambiar su nombre, su
-     teléfono y su contraseña (lo que se deje en blanco no cambia), y la
-     reactiva si estaba desactivada.
-   No existe ninguna ruta HTTP que cree o edite al dueño.
-
-   En Railway, desde el PC con las variables del servidor:
-     node -r dotenv/config src/scripts/superadmin.js dotenv_config_path=.env.railway */
 require('dotenv').config();
 const readline = require('readline');
 const { timingSafeEqual, createHash } = require('crypto');
@@ -28,7 +12,6 @@ function preguntar(texto) {
   return new Promise((resolver) => lector.question(texto, resolver));
 }
 
-/* Pregunta sin mostrar lo que se escribe (claves y contraseñas). */
 function preguntarOculto(texto) {
   return new Promise((resolver) => {
     const escribir = lector._writeToOutput;
@@ -42,7 +25,7 @@ function preguntarOculto(texto) {
   });
 }
 
-/* Compara en tiempo constante (sobre el hash, así las longitudes coinciden). */
+// Tiempo constante; se compara el hash para que las longitudes coincidan.
 function claveCorrecta(escrita, esperada) {
   const a = createHash('sha256').update(String(escrita)).digest();
   const b = createHash('sha256').update(String(esperada)).digest();
@@ -82,7 +65,7 @@ async function editar(dueno) {
   if (nombreCompleto || telefono) {
     const { valores, errores } = validarUsuario({
       nombreCompleto: nombreCompleto || dueno.nombreCompleto,
-      documento: '00000',            // no se cambia aquí; solo para validar el resto
+      documento: '00000',
       correo: 'sin-uso@ejemplo.co',
       telefono: telefono || dueno.telefono,
     }, { exigirContrasena: false });

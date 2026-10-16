@@ -1,10 +1,3 @@
-/* Crea el primer administrador desde la consola:
-
-     cd backend
-     npm run crear-admin
-
-   La contraseña se cifra con bcrypt. No existe ninguna ruta HTTP para
-   crear administradores: solo se pueden crear con este script. */
 require('dotenv').config();
 const readline = require('readline');
 const bcrypt = require('bcrypt');
@@ -18,7 +11,6 @@ function preguntar(texto) {
   return new Promise((resolver) => lector.question(texto, resolver));
 }
 
-/* Pregunta sin mostrar lo que se escribe (para la contraseña). */
 function preguntarOculto(texto) {
   return new Promise((resolver) => {
     const escribir = lector._writeToOutput;

@@ -1,24 +1,4 @@
--- ============================================================
---  Migración 006: dueño (superadmin), correcciones con aprobación
---  y odontograma (13 de octubre de 2026)
---
---  1. Nuevo rol 'superadmin' para el dueño del consultorio: ve y
---     cambia todo, crea, edita y elimina administradores y aprueba
---     las correcciones a la historia clínica. Solo se crea con el
---     script `npm run superadmin` (clave especial del servidor).
---  2. Una corrección de la historia que pide un administrador queda
---     'pendiente' hasta que el dueño la apruebe ('vigente') o la
---     rechace ('rechazada'). Nada se borra: la fila rechazada queda
---     como registro, con quién la revisó y por qué.
---  3. Odontograma: hallazgos por diente (numeración FDI, adultos y
---     niños) y por cara. No se borran: anular uno lo pide un
---     administrador y lo aprueba el dueño.
---
---  Para bases YA creadas que tienen aplicadas de la 001 a la 005.
---  Si creas la base desde cero con el schema.sql actual, NO la
---  necesitas. Ejecutar UNA sola vez.
--- ============================================================
-
+-- Migración 006: dueño (superadmin), correcciones con aprobación
 SET NAMES utf8mb4;
 
 USE arte_odontologico;
@@ -45,11 +25,8 @@ CREATE TABLE odontograma (
   notas            VARCHAR(500) NULL,
   creado_por       INT UNSIGNED NOT NULL,
   creado_en        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  -- Un hallazgo "por hacer" pasa a "realizado" una sola vez, con autor y fecha.
   realizado_por    INT UNSIGNED NULL,
   realizado_en     DATETIME     NULL,
-  -- Anulación (si se registró por error): la pide un administrador
-  -- y la decide el dueño. Mientras no se apruebe, el hallazgo sigue vigente.
   anulacion             ENUM('pendiente','aprobada','rechazada') NULL,
   anulacion_motivo      VARCHAR(300) NULL,
   anulacion_pedida_por  INT UNSIGNED NULL,

@@ -1,18 +1,6 @@
-/* Cambiar contraseña (cambiar-contrasena.html).
-
-   Contrato API v2, sección 3:
-     POST /auth/cambiar-contrasena  { contrasenaActual, contrasenaNueva }
-   Una clave actual incorrecta responde 400 con campos.contrasenaActual
-   (no 401, para no cerrar la sesión).
-
-   Llega aquí obligado quien ingresa con una clave temporal
-   (debeCambiarContrasena) y, por gusto, quien entra desde su panel. */
-
 const sesion = exigirSesion();
 const cuerpo = document.getElementById('panel-cuerpo');
 
-// Mismas reglas que el servidor (utils/validaciones.js): aquí solo se
-// adelantan para no esperar la respuesta; la validación real es la del backend.
 function errorClaveNueva(clave) {
   if (clave.length < 8 || clave.length > 72) return 'La contraseña debe tener entre 8 y 72 caracteres.';
   if (!/[A-Za-z]/.test(clave) || !/\d/.test(clave)) return 'La contraseña debe incluir al menos una letra y un número.';
@@ -90,7 +78,6 @@ function pintarFormulario() {
     }
   });
 
-  // Sin el filtro, el `false` de un aviso que no aplica se pintaba como texto.
   cuerpo.replaceChildren(...[
     el('h1', { class: 'gestion__titulo', texto: obligado ? 'Crea tu contraseña' : 'Cambiar contraseña' }),
     obligado && el('p', { class: 'gestion__intro', texto: 'Ingresaste con una contraseña temporal. Antes de continuar, elige una contraseña propia.' }),
