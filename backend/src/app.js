@@ -12,6 +12,9 @@ const app = express();
 if (process.env.PROXY_CONFIABLE) app.set('trust proxy', Number(process.env.PROXY_CONFIABLE) || 1);
 
 app.use(cors({ origin: process.env.ORIGEN_PERMITIDO || '*' }));
+// La foto de un especialista llega como texto base64 (el panel la
+// reduce antes a 400×400 px): esa ruta acepta un cuerpo algo mayor.
+app.use('/api/superadmin/especialistas', express.json({ limit: '500kb' }));
 app.use(express.json({ limit: '100kb' }));
 
 app.use('/api', rutas);
@@ -37,8 +40,10 @@ if (String(process.env.SERVIR_FRONTEND).toLowerCase() !== 'false') {
 app.use((err, req, res, next) => {
   console.error(err);
   const estado = err.status || 500;
+  const demasiadoGrande = err.type === 'entity.too.large';
   const cuerpo = {
-    error: err.publico || (estado < 500 ? 'Solicitud inválida' : 'Error interno del servidor'),
+    error: err.publico || (demasiadoGrande ? 'Lo que enviaste es demasiado grande.'
+      : estado < 500 ? 'Solicitud inválida' : 'Error interno del servidor'),
   };
   if (err.campos) cuerpo.campos = err.campos;
   if (err.extra) Object.assign(cuerpo, err.extra); // datos útiles, ej. el id de un registro repetido

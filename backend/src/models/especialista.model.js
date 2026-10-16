@@ -59,11 +59,12 @@ async function atiende(especialistaId, servicioId) {
 }
 
 /* Crea el especialista y sus especialidades en una transacción. */
-async function crear({ nombre, especialidadIds }) {
+async function crear({ nombre, titulo = null, especialidadIds }) {
   const conexion = await pool.getConnection();
   try {
     await conexion.beginTransaction();
-    const [r] = await conexion.execute(`INSERT INTO especialistas (nombre) VALUES (?)`, [nombre]);
+    const [r] = await conexion.execute(
+      `INSERT INTO especialistas (nombre, titulo) VALUES (?, ?)`, [nombre, titulo]);
     await insertarEspecialidades(conexion, r.insertId, especialidadIds);
     await conexion.commit();
     return r.insertId;
@@ -75,12 +76,15 @@ async function crear({ nombre, especialidadIds }) {
   }
 }
 
-async function actualizar(id, { nombre, activo, especialidadIds }) {
+async function actualizar(id, { nombre, titulo, activo, especialidadIds }) {
   const conexion = await pool.getConnection();
   try {
     await conexion.beginTransaction();
     if (nombre !== undefined) {
       await conexion.execute(`UPDATE especialistas SET nombre = ? WHERE id = ?`, [nombre, id]);
+    }
+    if (titulo !== undefined) {
+      await conexion.execute(`UPDATE especialistas SET titulo = ? WHERE id = ?`, [titulo, id]);
     }
     if (activo !== undefined) {
       await conexion.execute(`UPDATE especialistas SET activo = ? WHERE id = ?`, [activo, id]);
@@ -107,4 +111,34 @@ async function insertarEspecialidades(conexion, especialistaId, especialidadIds)
   );
 }
 
-module.exports = { listarPorEspecialidad, listarTodos, buscarPorId, atiende, crear, actualizar };
+/* Para la dueña: perfil completo, con la foto lista para un <img>
+   (data URL). Son pocos especialistas y cada foto pesa unos 30–60 KB. */
+async function listarPerfiles() {
+  const lista = await listarTodos();
+  const [filas] = await pool.execute(
+    `SELECT id, titulo, foto, foto_tipo AS fotoTipo FROM especialistas`
+  );
+  const extra = new Map(filas.map((f) => [f.id, f]));
+  return lista.map((e) => {
+    const f = extra.get(e.id) || {};
+    return {
+      ...e,
+      titulo: f.titulo || null,
+      foto: f.foto ? `data:${f.fotoTipo};base64,${Buffer.from(f.foto).toString('base64')}` : null,
+    };
+  });
+}
+
+async function guardarFoto(id, contenido, tipo) {
+  await pool.execute(
+    `UPDATE especialistas SET foto = ?, foto_tipo = ? WHERE id = ?`, [contenido, tipo, id]);
+}
+
+async function quitarFoto(id) {
+  await pool.execute(`UPDATE especialistas SET foto = NULL, foto_tipo = NULL WHERE id = ?`, [id]);
+}
+
+module.exports = {
+  listarPorEspecialidad, listarTodos, listarPerfiles, buscarPorId, atiende,
+  crear, actualizar, guardarFoto, quitarFoto,
+};
