@@ -1,32 +1,12 @@
-/* Servicio de notificaciones por WhatsApp.
-
-   Los controladores solo llaman a `notificarCita()`. Aquí se arma el
-   texto, se guarda en la tabla `notificaciones` y se entrega al
-   proveedor según WHATSAPP_MODO (manual, consola o api). Cambiar de
-   modo es cambiar el .env, sin tocar los controladores.
-
-   Nunca lanza: un fallo al notificar no debe deshacer ni bloquear
-   el agendamiento. El fallo queda registrado como 'fallida' y el
-   mensaje sigue disponible para enviarlo a mano desde el panel. */
-
 const citaModelo = require('../../models/cita.model');
 const notificacionModelo = require('../../models/notificacion.model');
 const { generarCodigoGestion } = require('../../utils/codigos');
 const mensajes = require('./mensajes');
 const ProveedorWhatsApp = require('./proveedores/ProveedorWhatsApp');
 
-/**
- * @param {object} p
- * @param {number} p.citaId
- * @param {'confirmacion'|'reprogramacion'|'cancelacion'|'recordatorio'} p.tipo
- * @param {string} [p.codigo]  código "Gestionar mi cita" en claro, si se tiene.
- *   Si el mensaje necesita enlace y no se pasa, se genera uno nuevo y el
- *   anterior deja de servir (en la base solo se guarda el hash).
- * @returns {Promise<{id?:number, estado:string, enlaceWhatsApp?:string}>}
- */
 async function notificarCita({ citaId, tipo, codigo }) {
   let notificacionId;
-  let enlace = null;  // si el envío falla, la secretaria lo envía a mano con este enlace
+  let enlace = null;
   try {
     const cita = await citaModelo.buscarDetalle(citaId);
     if (!cita) throw new Error(`Cita ${citaId} no encontrada`);

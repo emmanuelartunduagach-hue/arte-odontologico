@@ -1,6 +1,3 @@
-/* Rutas de pacientes: administrador (secretaria) y dueño (superadmin,
-   que pasa cualquier control de rol). El rol se lee del token firmado,
-   nunca del cuerpo de la petición. */
 const { Router } = require('express');
 const controlador = require('../controllers/pacientes.controller');
 const historia = require('../controllers/historia.controller');

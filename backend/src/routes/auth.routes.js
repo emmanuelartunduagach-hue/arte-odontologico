@@ -5,7 +5,6 @@ const { limitePeticiones } = require('../middleware/limitePeticiones');
 
 const router = Router();
 
-// Frena a quien intente adivinar contraseñas: intentos por IP cada 15 minutos.
 const limiteIngreso = limitePeticiones({
   maximo: Number(process.env.LIMITE_INGRESOS_POR_IP) || 10,
   ventanaMinutos: 15,

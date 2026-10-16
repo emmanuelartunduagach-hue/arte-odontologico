@@ -1,35 +1,14 @@
--- ============================================================
---  Migración 002: especialistas, franjas por especialista y
---  citas sin usuario (alcance v2, 6 de octubre de 2026)
---
---  Para bases YA creadas que tienen aplicada la migración 001.
---  Si creas la base desde cero con el schema.sql actual, NO la
---  necesitas: ya incluye todo esto.
---  Ejecutar UNA sola vez.
---
---  OJO: borra las franjas y citas de prueba que existan (en
---  desarrollo no hay datos reales). Los usuarios, servicios y
---  sedes se conservan.
--- ============================================================
-
--- Tildes y eñes correctas aunque el cliente use otra codificación.
+-- Migración 002: especialistas, franjas por especialista y
 SET NAMES utf8mb4;
 
 USE arte_odontologico;
 
--- Datos de prueba que ya no encajan en el modelo nuevo
 DELETE FROM notificaciones;
 DELETE FROM citas;
 DELETE FROM franjas_horarias;
 
--- ------------------------------------------------------------
---  Una sola sede: Rivera. Neiva se desactiva (no se borra).
--- ------------------------------------------------------------
 UPDATE sedes SET activa = FALSE WHERE nombre = 'Neiva';
 
--- ------------------------------------------------------------
---  Especialistas y sus especialidades
--- ------------------------------------------------------------
 CREATE TABLE especialistas (
   id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   nombre     VARCHAR(120) NOT NULL,
@@ -48,11 +27,6 @@ CREATE TABLE especialista_especialidad (
     REFERENCES servicios(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------
---  Franjas: pasan a ser de un especialista
--- ------------------------------------------------------------
--- La llave foránea de la sede usaba el índice uq_franja: se le
--- da su propio índice antes de quitarlo.
 ALTER TABLE franjas_horarias
   ADD INDEX fk_franja_sede (sede_id);
 
@@ -66,9 +40,6 @@ ALTER TABLE franjas_horarias
     REFERENCES especialistas(id) ON DELETE RESTRICT,
   ADD INDEX idx_franja_fecha (especialista_id, fecha, activa);
 
--- ------------------------------------------------------------
---  Citas: se puede agendar sin usuario
--- ------------------------------------------------------------
 ALTER TABLE citas
   DROP FOREIGN KEY fk_cita_paciente,
   DROP FOREIGN KEY fk_cita_franja;
@@ -102,10 +73,6 @@ ALTER TABLE citas
   ADD CONSTRAINT fk_cita_franja FOREIGN KEY (franja_id)
     REFERENCES franjas_horarias(id) ON DELETE RESTRICT;
 
--- ------------------------------------------------------------
---  Notificaciones: se guarda el texto y se permiten varias del
---  mismo tipo (la secretaria puede reprogramar varias veces)
--- ------------------------------------------------------------
 ALTER TABLE notificaciones
   DROP FOREIGN KEY fk_notif_cita;
 
@@ -117,9 +84,6 @@ ALTER TABLE notificaciones
   ADD CONSTRAINT fk_notif_cita FOREIGN KEY (cita_id)
     REFERENCES citas(id) ON DELETE CASCADE;
 
--- ------------------------------------------------------------
---  Historia clínica
--- ------------------------------------------------------------
 CREATE TABLE historia_clinica (
   id               INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   paciente_id      INT UNSIGNED NOT NULL,
@@ -148,9 +112,6 @@ CREATE TABLE historia_clinica (
   INDEX idx_hc_paciente (paciente_id, fecha_atencion)
 ) ENGINE=InnoDB;
 
--- ------------------------------------------------------------
---  Vista de la agenda
--- ------------------------------------------------------------
 CREATE OR REPLACE VIEW v_agenda AS
 SELECT
   c.id                  AS cita_id,

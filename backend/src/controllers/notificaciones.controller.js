@@ -1,16 +1,9 @@
-/* Mensajes de WhatsApp para la secretaria.
-
-   En modo manual (WHATSAPP_MODO=manual) los mensajes quedan
-   "pendiente": el panel muestra cada uno con un botón que abre su
-   WhatsApp Business con el texto ya escrito (enlaceWhatsApp). Al
-   enviarlo, la secretaria lo marca como enviado. */
 const notificacionModelo = require('../models/notificacion.model');
 const { enlaceWhatsApp } = require('../services/notificaciones/mensajes');
 const { ErrorHttp } = require('../utils/errores');
 const { aId } = require('../utils/validaciones');
 const { enviarRecordatorios } = require('../services/recordatorios');
 
-/* GET /api/admin/notificaciones?estado=pendiente|fallida|enviada */
 async function listar(req, res, next) {
   try {
     const estado = req.query.estado || 'pendiente';
@@ -22,7 +15,6 @@ async function listar(req, res, next) {
   }
 }
 
-/* PATCH /api/admin/notificaciones/:id   { estado: 'enviada' } */
 async function marcarEnviada(req, res, next) {
   try {
     const id = aId(req.params.id);
@@ -36,9 +28,6 @@ async function marcarEnviada(req, res, next) {
   }
 }
 
-/* POST /api/admin/recordatorios
-   Genera ya los recordatorios de las citas de mañana, sin esperar la
-   ejecución automática ni el horario. */
 async function ejecutarRecordatorios(req, res, next) {
   try {
     res.json(await enviarRecordatorios({ ignorarHorario: true }));

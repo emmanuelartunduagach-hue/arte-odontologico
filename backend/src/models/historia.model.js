@@ -1,12 +1,4 @@
-/* Acceso a `historia_clinica`.
-   Solo se insertan filas: no hay UPDATE ni DELETE (Resolución 1995 de
-   1999). Una corrección es una fila nueva con `corrige_a` apuntando a
-   la entrada corregida; la original se conserva tal cual.
-
-   Si la pide un administrador, la corrección queda 'pendiente' hasta
-   que el dueño la apruebe ('vigente') o la rechace ('rechazada'). El
-   único UPDATE es esa decisión (estado, revisor, fecha y motivo): el
-   contenido clínico de la fila no cambia nunca. */
+// Solo INSERT: la historia clínica no se edita ni se borra (Resolución 1995 de 1999).
 const { pool } = require('../config/db');
 
 const SELECT_ENTRADA = `
@@ -27,9 +19,6 @@ const SELECT_ENTRADA = `
     JOIN usuarios u           ON u.id = h.creado_por
     LEFT JOIN usuarios r      ON r.id = h.revisado_por`;
 
-/* Entradas de un paciente, la atención más reciente primero. Cada
-   entrada trae `correcciones` (ids de las correcciones VIGENTES que la
-   corrigen) y `correccionPendiente` (true si hay una esperando al dueño). */
 async function listarDePaciente(pacienteId) {
   const [filas] = await pool.execute(
     `${SELECT_ENTRADA}
@@ -71,7 +60,6 @@ async function buscarEntrada(id) {
   return filas[0] ? { ...filas[0], correcciones: [], correccionPendiente: false } : null;
 }
 
-/* ¿La entrada ya tiene una corrección esperando al dueño? */
 async function tieneCorreccionPendiente(id) {
   const [filas] = await pool.execute(
     `SELECT 1 FROM historia_clinica WHERE corrige_a = ? AND estado = 'pendiente' LIMIT 1`,
@@ -80,7 +68,6 @@ async function tieneCorreccionPendiente(id) {
   return filas.length > 0;
 }
 
-/* Correcciones que esperan al dueño, con la entrada original y el paciente. */
 async function listarPendientes() {
   const [filas] = await pool.execute(
     `${SELECT_ENTRADA.replace('SELECT h.id,', `SELECT h.id, h.paciente_id AS pacienteId, p.nombre_completo AS paciente,
@@ -94,7 +81,6 @@ async function listarPendientes() {
   return filas;
 }
 
-/* Decisión del dueño. Solo cambia filas que siguen pendientes. */
 async function revisar(id, { estado, revisadoPor, motivo }) {
   const [r] = await pool.execute(
     `UPDATE historia_clinica

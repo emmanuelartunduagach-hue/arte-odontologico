@@ -1,11 +1,3 @@
-/* Restablece la contraseña del administrador (la secretaria) desde la
-   consola, por si la olvida:
-
-     cd backend
-     npm run restablecer-admin
-
-   Solo funciona con acceso al servidor y a la base de datos; no existe
-   ninguna ruta HTTP para esto. */
 require('dotenv').config();
 const readline = require('readline');
 const bcrypt = require('bcrypt');
@@ -16,7 +8,6 @@ const { validarContrasena } = require('../utils/validaciones');
 const lector = readline.createInterface({ input: process.stdin, output: process.stdout });
 const preguntar = (texto) => new Promise((resolver) => lector.question(texto, resolver));
 
-/* Pregunta sin mostrar lo que se escribe (para la contraseña). */
 function preguntarOculto(texto) {
   return new Promise((resolver) => {
     const escribir = lector._writeToOutput;

@@ -1,12 +1,3 @@
-/* Rutas exclusivas del dueño (rol superadmin).
-
-   - Administradores: crear (con contraseña temporal), editar,
-     activar o desactivar, restablecer la contraseña y eliminar.
-     El dueño no se gestiona desde aquí: solo con el script
-     `npm run superadmin` y la clave especial del servidor.
-   - Solicitudes: correcciones de la historia clínica y anulaciones de
-     hallazgos del odontograma que pidieron los administradores. El
-     dueño las aprueba o las rechaza (con motivo). Nada se borra. */
 const bcrypt = require('bcrypt');
 const { randomInt } = require('crypto');
 const usuarioModelo = require('../models/usuario.model');
@@ -17,7 +8,6 @@ const { ErrorHttp } = require('../utils/errores');
 
 const RONDAS_BCRYPT = 10;
 
-/* Contraseña temporal legible: 4 letras + 4 números (sin I, O, 0 ni 1). */
 function contrasenaTemporal() {
   const letras = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
   const numeros = '23456789';
@@ -41,7 +31,6 @@ function errorDuplicado(error) {
   return new ErrorHttp(409, mensaje, { [campo]: mensaje });
 }
 
-/* GET /api/superadmin/administradores */
 async function listarAdministradores(req, res, next) {
   try {
     res.json(await usuarioModelo.listarAdministradores());
@@ -50,10 +39,6 @@ async function listarAdministradores(req, res, next) {
   }
 }
 
-/* POST /api/superadmin/administradores
-   { nombreCompleto, documento, correo, telefono }
-   Responde la contraseña temporal UNA sola vez: el dueño se la entrega
-   al administrador, que debe cambiarla al ingresar. */
 async function crearAdministrador(req, res, next) {
   try {
     const { valores, errores } = validarUsuario(req.body || {}, { exigirContrasena: false });
@@ -77,8 +62,6 @@ async function crearAdministrador(req, res, next) {
   }
 }
 
-/* PATCH /api/superadmin/administradores/:id
-   { nombreCompleto?, documento?, correo?, telefono?, activo? } */
 async function actualizarAdministrador(req, res, next) {
   try {
     const admin = await administradorPorId(req.params.id);
@@ -109,8 +92,6 @@ async function actualizarAdministrador(req, res, next) {
   }
 }
 
-/* POST /api/superadmin/administradores/:id/restablecer
-   Nueva contraseña temporal (se muestra una sola vez). */
 async function restablecerAdministrador(req, res, next) {
   try {
     const admin = await administradorPorId(req.params.id);
@@ -122,9 +103,6 @@ async function restablecerAdministrador(req, res, next) {
   }
 }
 
-/* DELETE /api/superadmin/administradores/:id
-   Si el administrador ya registró pacientes, citas o historia, no se
-   puede borrar (esos registros dicen quién los hizo): se desactiva. */
 async function eliminarAdministrador(req, res, next) {
   try {
     const admin = await administradorPorId(req.params.id);
@@ -142,10 +120,6 @@ async function eliminarAdministrador(req, res, next) {
   }
 }
 
-/* ---------- Solicitudes de cambio en la historia clínica ---------- */
-
-/* GET /api/superadmin/solicitudes
-   { correcciones: [...], anulaciones: [...] } pendientes, las más antiguas primero. */
 async function listarSolicitudes(req, res, next) {
   try {
     const [correcciones, anulaciones] = await Promise.all([
@@ -166,7 +140,6 @@ function motivoDe(cuerpo) {
   return motivo;
 }
 
-/* POST /api/superadmin/solicitudes/historia/:id/aprobar | /rechazar { motivo } */
 function decidirCorreccion(aprobar) {
   return async (req, res, next) => {
     try {
@@ -186,7 +159,6 @@ function decidirCorreccion(aprobar) {
   };
 }
 
-/* POST /api/superadmin/solicitudes/odontograma/:id/aprobar | /rechazar { motivo } */
 function decidirAnulacion(aprobar) {
   return async (req, res, next) => {
     try {

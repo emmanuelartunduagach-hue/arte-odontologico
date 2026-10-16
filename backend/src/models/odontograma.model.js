@@ -1,8 +1,3 @@
-/* Acceso a `odontograma`: hallazgos por diente (FDI) y por cara.
-
-   No se borran filas. Los únicos UPDATE son:
-   - pasar un hallazgo de "por hacer" a "realizado" (una vez, con autor y fecha);
-   - pedir, aprobar o rechazar su anulación (si se registró por error). */
 const { pool } = require('../config/db');
 
 const SELECT_HALLAZGO = `
@@ -36,7 +31,6 @@ async function buscarPorId(id) {
   return filas[0] || null;
 }
 
-/* Un hallazgo por cara, en una sola transacción. Devuelve los ids. */
 async function crearVarios({ pacienteId, diente, caras, hallazgo, estado, notas, creadoPor }) {
   const conexion = await pool.getConnection();
   try {
@@ -71,7 +65,6 @@ async function marcarRealizado(id, usuarioId) {
   return r.affectedRows > 0;
 }
 
-/* Pide la anulación. Si la pide el dueño, queda aprobada de una vez. */
 async function pedirAnulacion(id, { motivo, pedidaPor, aprobadaDeUnaVez }) {
   const [r] = await pool.execute(
     `UPDATE odontograma
@@ -94,7 +87,6 @@ async function revisarAnulacion(id, { aprobar, revisadoPor, motivo }) {
   return r.affectedRows > 0;
 }
 
-/* Anulaciones que esperan al dueño, con el nombre del paciente. */
 async function listarAnulacionesPendientes() {
   const [filas] = await pool.execute(
     `${SELECT_HALLAZGO.replace('SELECT o.id,', 'SELECT o.id, p.nombre_completo AS paciente,')}

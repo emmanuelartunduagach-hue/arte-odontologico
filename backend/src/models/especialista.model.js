@@ -1,7 +1,5 @@
-/* Acceso a `especialistas` y a su relación con las especialidades. */
 const { pool } = require('../config/db');
 
-/* Públicos: especialistas activos que atienden una especialidad activa. */
 async function listarPorEspecialidad(servicioId) {
   const [filas] = await pool.execute(
     `SELECT e.id, e.nombre
@@ -15,7 +13,6 @@ async function listarPorEspecialidad(servicioId) {
   return filas;
 }
 
-/* Para la secretaria: todos, con sus especialidades. */
 async function listarTodos() {
   const [filas] = await pool.execute(
     `SELECT e.id, e.nombre, e.activo, s.id AS servicioId, s.nombre AS servicioNombre
@@ -44,7 +41,6 @@ async function buscarPorId(id) {
   return filas[0] || null;
 }
 
-/* ¿El especialista (activo) atiende esa especialidad (activa)? */
 async function atiende(especialistaId, servicioId) {
   const [filas] = await pool.execute(
     `SELECT 1
@@ -58,7 +54,6 @@ async function atiende(especialistaId, servicioId) {
   return filas.length > 0;
 }
 
-/* Crea el especialista y sus especialidades en una transacción. */
 async function crear({ nombre, titulo = null, especialidadIds }) {
   const conexion = await pool.getConnection();
   try {
@@ -111,8 +106,6 @@ async function insertarEspecialidades(conexion, especialistaId, especialidadIds)
   );
 }
 
-/* Para la dueña: perfil completo, con la foto lista para un <img>
-   (data URL). Son pocos especialistas y cada foto pesa unos 30–60 KB. */
 async function listarPerfiles() {
   const lista = await listarTodos();
   const [filas] = await pool.execute(

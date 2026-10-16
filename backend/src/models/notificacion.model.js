@@ -1,4 +1,3 @@
-/* Bitácora de mensajes de WhatsApp (tabla `notificaciones`). */
 const { pool } = require('../config/db');
 
 async function crear({ citaId, tipo, destino, mensaje }) {
@@ -10,10 +9,7 @@ async function crear({ citaId, tipo, destino, mensaje }) {
   return r.insertId;
 }
 
-/* Al quedar enviado, el código del enlace se borra del texto guardado:
-   así la tabla no conserva enlaces válidos (en la tabla `citas` solo
-   está el hash). Mientras está pendiente sí lo guarda, porque la
-   secretaria necesita el texto completo para enviarlo a mano. */
+// Al quedar enviado se borra el código del enlace del texto guardado.
 async function marcar(id, estado, detalle = null) {
   await pool.execute(
     `UPDATE notificaciones
@@ -27,7 +23,6 @@ async function marcar(id, estado, detalle = null) {
   );
 }
 
-/* Para la secretaria: mensajes por estado, los más recientes primero. */
 async function listar({ estado }) {
   const [filas] = await pool.execute(
     `SELECT n.id, n.cita_id AS citaId, n.tipo, n.estado, n.destino, n.mensaje, n.detalle,

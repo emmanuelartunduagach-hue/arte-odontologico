@@ -1,13 +1,3 @@
-/* Ficha del paciente e historia clínica. Solo la secretaria.
-
-   La historia no se edita ni se borra (Resolución 1995 de 1999):
-   "editar" es agregar una entrada nueva, y corregir es agregar una
-   entrada que apunta a la corregida (`corrigeA`). La original queda
-   intacta y el panel muestra ambas, con autor y fecha.
-
-   Las correcciones que pide un administrador quedan en espera hasta que
-   el dueño (superadmin) las apruebe; las del dueño quedan vigentes de
-   una vez. Las entradas nuevas no necesitan aprobación. */
 const pacienteModelo = require('../models/paciente.model');
 const citaModelo = require('../models/cita.model');
 const historiaModelo = require('../models/historia.model');
@@ -25,8 +15,6 @@ async function pacientePorId(idTexto) {
   return paciente;
 }
 
-/* GET /api/pacientes/:id
-   Datos del paciente, sus citas y su historia, para la ficha. */
 async function ficha(req, res, next) {
   try {
     const paciente = await pacientePorId(req.params.id);
@@ -53,7 +41,6 @@ async function ficha(req, res, next) {
   }
 }
 
-/* GET /api/pacientes/:id/historia */
 async function listar(req, res, next) {
   try {
     const paciente = await pacientePorId(req.params.id);
@@ -67,8 +54,6 @@ function texto(valor) {
   return typeof valor === 'string' ? valor.trim() : '';
 }
 
-/* Valida y completa los datos de una entrada. `base` son los datos que
-   hereda una corrección de la entrada original. */
 async function validarEntrada(cuerpo, pacienteId, base = {}) {
   const errores = {};
   const datos = { ...base };
@@ -87,8 +72,6 @@ async function validarEntrada(cuerpo, pacienteId, base = {}) {
     datos.notas = notas || null;
   }
 
-  // Si viene una cita, debe ser de este paciente; de ella se toman la
-  // fecha, la especialidad y el especialista si no se envían.
   if (cuerpo.citaId !== undefined && cuerpo.citaId !== null) {
     const citaId = aId(cuerpo.citaId);
     const cita = citaId ? await citaModelo.buscarDetalle(citaId) : null;
@@ -126,9 +109,6 @@ async function validarEntrada(cuerpo, pacienteId, base = {}) {
   return datos;
 }
 
-/* POST /api/pacientes/:id/historia
-   { fechaAtencion, procedimiento, notas?, especialidadId?, especialistaId?, citaId? }
-   Con citaId (de este paciente) se puede omitir fecha, especialidad y especialista. */
 async function crear(req, res, next) {
   try {
     const paciente = await pacientePorId(req.params.id);
@@ -141,12 +121,6 @@ async function crear(req, res, next) {
   }
 }
 
-/* POST /api/admin/historia/:id/correccion
-   { notas, procedimiento?, fechaAtencion? }
-   Crea una entrada nueva que corrige a la indicada. Lo no enviado se
-   copia de la original. `notas` es obligatorio: explica la corrección.
-   Responde 201 con la entrada; `estado` dice si quedó 'vigente' (la
-   hizo el dueño) o 'pendiente' (espera la aprobación del dueño). */
 async function corregir(req, res, next) {
   try {
     const id = aId(req.params.id);
@@ -182,7 +156,6 @@ async function corregir(req, res, next) {
       creadoPor: req.usuario.id,
     });
     if (directa) {
-      // La del dueño se aprueba de una vez y queda registrado quién la revisó.
       await historiaModelo.revisar(nuevoId, { estado: 'vigente', revisadoPor: req.usuario.id });
     }
     res.status(201).json(await historiaModelo.buscarEntrada(nuevoId));

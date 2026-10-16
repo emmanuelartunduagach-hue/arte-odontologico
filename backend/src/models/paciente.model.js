@@ -1,9 +1,6 @@
-/* Acceso a `pacientes`: el registro de cada paciente, con su historia
-   clínica. No tienen usuario ni contraseña. Todas las consultas usan
-   parámetros (?) para evitar inyección SQL. */
 const { pool } = require('../config/db');
 
-const VERSION_POLITICA_DATOS = '1.1';  // debe coincidir con frontend/politica-datos.html
+const VERSION_POLITICA_DATOS = '1.1';  // Debe coincidir con frontend/politica-datos.html.
 
 const SELECT_PACIENTE = `
   SELECT id, nombres, apellidos, nombre_completo AS nombreCompleto,
@@ -13,13 +10,6 @@ const SELECT_PACIENTE = `
          DATE_FORMAT(creado_en, '%Y-%m-%d %H:%i:%s') AS creadoEn
     FROM pacientes`;
 
-/* Crea un paciente.
-   - origen 'consultorio': la secretaria lo registra en persona y
-     confirma que autorizó el tratamiento de sus datos (ahora). Puede
-     anotar a qué vino (`motivoConsulta`).
-   - origen 'web': se crea al aceptar su primera cita; la autorización
-     es la que dio al pedirla (`fechaAutorizacion` de la cita).
-   El nombre completo lo calcula la base (nombres + apellidos). */
 async function crear({
   nombres, apellidos, tipoDocumento, documento, telefono, telefonoFijo = null, correo,
   origen, motivoConsulta = null, fechaAutorizacion, creadoPor,
@@ -45,8 +35,6 @@ async function buscarPorDocumento(documento) {
   return filas[0] || null;
 }
 
-/* Hasta 100 pacientes. `busqueda` filtra por nombre, documento, celular
-   o correo; los comodines de LIKE escritos por el usuario se escapan. */
 async function listar(busqueda = '') {
   const patron = `%${busqueda.replace(/[\\%_]/g, '\\$&')}%`;
   const [filas] = await pool.execute(

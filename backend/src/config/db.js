@@ -1,5 +1,3 @@
-/* Pool de conexiones MySQL. Un pool reutiliza conexiones en
-   lugar de abrir una por consulta. */
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
@@ -14,11 +12,7 @@ const pool = mysql.createPool({
   timezone: 'Z',
 });
 
-/* Cada conexión trabaja con la hora de Colombia (UTC-5, sin horario de
-   verano). Así NOW() y los DEFAULT CURRENT_TIMESTAMP (creado_en,
-   actualizado_en, confirmada_en) guardan la hora de Rivera aunque el
-   servidor donde se publique esté en UTC. Se usa el desfase y no
-   'America/Bogota' porque MySQL en Windows no trae cargadas las zonas. */
+// Hora de Colombia en cada conexión: la usan NOW() y CURRENT_TIMESTAMP.
 pool.on('connection', (conexion) => {
   conexion.query("SET time_zone = '-05:00'");
 });

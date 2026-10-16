@@ -1,5 +1,3 @@
-/* Rutas exclusivas del dueño (rol superadmin): administradores y
-   aprobación de cambios en la historia clínica y especialistas. */
 const { Router } = require('express');
 const { requiereSesion, requiereRol } = require('../middleware/autenticacion');
 const controlador = require('../controllers/superadmin.controller');

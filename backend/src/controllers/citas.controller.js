@@ -1,30 +1,3 @@
-/* Citas.
-
-   Público (sin iniciar sesión):
-     POST /api/citas                              pedir una cita (queda confirmada)
-     GET  /api/citas/gestion/:codigo              ver la cita desde el enlace
-     POST /api/citas/gestion/:codigo/reprogramar  una sola vez
-     POST /api/citas/gestion/:codigo/cancelar
-   Secretaria:
-     GET  /api/admin/citas                        agenda con filtros
-     GET  /api/admin/citas/novedades?horas=48     lo que pasó en la web (Inicio)
-     POST /api/admin/citas                        agendar a un paciente (queda confirmada)
-     POST /api/admin/citas/:id/aceptar            pendiente → confirmada (citas antiguas)
-     POST /api/admin/citas/:id/rechazar           pendiente → rechazada (citas antiguas)
-     PATCH /api/admin/citas/:id/estado            atendida | no_asistio | cancelada
-     POST /api/admin/citas/:id/reprogramar        sin límite
-
-   Reglas acordadas (documento "Alcance v2", decisión 27 del 9 de octubre):
-   - La cita pedida por la web queda confirmada de una vez: se crea o se
-     enlaza la ficha del paciente y le llega el WhatsApp con los datos y
-     el enlace. La secretaria ya no aprueba citas; las ve en "Novedades
-     de la web". (Aceptar y rechazar quedan para citas pendientes de
-     antes de este cambio.)
-   - El paciente reprograma 1 vez desde el enlace; el cambio queda
-     confirmado y le llega el aviso. Después solo puede cancelar.
-   - Reprogramar o cancelar desde el enlace: hasta 24 h antes.
-   - Las canceladas y rechazadas no se borran. */
-
 const citaModelo = require('../models/cita.model');
 const franjaModelo = require('../models/franja.model');
 const especialistaModelo = require('../models/especialista.model');
@@ -36,14 +9,11 @@ const { hashCodigo, pareceCodigo } = require('../utils/codigos');
 const { ahoraBogota, hoyBogota, sumarDias } = require('../utils/tiempo');
 
 const HORAS_MINIMAS = () => Number(process.env.HORAS_MINIMAS_GESTION ?? 24);
-// Citas pendientes o confirmadas que una persona puede tener a la vez
-// desde la web (0 = sin límite). Se acepta el nombre anterior de la variable.
 const LIMITE_POR_DOCUMENTO = () =>
   Number(process.env.LIMITE_CITAS_ACTIVAS_POR_DOCUMENTO ?? process.env.LIMITE_CITAS_ACTIVAS_SIN_USUARIO ?? 1);
 
 const MENSAJE_HORA_TOMADA = 'Esa hora acaba de ser tomada por otra persona. Elige otra.';
 
-/* Lo que se muestra de una cita fuera del panel (sin documento ni teléfono completos). */
 function vistaPublica(cita) {
   return {
     id: cita.id,
@@ -60,7 +30,6 @@ function vistaPublica(cita) {
   };
 }
 
-/* Qué puede hacer el paciente desde su enlace, y por qué no. */
 function reglasGestion(cita) {
   if (cita.estado === 'cancelada') {
     return { puedeReprogramar: false, puedeCancelar: false, motivo: 'Esta cita fue cancelada.' };
@@ -99,16 +68,6 @@ function esHoraTomada(error) {
   return error.code === 'ER_DUP_ENTRY' && String(error.sqlMessage).includes('uq_cita_franja_ocupada');
 }
 
-/* ---------- Público ---------- */
-
-/* POST /api/citas
-   { especialidadId, franjaId, nombres, apellidos, tipoDocumento, documento,
-     telefono, telefonoFijo?, correo, autorizacionDatos: true, sitioWeb: '' }
-   La cita queda confirmada y al celular escrito le llega el WhatsApp con
-   los datos y el enlace para reprogramar o cancelar (el enlace no va en
-   la respuesta: solo lo tiene el dueño de ese número).
-   `sitioWeb` es un campo trampa: el formulario lo oculta, así que
-   una persona lo deja vacío y un bot suele llenarlo. */
 async function crear(req, res, next) {
   try {
     const cuerpo = req.body || {};
@@ -136,8 +95,6 @@ async function crear(req, res, next) {
     if (LIMITE_POR_DOCUMENTO() > 0) {
       const activas = await citaModelo.contarActivasPorDocumento(valores.documento, ahora);
       if (activas.pendientes + activas.confirmadas >= LIMITE_POR_DOCUMENTO()) {
-        // Una solicitud pendiente todavía no tiene enlace: solo llega por
-        // WhatsApp cuando el consultorio la acepta.
         throw new ErrorHttp(409, activas.pendientes > 0
           ? 'Ya tienes una solicitud de cita en revisión. Te avisaremos por WhatsApp cuando el consultorio la confirme; si necesitas cambiarla antes, escríbenos.'
           : 'Ya tienes una cita confirmada. Para pedir otra, primero asiste a esa cita o cancélala desde el enlace que te llegó por WhatsApp.');
@@ -158,8 +115,6 @@ async function crear(req, res, next) {
       throw error;
     }
 
-    // Ficha del paciente: se crea si es nuevo o se enlaza si ya existe.
-    // Un fallo aquí no tumba la cita: se ve igual en la ficha por documento.
     try {
       const paciente = await pacienteParaCitaWeb(await citaModelo.buscarDetalle(id));
       if (paciente) await citaModelo.enlazarPaciente(id, paciente.id);
@@ -185,7 +140,6 @@ async function citaDesdeCodigo(codigo) {
   return cita;
 }
 
-/* GET /api/citas/gestion/:codigo */
 async function verGestion(req, res, next) {
   try {
     const cita = await citaDesdeCodigo(req.params.codigo);
@@ -196,9 +150,6 @@ async function verGestion(req, res, next) {
   }
 }
 
-/* POST /api/citas/gestion/:codigo/reprogramar   { franjaId }
-   La nueva hora debe ser del mismo especialista. Queda confirmada y le
-   llega el aviso por WhatsApp con el mismo enlace (sigue sirviendo). */
 async function reprogramarGestion(req, res, next) {
   try {
     const cita = await citaDesdeCodigo(req.params.codigo);
@@ -236,7 +187,6 @@ async function reprogramarGestion(req, res, next) {
   }
 }
 
-/* POST /api/citas/gestion/:codigo/cancelar */
 async function cancelarGestion(req, res, next) {
   try {
     const cita = await citaDesdeCodigo(req.params.codigo);
@@ -253,12 +203,8 @@ async function cancelarGestion(req, res, next) {
   }
 }
 
-/* ---------- Secretaria ---------- */
-
 const ESTADOS = ['pendiente', 'confirmada', 'rechazada', 'cancelada', 'atendida', 'no_asistio'];
 
-/* GET /api/admin/citas?fecha=&desde=&hasta=&especialistaId=&estado=&q=
-   Sin fechas: desde hoy hasta dentro de 30 días. */
 async function agenda(req, res, next) {
   try {
     const q = req.query;
@@ -287,7 +233,6 @@ async function agenda(req, res, next) {
         documento: c.documento,
         telefono: c.telefono,
         telefonoFijo: c.telefonoFijo,
-        // Si el paciente la reprogramó: la hora que tenía antes.
         fechaAnterior: c.fechaAnterior,
         horaAnterior: c.horaAnterior,
         correo: c.correo,
@@ -309,7 +254,6 @@ async function citaPorId(idTexto) {
   return cita;
 }
 
-/* PATCH /api/admin/citas/:id/estado   { estado: 'atendida' | 'no_asistio' | 'cancelada' } */
 async function cambiarEstado(req, res, next) {
   try {
     const cita = await citaPorId(req.params.id);
@@ -344,9 +288,6 @@ async function cambiarEstado(req, res, next) {
   }
 }
 
-/* POST /api/admin/citas/:id/reprogramar   { franjaId }
-   La secretaria no tiene límite ni plazo, y puede pasar la cita a
-   otro especialista que atienda la misma especialidad. */
 async function reprogramarAdmin(req, res, next) {
   try {
     const cita = await citaPorId(req.params.id);
@@ -373,9 +314,6 @@ async function reprogramarAdmin(req, res, next) {
     }
     if (!cambiada) throw new ErrorHttp(409, 'La cita ya cambió de estado.');
 
-    // Una pendiente aún no tiene mensaje: el paciente se entera al aceptarla.
-    // Una confirmada recibe el aviso con un enlace nuevo (sin código en
-    // claro no se puede reutilizar el anterior, que deja de servir).
     const notificacion = cita.estado === 'confirmada'
       ? await notificarCita({ citaId: cita.id, tipo: 'reprogramacion' })
       : null;
@@ -385,10 +323,6 @@ async function reprogramarAdmin(req, res, next) {
   }
 }
 
-/* GET /api/admin/citas/novedades?horas=48
-   Para el Inicio del panel: citas pedidas por la web en las últimas horas
-   y las que el paciente reprogramó o canceló desde su enlace. Cada una
-   trae `novedad`: 'nueva' | 'cambio' | 'cancelada'. */
 async function novedades(req, res, next) {
   try {
     const horas = Math.min(Math.max(Number.parseInt(req.query.horas, 10) || 48, 1), 24 * 30);
@@ -412,12 +346,6 @@ async function novedades(req, res, next) {
   }
 }
 
-/* Ficha de quien pidió una cita por la web, para enlazarla:
-   - si no hay paciente con ese documento, se crea con los datos de la cita;
-   - si existe y coincide el celular o el correo, es la misma persona;
-   - si existe pero no coincide ninguno, no se enlaza (alguien pudo escribir
-     un documento ajeno): la cita igual aparece en esa ficha por documento,
-     para que la secretaria la revise. */
 async function pacienteParaCitaWeb(cita) {
   const existente = await pacienteModelo.buscarPorDocumento(cita.documento);
   if (existente) {
@@ -429,8 +357,6 @@ async function pacienteParaCitaWeb(cita) {
   return paciente;
 }
 
-/* Paciente con el documento de la cita; si no existe, se crea con los
-   datos que escribió al pedirla. Devuelve { paciente, nuevo }. */
 async function pacienteDeCita(cita, creadoPor) {
   const existente = await pacienteModelo.buscarPorDocumento(cita.documento);
   if (existente) return { paciente: existente, nuevo: false };
@@ -449,7 +375,6 @@ async function pacienteDeCita(cita, creadoPor) {
     });
     return { paciente: await pacienteModelo.buscarPorId(id), nuevo: true };
   } catch (error) {
-    // Otra aceptación lo creó al mismo tiempo: se usa ese.
     if (error.code === 'ER_DUP_ENTRY') {
       return { paciente: await pacienteModelo.buscarPorDocumento(cita.documento), nuevo: false };
     }
@@ -457,9 +382,6 @@ async function pacienteDeCita(cita, creadoPor) {
   }
 }
 
-/* POST /api/admin/citas/:id/aceptar
-   La cita pasa a confirmada, queda en la ficha del paciente y le llega
-   el WhatsApp con los datos y el enlace para reprogramar o cancelar. */
 async function aceptar(req, res, next) {
   try {
     const cita = await citaPorId(req.params.id);
@@ -485,9 +407,6 @@ async function aceptar(req, res, next) {
   }
 }
 
-/* POST /api/admin/citas/:id/rechazar
-   La hora se libera y al paciente le llega un WhatsApp invitándolo a
-   pedir otra hora. */
 async function rechazar(req, res, next) {
   try {
     const cita = await citaPorId(req.params.id);
@@ -500,10 +419,6 @@ async function rechazar(req, res, next) {
   }
 }
 
-/* POST /api/admin/citas   { pacienteId, especialidadId, franjaId }
-   Para quien llega al consultorio o llama: la secretaria le agenda la
-   cita con los datos de su ficha. Queda confirmada de una vez (no hay
-   nada que aprobar) y le llega el WhatsApp con el enlace. */
 async function crearAdmin(req, res, next) {
   try {
     const cuerpo = req.body || {};

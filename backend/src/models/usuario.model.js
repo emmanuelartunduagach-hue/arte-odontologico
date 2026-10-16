@@ -1,11 +1,5 @@
-/* Acceso a la tabla `usuarios`: quienes inician sesión (la secretaria,
-   rol administrador, y el dueño, rol superadmin).
-   Los pacientes no tienen usuario: ver paciente.model.js. Todas las
-   consultas usan parámetros (?) para evitar inyección SQL. */
 const { pool } = require('../config/db');
 
-/* Crea un administrador. Solo lo usa el script `npm run crear-admin`;
-   no existe ninguna ruta HTTP que llegue a esta función. */
 async function crearAdministrador({ nombreCompleto, documento, correo, telefono, contrasenaHash }) {
   const [resultado] = await pool.execute(
     `INSERT INTO usuarios
@@ -34,7 +28,6 @@ async function buscarPorId(id) {
   return filas[0] || null;
 }
 
-/* Guarda la contraseña nueva y apaga la obligación de cambiarla. */
 async function actualizarContrasena(id, contrasenaHash) {
   await pool.execute(
     `UPDATE usuarios SET contrasena_hash = ?, debe_cambiar_contrasena = FALSE WHERE id = ?`,
@@ -42,7 +35,6 @@ async function actualizarContrasena(id, contrasenaHash) {
   );
 }
 
-/* Administrador por correo (para el script de restablecer su clave). */
 async function buscarAdministradorPorCorreo(correo) {
   const [filas] = await pool.execute(
     `SELECT id, nombre_completo FROM usuarios WHERE correo = ? AND rol = 'administrador' LIMIT 1`,
@@ -51,7 +43,6 @@ async function buscarAdministradorPorCorreo(correo) {
   return filas[0] || null;
 }
 
-/* Datos propios de quien tiene la sesión. */
 async function perfil(id) {
   const [filas] = await pool.execute(
     `SELECT id, nombre_completo AS nombreCompleto, documento, correo, telefono, rol
@@ -60,8 +51,6 @@ async function perfil(id) {
   );
   return filas[0] || null;
 }
-
-/* ---------- Administradores (los gestiona el dueño) ---------- */
 
 const CAMPOS_ADMIN = `id, nombre_completo AS nombreCompleto, documento, correo, telefono,
   activo, debe_cambiar_contrasena AS debeCambiarContrasena,
@@ -83,8 +72,6 @@ async function buscarAdministrador(id) {
   return f ? { ...f, activo: Boolean(f.activo), debeCambiarContrasena: Boolean(f.debeCambiarContrasena) } : null;
 }
 
-/* Administrador creado por el dueño, con contraseña temporal que debe
-   cambiar al ingresar. */
 async function crearAdministradorTemporal({ nombreCompleto, documento, correo, telefono, contrasenaHash, creadoPor }) {
   const [r] = await pool.execute(
     `INSERT INTO usuarios
@@ -96,7 +83,6 @@ async function crearAdministradorTemporal({ nombreCompleto, documento, correo, t
   return r.insertId;
 }
 
-/* Solo cambia los campos enviados. */
 async function actualizarAdministrador(id, cambios) {
   const columnas = { nombreCompleto: 'nombre_completo', documento: 'documento', correo: 'correo', telefono: 'telefono', activo: 'activo' };
   const pares = Object.entries(cambios).filter(([k]) => columnas[k]);
@@ -108,7 +94,6 @@ async function actualizarAdministrador(id, cambios) {
   );
 }
 
-/* Contraseña temporal nueva (el administrador la cambia al ingresar). */
 async function restablecerTemporal(id, contrasenaHash) {
   await pool.execute(
     `UPDATE usuarios SET contrasena_hash = ?, debe_cambiar_contrasena = TRUE
@@ -117,14 +102,10 @@ async function restablecerTemporal(id, contrasenaHash) {
   );
 }
 
-/* Borra al administrador. Si ya registró pacientes, citas o historia,
-   la base lo impide (ER_ROW_IS_REFERENCED_2) y el controlador lo informa. */
 async function eliminarAdministrador(id) {
   const [r] = await pool.execute(`DELETE FROM usuarios WHERE id = ? AND rol = 'administrador'`, [id]);
   return r.affectedRows > 0;
 }
-
-/* ---------- Dueño (solo el script `npm run superadmin`) ---------- */
 
 async function crearSuperadmin({ nombreCompleto, documento, correo, telefono, contrasenaHash }) {
   const [r] = await pool.execute(

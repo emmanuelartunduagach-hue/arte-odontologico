@@ -1,12 +1,3 @@
-/* Datos de demostración para probar el sistema desde el navegador:
-   3 especialistas y horarios para los próximos 14 días (lunes a sábado).
-
-     cd backend
-     npm run datos-demo
-
-   Solo para desarrollo: no se ejecuta si NODE_ENV=production.
-   Requiere que exista el administrador (npm run crear-admin).
-   Se puede ejecutar varias veces: no duplica especialistas ni horas. */
 require('dotenv').config();
 const { pool } = require('../config/db');
 const { hoyBogota, sumarDias } = require('../utils/tiempo');
@@ -34,7 +25,6 @@ const HORAS = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '1
     }
     const [[sede]] = await pool.query(`SELECT id FROM sedes WHERE activa = TRUE ORDER BY id LIMIT 1`);
 
-    // Fechas: próximos 14 días, sin domingos. El sábado solo en la mañana.
     const fechas = [];
     for (let i = 1; i <= 14; i++) {
       const fecha = sumarDias(hoyBogota(), i);

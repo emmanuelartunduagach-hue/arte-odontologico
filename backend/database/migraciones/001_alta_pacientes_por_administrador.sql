@@ -1,12 +1,4 @@
--- ============================================================
---  Migración 001: alta de pacientes por el administrador
---  Para bases YA creadas con el schema.sql anterior.
---  Si creas la base desde cero con el schema.sql actual, NO la
---  necesitas: ya incluye estas columnas.
---  Ejecutar UNA sola vez (MySQL no repite ADD COLUMN sin error).
--- ============================================================
-
--- Tildes y eñes correctas aunque el cliente use otra codificación.
+-- Migración 001: alta de pacientes por el administrador
 SET NAMES utf8mb4;
 
 USE arte_odontologico;

@@ -1,6 +1,3 @@
-/* Punto de entrada. Verifica la base de datos antes de
-   levantar el servidor: es preferible fallar de inmediato
-   que aceptar peticiones sin persistencia. */
 require('dotenv').config();
 const app = require('./app');
 const { probarConexion } = require('./config/db');
@@ -15,10 +12,9 @@ const PUERTO = process.env.PORT || 3000;
     app.listen(PUERTO, () => {
       console.log(`API escuchando en http://localhost:${PUERTO}/api`);
     });
-    iniciarProgramacion(); // recordatorios del día anterior
+    iniciarProgramacion();
   } catch (error) {
-    // Algunos errores de red (varias direcciones intentadas) llegan con el
-    // mensaje vacío: se muestran también el código y el destino.
+    // Algunos errores de red llegan sin mensaje: se muestran el código y el destino.
     const detalle = [error.code, error.message, error.errors?.map((e) => e.message).join(' | ')]
       .filter(Boolean).join(' — ');
     console.error('No fue posible conectar con MySQL:', detalle || String(error));

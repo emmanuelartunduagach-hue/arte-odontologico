@@ -1,6 +1,3 @@
-/* Panel de la secretaria (administrador) y del dueño (superadmin, que
-   pasa cualquier control de rol). El rol se lee del token firmado,
-   nunca del cuerpo de la petición. */
 const { Router } = require('express');
 const { requiereSesion, requiereRol } = require('../middleware/autenticacion');
 const especialidades = require('../controllers/especialidades.controller');
@@ -18,7 +15,6 @@ router.get('/especialidades', especialidades.listarTodas);
 router.post('/especialidades', especialidades.crear);
 router.patch('/especialidades/:id', especialidades.actualizar);
 
-// Crear y editar especialistas es solo de la dueña (/superadmin/especialistas).
 router.get('/especialistas', especialistas.listarTodos);
 router.get('/especialistas/:id/franjas', especialistas.listarFranjas);
 router.post('/especialistas/:id/franjas', especialistas.publicarFranjas);

@@ -1,14 +1,3 @@
-/* Verificación del token y control de rol.
-
-   Corrige el fallo del boceto: allí el rol se enviaba desde el
-   formulario de ingreso, así que cualquiera podía declararse
-   administrador. Aquí el rol se lee del token firmado por el
-   servidor y no puede alterarse desde el cliente.
-
-   Además, en cada petición se confirma en la base que el usuario
-   sigue activo y con el mismo rol: si el dueño elimina o desactiva a
-   un administrador, su sesión deja de servir de inmediato, sin
-   esperar a que venza el token. */
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/db');
 
@@ -43,8 +32,7 @@ async function requiereSesion(req, res, next) {
   }
 }
 
-/* El dueño (superadmin) tiene permiso total: pasa cualquier control de
-   rol. Las rutas que son solo suyas usan requiereRol('superadmin'). */
+// El dueño pasa cualquier control de rol.
 function requiereRol(...rolesPermitidos) {
   return (req, res, next) => {
     const rol = req.usuario?.rol;

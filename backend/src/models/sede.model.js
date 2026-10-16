@@ -1,4 +1,3 @@
-/* El consultorio atiende hoy en una sola sede activa (Rivera). */
 const { pool } = require('../config/db');
 
 async function principal() {

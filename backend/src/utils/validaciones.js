@@ -1,15 +1,8 @@
-/* Validación de datos de personas, fechas y horas.
-   Cada validador de campo devuelve '' si el valor es válido o el
-   mensaje de error si no. Las funciones `validarX` agrupan campos y
-   devuelven { valores (normalizados), errores (un mensaje por campo) }. */
-
 const REGEX_CORREO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 function limpiar(valor) {
   return typeof valor === 'string' ? valor.trim() : '';
 }
-
-/* ---------- Normalización ---------- */
 
 function normalizarNombre(valor) {
   return limpiar(valor).replace(/\s+/g, ' ');
@@ -19,16 +12,12 @@ function normalizarDocumento(valor) {
   return limpiar(valor).replace(/[.\s-]/g, '');
 }
 
-/* Deja solo dígitos y agrega el indicativo de Colombia (57) a los
-   celulares de 10 dígitos que empiezan por 3. WhatsApp exige el
-   número completo con indicativo y sin el signo +. */
+// WhatsApp exige el número con indicativo: se agrega 57 a los celulares de Colombia.
 function normalizarTelefono(valor) {
   const digitos = limpiar(valor).replace(/[\s\-()+]/g, '');
   if (/^3\d{9}$/.test(digitos)) return `57${digitos}`;
   return digitos;
 }
-
-/* ---------- Validadores de campo ---------- */
 
 function errorNombre(nombre) {
   return nombre.length < 3 || nombre.length > 120
@@ -54,7 +43,6 @@ function errorCorreo(correo) {
     : '';
 }
 
-/* Devuelve el mensaje de error de una contraseña, o '' si es válida. */
 function validarContrasena(contrasena) {
   if (typeof contrasena !== 'string' || contrasena.length < 8 || contrasena.length > 72) {
     return 'La contraseña debe tener entre 8 y 72 caracteres.';
@@ -65,14 +53,10 @@ function validarContrasena(contrasena) {
   return '';
 }
 
-/* ---------- Grupos de campos ---------- */
-
 function agregar(errores, campo, mensaje) {
   if (mensaje) errores[campo] = mensaje;
 }
 
-/* Usuario completo. `exigirContrasena: false` se usa cuando la
-   secretaria crea un paciente: la contraseña la genera el sistema. */
 function validarUsuario(datos = {}, { exigirContrasena = true } = {}) {
   const errores = {};
   const nombreCompleto = normalizarNombre(datos.nombreCompleto);
@@ -97,7 +81,6 @@ function validarUsuario(datos = {}, { exigirContrasena = true } = {}) {
   };
 }
 
-/* Tipos de documento aceptados (Colombia). */
 const TIPOS_DOCUMENTO = {
   CC: 'Cédula de ciudadanía',
   TI: 'Tarjeta de identidad',
@@ -113,7 +96,6 @@ function errorParteNombre(valor, que) {
   return '';
 }
 
-/* El pasaporte puede llevar letras; los demás documentos, solo números. */
 function errorDocumentoSegunTipo(documento, tipo) {
   if (tipo === 'PA') {
     return /^[A-Z0-9]{5,20}$/.test(documento)
@@ -129,9 +111,6 @@ function errorTelefonoFijo(telefono) {
     : 'Escribe un teléfono válido, por ejemplo 608 837 0000, o déjalo vacío.';
 }
 
-/* Datos de una persona al pedir su cita o al registrarla en el
-   consultorio. Obligatorios: nombres, apellidos, tipo y número de
-   documento, celular y correo. Opcional: teléfono fijo. */
 function validarDatosPersona(datos = {}) {
   const errores = {};
   const nombres = normalizarNombre(datos.nombres);
@@ -159,26 +138,20 @@ function validarDatosPersona(datos = {}) {
   };
 }
 
-/* ---------- Fechas, horas e identificadores ---------- */
-
-/* 'YYYY-MM-DD' que además sea una fecha real (no 2026-02-31). */
 function esFecha(valor) {
   if (typeof valor !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(valor)) return false;
   const fecha = new Date(`${valor}T00:00:00Z`);
   return !Number.isNaN(fecha.getTime()) && fecha.toISOString().slice(0, 10) === valor;
 }
 
-/* 'HH:MM' entre 00:00 y 23:59. */
 function esHora(valor) {
   return typeof valor === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(valor);
 }
 
-/* 'YYYY-MM'. */
 function esMes(valor) {
   return typeof valor === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(valor);
 }
 
-/* Entero positivo que venga como número o como texto ("12"). */
 function aId(valor) {
   const numero = typeof valor === 'string' && /^\d+$/.test(valor) ? Number(valor) : valor;
   return Number.isInteger(numero) && numero > 0 && numero < 2 ** 32 ? numero : null;
