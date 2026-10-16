@@ -882,7 +882,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 
 /* ---------- Filas de citas ---------- */
 .lista-filas {
-  overflow: hidden;
   border-radius: var(--radio-lg);
   background: var(--papel);
   box-shadow: var(--sombra-sutil);
@@ -918,7 +917,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 .lista-pacientes {
   border: 1px solid var(--borde);
   border-radius: var(--radio-lg);
-  overflow: hidden;
   background: var(--papel);
   box-shadow: var(--sombra-sutil);
 }
@@ -950,7 +948,7 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 .solicitud { border-radius: var(--radio-lg); box-shadow: var(--sombra-sutil); transition: box-shadow var(--transicion); }
 .solicitud:hover { box-shadow: var(--sombra-media); }
 .solicitud__lado { border-radius: var(--radio-md); }
-.equipo { border: 1px solid var(--borde); border-radius: var(--radio-lg); overflow: hidden; background: var(--papel); box-shadow: var(--sombra-sutil); }
+.equipo { border: 1px solid var(--borde); border-radius: var(--radio-lg); background: var(--papel); box-shadow: var(--sombra-sutil); }
 .fila-equipo { transition: background var(--transicion); }
 .fila-equipo:hover { background: var(--violeta-50); }
 
@@ -1004,7 +1002,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 /* Franja lavanda arriba del contenido */
 .panel-contenido {
   position: relative;
-  overflow: hidden;
   isolation: isolate;
   background:
     linear-gradient(180deg, var(--lavanda-100) 0, var(--papel) 240px);
@@ -1178,3 +1175,11 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
   .pagina-panel--dueno .panel-nav::-webkit-scrollbar { display: none; }
   .pagina-panel--dueno .panel-nav a { scroll-snap-align: start; padding-inline: var(--e-1); }
 }
+
+/* Las listas no recortan su contenido (overflow) para que los menús
+   «Más» y «Opciones» de la última fila se vean completos; en su lugar,
+   la primera y la última fila siguen la curva de la tarjeta. */
+.lista-filas > :first-child, .lista-pacientes > li:first-child, .lista-pacientes > li:first-child > a,
+.equipo > :first-child { border-top-left-radius: var(--radio-lg); border-top-right-radius: var(--radio-lg); }
+.lista-filas > :last-child, .lista-pacientes > li:last-child, .lista-pacientes > li:last-child > a,
+.equipo > :last-child { border-bottom-left-radius: var(--radio-lg); border-bottom-right-radius: var(--radio-lg); }
