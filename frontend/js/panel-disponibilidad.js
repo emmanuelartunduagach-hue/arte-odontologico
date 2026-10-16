@@ -166,7 +166,8 @@ function abrirEditorDia(fecha) {
 
   const horasEditor = [...new Set([...HORAS_PUBLICABLES, ...delDia.keys()])].sort();
   const marcadas = new Set(delDia.keys());
-  const bloqueada = (h) => Boolean(delDia.get(h)?.cita) || `${fecha}T${h}` <= ahora;
+  const yaPaso = (h) => `${fecha}T${h}` <= ahora;
+  const bloqueada = (h) => Boolean(delDia.get(h)?.cita);
 
   const error = el('p', { class: 'alerta', role: 'alert', hidden: true });
   const resumen = el('p', { class: 'editor-dia__resumen', 'aria-live': 'polite' });
@@ -175,14 +176,15 @@ function abrirEditorDia(fecha) {
   const botones = new Map();
   function botonHora(h) {
     const franja = delDia.get(h);
-    const pasada = `${fecha}T${h}` <= ahora;
+    const pasada = yaPaso(h);
     if (franja?.cita) {
       return el('span', { class: 'hora-toggle hora-toggle--cita', title: `Cita de ${franja.cita.paciente}` },
         el('span', { texto: horaLarga(h) }), el('span', { class: 'hora-toggle__nota', texto: `Cita: ${franja.cita.paciente}` }));
     }
     const b = el('button', {
-      type: 'button', class: 'hora-toggle', 'aria-pressed': String(marcadas.has(h)), disabled: pasada,
+      type: 'button', class: 'hora-toggle' + (pasada ? ' hora-toggle--pasada' : ''), 'aria-pressed': String(marcadas.has(h)),
       onclick: () => { marcadas.has(h) ? marcadas.delete(h) : marcadas.add(h); pintarBotones(); actualizar(); },
+      title: pasada ? 'Ya pasó: no se publica hoy, pero sí se copia a los otros días' : null,
     }, el('span', { texto: horaLarga(h) }), pasada && el('span', { class: 'hora-toggle__nota', texto: 'Ya pasó' }));
     botones.set(h, b);
     return b;
@@ -222,8 +224,10 @@ function abrirEditorDia(fecha) {
       el('legend', { class: 'campo__etiqueta', texto: 'Días' }), otrosDias),
     el('label', { class: 'campo' }, el('span', { class: 'campo__etiqueta', texto: 'Repetir' }), repetir));
 
+  const hayPasadas = horasEditor.some(yaPaso);
   const form = el('form', { class: 'editor-dia', novalidate: true },
     el('p', { class: 'seccion-panel__subtitulo', texto: `${especialista.nombre}. Toca una hora para publicarla o quitarla: las marcadas son las que los pacientes pueden elegir.` }),
+    hayPasadas && el('p', { class: 'campo__ayuda', texto: 'Las horas que ya pasaron no se publican hoy, pero puedes marcarlas para copiarlas a otros días.' }),
     atajos,
     bloques,
     copiar,
@@ -286,7 +290,7 @@ function abrirEditorDia(fecha) {
       const partes = [];
       if (c.totalAgregar) partes.push(`se publican ${plural(c.totalAgregar, 'hora', 'horas')}`);
       if (c.quitar.length) partes.push(`se quitan ${plural(c.quitar.length, 'hora', 'horas')}`);
-      const quedan = horasEditor.filter((h) => marcadas.has(h) || delDia.get(h)?.cita).length;
+      const quedan = horasEditor.filter((h) => (marcadas.has(h) && !yaPaso(h)) || delDia.get(h)?.cita).length;
       resumen.textContent = partes.length
         ? `${capitalizar(partes.join(' y '))}${dias}.` + (c.fechas.length === 1 ? ` El día queda con ${plural(quedan, 'hora', 'horas')}.` : '')
           + (c.conCita ? ` ${plural(c.conCita, 'hora con cita se conserva', 'horas con cita se conservan')}.` : '')

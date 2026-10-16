@@ -487,6 +487,7 @@ a.fila-cita__nombre:hover { color: var(--acento-texto); }
 .hora-toggle[aria-pressed="true"] { border-style: solid; border-color: var(--menta-600); background: var(--menta-100); color: var(--menta-600); font-weight: var(--peso-semi); }
 .hora-toggle[aria-pressed="true"]::before { content: "✓ "; }
 .hora-toggle:disabled { cursor: not-allowed; opacity: .5; }
+.hora-toggle--pasada:not([aria-pressed="true"]) { opacity: .6; }
 .hora-toggle--cita { border-style: solid; border-color: var(--violeta-100); background: var(--violeta-100); color: var(--acento-texto); font-weight: var(--peso-semi); cursor: default; }
 .hora-toggle__nota { display: block; font-size: var(--txt-xs); font-weight: var(--peso-normal); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .editor-dia__copiar { margin: var(--e-2) 0 var(--e-4); padding: var(--e-3); border: 1px solid var(--borde); border-radius: var(--radio-md); background: var(--lienzo); }
