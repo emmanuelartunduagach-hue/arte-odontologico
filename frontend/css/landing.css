@@ -1,17 +1,3 @@
-/* ============================================================
-   Landing — estilos exclusivos de la página pública.
-   ============================================================ */
-
-/* ---------- Portada ----------
-   El boceto usaba una imagen a sangre completa con el texto
-   centrado encima y un degradado morado al 80% de opacidad.
-   Es el tratamiento más común y hunde la legibilidad del
-   titular. Aquí el texto vive sobre fondo limpio a la
-   izquierda y la fotografía ocupa su propio espacio a la
-   derecha, recortada en arco. El arco no es decoración:
-   remite a la forma de una pieza dental y se repite después
-   como textura de fondo en el resto de la página.            */
-
 .portada {
   position: relative;
   background-color: var(--papel);
@@ -20,8 +6,6 @@
   overflow: hidden;
 }
 
-/* Halo muy tenue detrás de la fotografía. Da profundidad al
-   bloque derecho sin recurrir a un degradado de relleno.     */
 .portada::after {
   content: '';
   position: absolute;
@@ -44,12 +28,6 @@
   padding-block: var(--e-9);
 }
 
-/* Titular como elemento activo del diseño, no como simple
-   contenedor de texto. Playfair Display es de alto contraste:
-   a tamaño grande luce mejor, por eso el titular es amplio y el
-   interlineado se mantiene cerrado.
-   Deliberadamente NO se acentúa una palabra suelta en color o
-   cursiva: es el recurso más repetido y no aporta jerarquía. */
 .portada__titulo {
   font-size: clamp(2.75rem, 5.6vw, 4.5rem);
   line-height: 1.04;
@@ -73,17 +51,12 @@
   margin-bottom: var(--e-6);
 }
 
-/* Datos operativos del consultorio. Reemplazan a la típica
-   fila de métricas infladas ("+500 pacientes felices"), que
-   en un proyecto académico nadie puede sustentar.            */
 .portada__datos {
   display: flex;
   flex-wrap: wrap;
   gap: var(--e-3);
 }
 
-/* Cada dato es una pieza pequeña de cristal: separa la
-   información sin recurrir a un divisor ni a iconos extra. */
 .portada__datos li {
   padding: var(--e-3) var(--e-4);
   background: var(--cristal);
@@ -97,12 +70,8 @@
 .dato__clave { font-size: var(--txt-xs); color: var(--ink-600); margin-bottom: 2px; }
 .dato__valor { font-size: var(--txt-sm); font-weight: var(--peso-semi); color: var(--ink-900); white-space: nowrap; }
 
-/* ---------- Figura de portada ---------- */
-
 .portada__figura { position: relative; isolation: isolate; }
 
-/* Anillo desplazado detrás del arco: eco de la forma de la
-   foto que da sensación de capas. Es solo contorno, no relleno. */
 .portada__figura::before {
   content: '';
   position: absolute;
@@ -113,9 +82,6 @@
   z-index: -1;
 }
 
-/* La foto se muestra completa (sin recorte): lleva texto
-   incrustado y el rostro debe verse entero. La altura sale de
-   su proporción real. */
 .portada__imagen {
   width: 100%;
   height: auto;
@@ -123,11 +89,6 @@
   background: var(--violeta-100);
   box-shadow: var(--sombra-flotante);
 }
-
-/* ---------- Textura de sección ----------
-   Arcos a muy baja opacidad. Retoman el recorte de la foto de
-   portada, de modo que la textura continúa una idea del diseño
-   en lugar de decorar por decorar.                           */
 
 .seccion--tinta { position: relative; background-color: var(--violeta-50); }
 
@@ -144,11 +105,6 @@
 
 .seccion--tinta > * { position: relative; z-index: 1; }
 
-/* ---------- Sección lavanda ----------
-   Fondo lavanda de la portada. Todo el texto de esta sección va
-   en --ink-900: es el único color de texto que mantiene contraste
-   AA sobre este fondo. La textura de arcos pasa a blanco.      */
-
 .seccion--lavanda { position: relative; background: var(--degradado-lavanda); }
 
 .seccion--lavanda::before {
@@ -163,13 +119,11 @@
 }
 
 .seccion--lavanda > * { position: relative; z-index: 1; }
-/* Esta sección es más compacta para que quepa en una pantalla. */
 .seccion--lavanda { padding-block: var(--e-6); }
 .seccion--lavanda .seccion__intro { margin-bottom: var(--e-5); }
 .seccion--lavanda .seccion__intro h2 { font-size: clamp(var(--txt-lg), 3.6vw, var(--txt-xl)); }
 .seccion--lavanda .seccion__intro p { color: var(--ink-900); }
 
-/* Frase de cierre bajo el carrusel, dentro del fondo lavanda. */
 .seccion__cierre {
   margin: var(--e-5) auto 0;
   max-width: 52ch;
@@ -180,17 +134,8 @@
   text-wrap: balance;
 }
 
-/* ---------- Especialidades ----------
-   Tarjetas en el mismo lavanda de la portada para que resalten
-   sobre el fondo blanco y la página mantenga una sola paleta.
-   Sin sombra por tarjeta: el color delimita. El texto va en
-   --ink-900 (único con contraste AA sobre lavanda).          */
-
 .servicios { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--e-4); }
 
-/* Compacta para que, al pulsar "Agendar mi cita", se vean las nueve
-   especialidades sin desplazarse. La sección queda justo debajo del
-   encabezado fijo (≈73px). */
 #especialidades { padding-block: var(--e-7); scroll-margin-top: 77px; }
 #especialidades .seccion__intro { margin-bottom: var(--e-5); }
 #especialidades .seccion__intro h2 { font-size: clamp(var(--txt-lg), 3.6vw, var(--txt-xl)); }
@@ -234,41 +179,23 @@
 }
 .servicio__icono svg { width: 22px; height: 22px; }
 
-/* El icono se rellena con el color de marca al interactuar:
-   un solo cambio de estado, sobre lo que identifica la tarjeta. */
 .servicio:hover .servicio__icono,
 .servicio:focus-visible .servicio__icono { background: var(--degradado-marca); color: var(--sobre-marca); transform: scale(1.05); }
 
 .servicio__nombre { display: block; font-size: var(--txt-base); font-weight: var(--peso-semi); margin-bottom: var(--e-1); letter-spacing: -.005em; }
 .servicio__desc { display: block; font-size: var(--txt-sm); color: var(--ink-600); line-height: var(--alto-normal); }
 
-/* ---------- Carrusel ----------
-   Las fotos conservan su proporción real (altura común, ancho
-   variable): así no se recortan los afiches con texto ni los
-   rostros. Sin JavaScript, o con "reducir movimiento" activado,
-   es una tira que se desplaza a mano (táctil o trackpad).
-   Con movimiento permitido, landing.js agrega .carrusel--auto:
-   la tira se desliza sola, lento y de forma continua. Se
-   detiene al pasar el cursor por encima.                       */
-
 .carrusel__pista {
-  /* Altura ligada a la pantalla: título, fotos y frase final se ven
-     completos sin desplazarse (≈400px es lo que ocupan encabezado,
-     título, descripción y frase). */
   height: clamp(220px, calc(100svh - 400px), 440px);
   overflow-x: auto;
   scrollbar-width: none;
   border-radius: var(--radio-lg);
-  padding-bottom: 14px;   /* deja ver la sombra de las fotos */
-  margin-bottom: -14px;
+  padding-bottom: 14px;  margin-bottom: -14px;
 }
 .carrusel__pista::-webkit-scrollbar { display: none; }
 
 .carrusel__carril { display: flex; width: max-content; height: 100%; }
 
-/* El margen (y no "gap") hace que la mitad del carril mida
-   exactamente lo mismo que el original, para que el bucle no
-   se note al reiniciar. */
 .carrusel__item { flex: 0 0 auto; height: 100%; margin-right: var(--e-3); }
 
 .carrusel__item img {
@@ -289,8 +216,6 @@
 @keyframes carrusel-deslizar {
   to { transform: translateX(-50%); }
 }
-
-/* ---------- Contacto ---------- */
 
 .contacto {
   display: grid;
@@ -325,8 +250,6 @@
 .aviso-wa { padding: var(--e-5); background: var(--degradado-lavanda); border-radius: var(--radio-lg); box-shadow: var(--sombra-sutil); }
 .aviso-wa h3 { font-family: var(--fuente-ui); font-size: var(--txt-base); font-weight: var(--peso-semi); margin-bottom: var(--e-2); }
 .aviso-wa p { font-size: var(--txt-sm); color: var(--ink-900); margin-bottom: var(--e-4); }
-
-/* ---------- Modal ---------- */
 
 .modal[hidden] { display: none; }
 
@@ -405,8 +328,6 @@
 
 .rejilla-2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--e-3); }
 
-/* Casilla de autorización de datos — exigida por la Ley 1581
-   de 2012 antes de tratar datos personales de pacientes.     */
 .casilla {
   display: flex;
   gap: var(--e-3);
@@ -417,10 +338,6 @@
   margin-block: var(--e-4);
 }
 .casilla input { margin-top: 3px; flex-shrink: 0; width: 16px; height: 16px; accent-color: var(--violeta-600); }
-
-/* ---------- Agendar cita (modal) ----------
-   El contenido lo genera js/agendar.js. Reutiliza .campo, .casilla
-   y .rejilla-2 de base/landing. */
 
 .seccion[id] { scroll-margin-top: 80px; }
 #especialidades.seccion[id] { scroll-margin-top: 77px; }
@@ -441,7 +358,6 @@
 
 .estado-carga { padding-block: var(--e-5); color: var(--ink-900); font-size: var(--txt-sm); }
 
-/* Resumen de lo elegido, con enlace "Cambiar" */
 .resumen {
   display: grid;
   gap: var(--e-2);
@@ -466,7 +382,6 @@
   cursor: pointer;
 }
 
-/* Lista de especialistas */
 .opciones { display: grid; gap: var(--e-2); }
 .opcion {
   display: flex;
@@ -485,7 +400,6 @@
 .opcion:hover,
 .opcion:focus-visible { border-color: var(--violeta-300); background: var(--violeta-50); transform: translateX(3px); box-shadow: var(--sombra-media); }
 
-/* Calendario: los días con horas libres van en lavanda; el resto, apagado y sin acción */
 .calendario { margin-bottom: var(--e-4); }
 .calendario__cabecera { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--e-3); }
 .calendario__mes { font-weight: var(--peso-semi); text-transform: capitalize; }
@@ -525,7 +439,6 @@
 .dia[aria-pressed="true"] { background: var(--degradado-marca); color: var(--sobre-marca); box-shadow: var(--sombra-media); }
 .calendario__ayuda { margin-top: var(--e-3); font-size: var(--txt-xs); color: var(--ink-600); }
 
-/* Horas */
 .horas { display: flex; flex-wrap: wrap; gap: var(--e-2); margin-bottom: var(--e-4); }
 .hora {
   padding: var(--e-2) var(--e-4);
@@ -542,7 +455,6 @@
 .hora:hover,
 .hora:focus-visible { background: var(--degradado-marca); border-color: transparent; color: var(--sobre-marca); transform: translateY(-1px); box-shadow: var(--sombra-media); }
 
-/* Avisos */
 .alerta {
   margin-block: var(--e-4);
   padding: var(--e-3) var(--e-4);
@@ -556,19 +468,11 @@
 .alerta--info { background: var(--violeta-50); color: var(--ink-900); }
 .alerta__accion { margin-top: var(--e-3); }
 
-/* Campo trampa contra bots: fuera de pantalla (no display:none, que los bots detectan) */
 .trampa { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 
-/* Confirmación */
 .exito { display: flex; align-items: center; gap: var(--e-3); margin-bottom: var(--e-4); color: var(--menta-600); }
 .exito svg { width: 32px; height: 32px; flex-shrink: 0; }
 .exito .agendar__titulo { margin: 0; color: var(--ink-900); }
-
-/* ---------- Entrada de página ----------
-   Una sola secuencia orquestada, al cargar y solo en el hero.
-   Deliberadamente NO se anima cada sección al hacer scroll:
-   ese efecto repetido es lo que hace que una página se sienta
-   plantilla en lugar de producto.                            */
 
 @media (prefers-reduced-motion: no-preference) {
   .entrada > * { animation: subir 620ms cubic-bezier(.2, .7, .3, 1) backwards; }
@@ -590,8 +494,6 @@
   to { opacity: 1; transform: none; }
 }
 
-/* ---------- Responsive ---------- */
-
 @media (max-width: 960px) {
   .portada::after { display: none; }
   .portada__rejilla { grid-template-columns: 1fr; gap: var(--e-7); padding-block: var(--e-7); }
@@ -611,10 +513,6 @@
   .encabezado__acciones .btn { padding-inline: var(--e-4); }
 }
 
-
-/* ---------- Gestionar mi cita (gestionar-cita.html) ---------- */
-
-/* El fondo lila cubre toda la pantalla, también en celulares altos. */
 .pagina-gestion { background-color: var(--violeta-50); background-image: var(--degradado-pagina); background-attachment: fixed; }
 .gestion { padding-block: var(--e-8); min-height: calc(100vh - 72px); min-height: calc(100dvh - 76px); background: transparent; }
 .gestion__tarjeta {
@@ -636,18 +534,6 @@
   .acciones .btn { width: 100%; }
 }
 
-/* ============================================================
-   Identidad: el arco
-   La forma de arco (la corona de un diente y el recorte de la
-   foto de portada) es el único gesto fuerte de la página. Se usa
-   en tres lugares: el portal lavanda de la portada, el panel de
-   WhatsApp en Contacto y el sello de cada título de sección.
-   Todo lo demás se mantiene sobrio.
-   ============================================================ */
-
-/* ---------- Portada: portal lavanda detrás de la foto ----------
-   Un arco lavanda que nace del borde inferior de la portada y
-   envuelve la fotografía; dentro, dos arcos finos en blanco.    */
 .portada::after { display: none; }
 .portada__figura { padding-inline: var(--e-5); align-self: stretch; display: grid; align-content: center; }
 .portada__figura::before {
@@ -666,7 +552,6 @@
 }
 .portada__imagen { border: 6px solid var(--papel); }
 
-/* ---------- Títulos de sección con sello de arco ---------- */
 .seccion__intro h2,
 .contacto h2 {
   position: relative;
@@ -687,10 +572,6 @@
 }
 .seccion--lavanda .seccion__intro h2::before { background: var(--ink-900); }
 
-/* ---------- Especialidades: de nuevo en lavanda ----------
-   El lavanda sólido de la portada, como lo prefería el equipo.
-   Texto en --ink-900 (único con AA sobre lavanda). El ícono va en
-   una pastilla blanca y se rellena de morado al interactuar.   */
 #especialidades {
   position: relative;
   background: var(--papel);
@@ -706,8 +587,6 @@
   overflow: hidden;
   isolation: isolate;
 }
-/* Arco blanco tenue en la esquina: eco de la portada. */
-/* Diente del logo como marca de agua en la esquina. */
 .servicio::after {
   content: '';
   position: absolute;
@@ -742,7 +621,6 @@
 .servicio__nombre { font-size: var(--txt-md); }
 .servicio__desc { color: var(--ink-900); }
 
-/* ---------- Nuestros espacios ---------- */
 .seccion--lavanda { padding-block: var(--e-7); }
 .seccion__cierre {
   font-style: italic;
@@ -751,7 +629,6 @@
   max-width: 34ch;
 }
 
-/* ---------- Contacto: datos + portal de WhatsApp ---------- */
 #contacto { background: var(--lienzo); }
 .contacto {
   grid-template-columns: 1.15fr 1fr;
@@ -801,14 +678,11 @@
 }
 .aviso-wa p { color: var(--pie-texto); margin-inline: auto; margin-bottom: var(--e-5); }
 
-/* ---------- Pie ---------- */
 .pie h4 { font-family: var(--fuente-titular); font-weight: var(--peso-titular); font-size: var(--txt-md); }
 
-/* ---------- Diálogo de agendar ---------- */
 .modal__cabecera h2 { letter-spacing: -.01em; }
 .dia--libre { background: var(--lavanda-500); }
 
-/* ---------- Responsive de la capa de identidad ---------- */
 @media (max-width: 960px) {
   .portada__figura { margin-top: var(--e-4); align-self: auto; }
   .portada__figura::before { inset: -28px -8px -36px -8px; border-radius: 999px 999px var(--radio-xl) var(--radio-xl); }

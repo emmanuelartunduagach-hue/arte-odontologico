@@ -1,24 +1,10 @@
-/* Gestionar mi cita (gestionar-cita.html?codigo=…).
-
-   Contrato API v2, sección 2:
-     GET  /citas/gestion/:codigo                 ver la cita y qué se puede hacer
-     POST /citas/gestion/:codigo/reprogramar     { franjaId }  (una sola vez)
-     POST /citas/gestion/:codigo/cancelar
-
-   Los botones se muestran según puedeReprogramar / puedeCancelar y, si
-   alguno es false, se explica el `motivo`. Al reprogramar, la nueva hora
-   queda confirmada de una vez y llega el aviso por WhatsApp; este mismo
-   enlace sigue sirviendo. Las utilidades están en js/comun.js. */
-
 const codigo = new URLSearchParams(location.search).get('codigo') || '';
 const cuerpo = document.getElementById('gestion-cuerpo');
 const estado = { paso: 'cargando', mensaje: 'Buscando tu cita…', aviso: null };
-let turno = 0;  // descarta respuestas de una pantalla que ya cambió
+let turno = 0;
 
 const rutaGestion = (accion = '') => `/citas/gestion/${encodeURIComponent(codigo)}${accion}`;
 const URL_AGENDAR = 'index.html#especialidades';
-
-/* ---------- Pantallas ---------- */
 
 function titulo(texto) {
   return el('h1', { class: 'agendar__titulo gestion__titulo', tabindex: '-1', 'data-foco': true, texto });
@@ -49,8 +35,6 @@ function pintarError() {
   return [
     titulo(estado.error.estado === 404 ? 'No encontramos tu cita' : 'No pudimos cargar tu cita'),
     el('p', { class: 'alerta', role: 'alert', texto: estado.error.message }),
-    // Si el consultorio cambia la hora, llega un enlace nuevo y el
-    // anterior deja de servir.
     estado.error.estado === 404 && el('p', { class: 'agendar__nota', texto: 'Si el consultorio cambió la hora de tu cita, usa el enlace del último WhatsApp que te enviamos: el anterior ya no funciona. Si no lo encuentras, escríbenos y te ayudamos.' }),
     el('div', { class: 'acciones' },
       estado.error.estado === 404
@@ -100,8 +84,6 @@ function pintarVer() {
     el('div', { class: 'acciones' }, acciones),
   ];
 }
-
-/* ---------- Reprogramar ---------- */
 
 function comenzarReprogramar() {
   Object.assign(estado, {
@@ -197,7 +179,6 @@ async function reprogramar() {
     pintar();
   } catch (error) {
     if (error.estado === 409) {
-      // La hora se tomó o la regla ya no lo permite: se vuelve a elegir.
       const fecha = estado.fecha;
       Object.assign(estado, { paso: 'reprogramar', franja: null, horas: null, aviso: null, alerta: error.message });
       pintar();
@@ -215,8 +196,6 @@ function volverAVer() {
   Object.assign(estado, { paso: 'ver', aviso: null, error: null });
   pintar();
 }
-
-/* ---------- Cancelar ---------- */
 
 function prepararCancelar() {
   const { cita, puedeReprogramar } = estado.gestion;
@@ -261,8 +240,6 @@ function pintarCancelada() {
       el('a', { class: 'btn btn--secundario', href: 'index.html', texto: 'Ir al inicio' })),
   ];
 }
-
-/* ---------- Carga inicial y errores ---------- */
 
 function fallar(error, reintentar) {
   estado.paso = 'error';

@@ -1,33 +1,7 @@
-/* Panel de la secretaria · Pacientes e historia clínica.
-
-   Un paciente es un registro sin usuario ni contraseña. Llega de dos formas:
-   - por la web: su ficha se crea sola cuando la secretaria acepta su
-     primera cita;
-   - en persona: la secretaria lo registra aquí y le agenda la cita.
-
-   Contrato API v2, sección 4:
-     GET  /pacientes?q=                   lista y búsqueda
-     POST /pacientes                      { nombres, apellidos, tipoDocumento, documento, telefono, telefonoFijo?,
-                                            correo, motivoConsulta?, autorizacionDatos }
-     GET  /pacientes/:id                  { paciente, citas, historia }
-     POST /pacientes/:id/historia         { fechaAtencion, procedimiento, notas?, citaId? }
-     POST /admin/historia/:id/correccion  { notas, procedimiento? }
-     POST /admin/citas                    { pacienteId, especialidadId, franjaId }  (queda confirmada)
-   Para agendar se usan el catálogo y el calendario públicos:
-     GET /especialidades · /especialidades/:id/especialistas
-     GET /especialistas/:id/calendario?mes= · /especialistas/:id/horas?fecha=
-
-   La historia clínica no se edita ni se borra (Resolución 1995 de 1999):
-   corregir es agregar una entrada nueva que apunta a la original. La
-   corrección que pide un administrador queda "esperando aprobación"
-   hasta que el dueño la apruebe o la rechace (panel-superadmin.js); la
-   del dueño queda vigente de una vez. El odontograma vive en
-   panel-odontograma.js. */
-
 const pacientesPanel = {
   q: '',
   turno: 0,
-  especialidades: null,   // GET /especialidades (para agendar)
+  especialidades: null,
 };
 
 const ORIGEN = { web: 'Pidió cita por la web', consultorio: 'Registrado en el consultorio' };
@@ -36,8 +10,6 @@ function montarPacientes(cuerpo, parametro) {
   if (parametro) return montarFicha(cuerpo, parametro);
   return montarLista(cuerpo);
 }
-
-/* ---------- Formularios (campos con su error) ---------- */
 
 function campoForm(nombre, etiqueta, tipo = 'text', extra = {}) {
   const id = `pac-${nombre}`;
@@ -64,7 +36,6 @@ function limpiarErroresForm(form) {
   form.querySelectorAll('[aria-invalid]').forEach((c) => c.removeAttribute('aria-invalid'));
 }
 
-/** Muestra los errores por campo; devuelve los que no tienen campo. */
 function mostrarErroresForm(form, campos) {
   const sueltos = [];
   let primero = null;
@@ -80,8 +51,6 @@ function mostrarErroresForm(form, campos) {
   primero?.focus();
   return sueltos;
 }
-
-/* ---------- Lista ---------- */
 
 function montarLista(cuerpo) {
   const resultados = el('div');
@@ -134,8 +103,6 @@ async function cargarLista(resultados) {
             el('span', { class: 'fila-cita__detalle', texto: `Doc. ${p.documento} · Cel. ${telefonoLegible(p.telefono)}` })),
           el('span', { class: 'fila-paciente-panel__origen', texto: p.origen === 'web' ? 'Web' : 'Consultorio' }))))));
 }
-
-/* ---------- Registrar paciente (llegó al consultorio) ---------- */
 
 function nuevoPaciente() {
   const nodo = dialogo.abrir('Registrar paciente');
@@ -202,8 +169,6 @@ function nuevoPaciente() {
   pintarEn(nodo, form);
   form.nombres.focus();
 }
-
-/* ---------- Ficha del paciente ---------- */
 
 async function montarFicha(cuerpo, idTexto) {
   const aviso = tomarAviso();
@@ -311,8 +276,6 @@ function entradaHistoria(h, historia, paciente, citas) {
       puedeCorregir && el('button', { type: 'button', class: 'btn btn--fantasma btn--compacto', onclick: () => corregirEntrada(h, paciente), texto: 'Corregir' })));
 }
 
-/* ---------- Historia: agregar y corregir ---------- */
-
 function agregarEntrada(paciente, citas, citaElegida = null) {
   const nodo = dialogo.abrir('Agregar a la historia clínica');
   const atendidas = citas.filter((c) => c.estado === 'atendida');
@@ -336,7 +299,6 @@ function agregarEntrada(paciente, citas, citaElegida = null) {
       el('button', { type: 'submit', class: 'btn btn--primario', texto: 'Guardar entrada' }),
       el('button', { type: 'button', class: 'btn btn--secundario', 'data-cerrar': true, texto: 'Cancelar' })));
 
-  // Al elegir una cita, la fecha de atención es la de la cita.
   form.citaId?.addEventListener('change', () => {
     const c = atendidas.find((x) => String(x.id) === form.citaId.value);
     if (c) form.fechaAtencion.value = c.fecha;
@@ -413,10 +375,6 @@ function corregirEntrada(entrada, paciente) {
   pintarEn(nodo, form);
   form.notas.focus();
 }
-
-/* ---------- Agendar cita a un paciente ----------
-   Especialidad → especialista → día → hora → confirmar. Queda confirmada
-   y al paciente le llega el WhatsApp con los datos y el enlace. */
 
 async function agendarParaPaciente(paciente) {
   const nodo = dialogo.abrir('Agendar cita');

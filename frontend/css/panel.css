@@ -1,8 +1,3 @@
-/* ============================================================
-   Páginas con sesión: cambiar contraseña y panel de la secretaria. Se carga después de landing.css y reutiliza
-   .gestion, .gestion__tarjeta, .resumen, .alerta y .acciones.
-   ============================================================ */
-
 .encabezado__usuario {
   font-size: var(--txt-sm);
   color: var(--ink-600);
@@ -10,7 +5,6 @@
 
 .gestion__intro { margin-bottom: var(--e-5); color: var(--ink-600); }
 
-/* Estado de la cita: el texto siempre acompaña al color. */
 .estado {
   display: inline-block;
   padding: 2px var(--e-3);
@@ -25,28 +19,18 @@
 .estado--no_asistio { background: var(--borde); color: var(--ink-600); }
 .estado--rechazada  { background: var(--rosa-100);  color: var(--rosa-700); }
 
-/* ---------- Cambiar contraseña ---------- */
-
 .form-clave { max-width: 420px; }
 .form-clave .campo__error[hidden] { display: none; }
-
-/* ---------- Panel de la secretaria ----------
-   Menú lateral + contenido a todo el ancho. En celular el menú pasa
-   a ser una barra fija abajo, al alcance del pulgar. Detrás, una
-   textura con el diente del logo (trazado del logo.png), muy tenue. */
 
 .pagina-panel {
   background-color: var(--violeta-50);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='76' height='76' viewBox='0 0 76 76'%3E%3Cpath d='M26.2 40.5 29.4 48.5 32.0 53.0 34.0 54.8 35.1 54.9 35.7 54.7 36.6 53.8 37.0 52.9 38.8 46.7 39.6 45.3 38.5 46.6 35.7 52.7 35.0 53.3 34.7 53.3 33.6 52.1 32.1 49.3 29.7 42.8 27.5 41.6ZM53.3 37.1 50.9 39.7 49.0 41.1 45.0 49.9 43.1 52.4 42.5 52.4 41.9 51.5 40.4 47.8 40.9 52.0 41.3 53.1 42.1 53.9 43.6 54.0 44.3 53.7 46.7 51.2 49.7 45.9 51.7 41.6ZM24.0 31.6 24.1 32.5 26.0 35.3 27.8 37.0 26.5 31.6 26.5 28.8 27.1 27.3 28.0 26.5 30.0 26.3 32.5 26.8 35.5 28.0 39.6 30.3 42.8 31.2 45.0 31.2 46.2 30.8 47.8 29.9 48.6 29.1 47.5 29.8 45.7 30.4 44.1 30.4 42.6 30.1 40.7 29.3 37.4 27.0 33.9 25.1 31.5 24.2 28.9 23.9 26.4 24.6 24.9 26.1 24.1 28.3ZM54.4 29.3 53.9 27.6 52.7 25.6 51.5 24.6 50.0 23.9 48.8 23.7 46.2 23.9 44.1 24.7 41.5 26.4 44.7 25.2 46.9 24.9 48.3 25.0 49.9 25.6 51.4 26.9 52.1 28.8 52.0 31.6 51.6 33.0 50.2 35.2 47.2 38.0 45.2 39.2 42.9 40.2 38.3 41.2 33.4 41.0 30.3 40.0 28.2 38.8 24.7 35.4 23.2 33.1 21.5 29.7 22.4 33.0 23.9 36.0 25.5 38.3 27.3 40.1 29.2 41.5 32.9 43.0 35.4 43.5 38.3 43.6 42.2 43.0 45.3 42.0 47.9 40.7 50.0 39.1 52.1 36.9 53.7 34.2 54.4 31.7ZM22.8 23.0 22.5 23.3 22.8 23.8 23.2 23.5ZM27.2 21.0 27.1 21.6 26.2 22.0 26.9 22.2 27.3 23.1 27.5 22.3 28.4 22.0 27.8 21.9Z' fill='%234a1f60' fill-opacity='.06' fill-rule='evenodd'/%3E%3C/svg%3E");
   background-attachment: fixed;
 }
-/* Modo oscuro: el mismo diente, en lila claro y muy tenue. (El color
-   va dentro del SVG, por eso no puede ser una variable.) */
 :root[data-tema="oscuro"] .pagina-panel {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='76' height='76' viewBox='0 0 76 76'%3E%3Cpath d='M26.2 40.5 29.4 48.5 32.0 53.0 34.0 54.8 35.1 54.9 35.7 54.7 36.6 53.8 37.0 52.9 38.8 46.7 39.6 45.3 38.5 46.6 35.7 52.7 35.0 53.3 34.7 53.3 33.6 52.1 32.1 49.3 29.7 42.8 27.5 41.6ZM53.3 37.1 50.9 39.7 49.0 41.1 45.0 49.9 43.1 52.4 42.5 52.4 41.9 51.5 40.4 47.8 40.9 52.0 41.3 53.1 42.1 53.9 43.6 54.0 44.3 53.7 46.7 51.2 49.7 45.9 51.7 41.6ZM24.0 31.6 24.1 32.5 26.0 35.3 27.8 37.0 26.5 31.6 26.5 28.8 27.1 27.3 28.0 26.5 30.0 26.3 32.5 26.8 35.5 28.0 39.6 30.3 42.8 31.2 45.0 31.2 46.2 30.8 47.8 29.9 48.6 29.1 47.5 29.8 45.7 30.4 44.1 30.4 42.6 30.1 40.7 29.3 37.4 27.0 33.9 25.1 31.5 24.2 28.9 23.9 26.4 24.6 24.9 26.1 24.1 28.3ZM54.4 29.3 53.9 27.6 52.7 25.6 51.5 24.6 50.0 23.9 48.8 23.7 46.2 23.9 44.1 24.7 41.5 26.4 44.7 25.2 46.9 24.9 48.3 25.0 49.9 25.6 51.4 26.9 52.1 28.8 52.0 31.6 51.6 33.0 50.2 35.2 47.2 38.0 45.2 39.2 42.9 40.2 38.3 41.2 33.4 41.0 30.3 40.0 28.2 38.8 24.7 35.4 23.2 33.1 21.5 29.7 22.4 33.0 23.9 36.0 25.5 38.3 27.3 40.1 29.2 41.5 32.9 43.0 35.4 43.5 38.3 43.6 42.2 43.0 45.3 42.0 47.9 40.7 50.0 39.1 52.1 36.9 53.7 34.2 54.4 31.7ZM22.8 23.0 22.5 23.3 22.8 23.8 23.2 23.5ZM27.2 21.0 27.1 21.6 26.2 22.0 26.9 22.2 27.3 23.1 27.5 22.3 28.4 22.0 27.8 21.9Z' fill='%23d6bfec' fill-opacity='.04' fill-rule='evenodd'/%3E%3C/svg%3E");
 }
 
-/* Menú de la cuenta (encabezado) */
 .menu-cuenta { position: relative; }
 .menu-cuenta__boton {
   display: flex;
@@ -152,7 +136,6 @@
 }
 .panel-contenido:focus { outline: none; }
 
-/* Encabezado de cada sección */
 .seccion-panel__cabecera {
   display: flex;
   flex-wrap: wrap;
@@ -182,7 +165,6 @@
   gap: var(--e-3);
 }
 
-/* Inicio: dos datos grandes */
 .datos-panel {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -209,8 +191,6 @@
 .bloque-panel__titulo { font-size: var(--txt-md); margin-bottom: var(--e-3); }
 .bloque-panel__enlace { font-size: var(--txt-sm); font-weight: var(--peso-semi); }
 .bloque-panel__ayuda { margin: calc(-1 * var(--e-2)) 0 var(--e-3); font-size: var(--txt-sm); color: var(--ink-600); }
-
-/* ---------- Pacientes ---------- */
 
 .pacientes__busqueda { margin-bottom: var(--e-4); max-width: 560px; }
 .lista-pacientes { list-style: none; margin: var(--e-3) 0 0; padding: 0; }
@@ -272,7 +252,6 @@
 .fila-cita-ficha:first-child { border-top: 0; }
 .fila-cita-ficha__lado { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-2); }
 
-/* Historia clínica: línea de tiempo */
 .historia { list-style: none; margin: 0; padding: 0 0 0 var(--e-5); border-left: 2px solid var(--violeta-100); display: grid; gap: var(--e-4); }
 .nota-hc {
   position: relative;
@@ -303,7 +282,6 @@
 .nota-hc__pie { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--e-2); margin-top: var(--e-3); }
 textarea.campo__control { resize: vertical; min-height: 96px; font: inherit; }
 
-/* Filas de citas */
 .lista-filas {
   border: 1px solid var(--borde);
   border-radius: var(--radio-md);
@@ -312,7 +290,6 @@ textarea.campo__control { resize: vertical; min-height: 96px; font: inherit; }
 
 .fila-cita {
   display: grid;
-  /* Acciones a su ancho: una solicitud muestra Aceptar, Rechazar y Más. */
   grid-template-columns: 70px minmax(0, 1.5fr) minmax(0, 1.2fr) minmax(120px, 1fr) auto;
   gap: var(--e-2) var(--e-4);
   align-items: center;
@@ -336,10 +313,8 @@ a.fila-cita__nombre:hover { color: var(--acento-texto); }
 .fila-cita__paciente .fila-cita__detalle span { display: block; }
 .fila-cita__especialista { font-size: var(--txt-sm); }
 .fila-cita__estado { display: grid; justify-items: start; gap: 2px; }
-/* Solicitud de cambio de hora hecha por el paciente: qué hora tenía. */
 .fila-cita__cambio { font-size: var(--txt-xs); color: var(--ambar-700); line-height: var(--alto-normal); }
 .fila-cita__cambio strong { font-weight: var(--peso-semi); }
-/* Novedades de la web (Inicio): qué pasó y cuándo. */
 .fila-cita__novedad { font-size: var(--txt-xs); line-height: var(--alto-normal); color: var(--ink-600); }
 .fila-cita__novedad strong { font-weight: var(--peso-semi); }
 .fila-cita__novedad--nueva strong { color: var(--menta-600); }
@@ -347,7 +322,6 @@ a.fila-cita__nombre:hover { color: var(--acento-texto); }
 .fila-cita__novedad--cancelada strong { color: var(--rosa-700); }
 .fila-cita__acciones { display: flex; flex-wrap: wrap; gap: var(--e-2); justify-content: flex-end; align-items: center; }
 
-/* Menú "Más" */
 .menu-acciones { position: relative; }
 .menu-acciones summary { list-style: none; cursor: pointer; }
 .menu-acciones summary::-webkit-details-marker { display: none; }
@@ -377,7 +351,6 @@ a.fila-cita__nombre:hover { color: var(--acento-texto); }
 .menu-acciones__lista button:hover,
 .menu-acciones__lista button:focus-visible { background: var(--violeta-100); }
 
-/* Agenda */
 .agenda__barra {
   display: flex;
   flex-wrap: wrap;
@@ -401,7 +374,6 @@ a.fila-cita__nombre:hover { color: var(--acento-texto); }
 .aviso-accion__titulo { font-weight: var(--peso-semi); }
 .aviso-accion__botones { margin-top: var(--e-1); }
 
-/* Mensajes */
 .pestanas { display: flex; gap: var(--e-1); border-bottom: 1px solid var(--borde); margin-bottom: var(--e-4); }
 .pestanas__item {
   padding: var(--e-2) var(--e-4);
@@ -427,7 +399,6 @@ a.fila-cita__nombre:hover { color: var(--acento-texto); }
 }
 .mensaje__acciones { margin-top: var(--e-3); }
 
-/* Disponibilidad */
 .disponibilidad__especialista { display: grid; gap: var(--e-1); flex: 1 1 260px; }
 .disponibilidad__especialista .campo__etiqueta { margin: 0; }
 .disponibilidad__especialista .campo__control { padding-block: var(--e-2); }
@@ -475,7 +446,6 @@ a.fila-cita__nombre:hover { color: var(--acento-texto); }
 .disponibilidad__leyenda { margin-top: var(--e-4); font-size: var(--txt-xs); color: var(--ink-600); display: flex; flex-wrap: wrap; gap: var(--e-2); align-items: center; }
 .disponibilidad__leyenda .chip-hora { width: auto; }
 
-/* Editor del horario de un día */
 .publicar__grupo { border: 0; padding: 0; margin: 0 0 var(--e-4); }
 .publicar__opciones { display: flex; flex-wrap: wrap; gap: var(--e-2); }
 .publicar__atajos { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-1); margin: var(--e-3) 0; padding-bottom: var(--e-3); border-bottom: 1px solid var(--borde); }
@@ -539,7 +509,6 @@ a.fila-cita__nombre:hover { color: var(--acento-texto); }
   .fila-cita { grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1fr); }
   .fila-cita__especialista { grid-column: 3; }
   .fila-cita__estado { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 2px var(--e-2); }
-  /* Qué pasó y la hora anterior van en su propia línea, debajo del estado. */
   .fila-cita__novedad, .fila-cita__cambio { flex-basis: 100%; }
   .fila-cita__acciones { grid-column: 3; justify-content: flex-start; }
 }
@@ -558,7 +527,6 @@ a.fila-cita__nombre:hover { color: var(--acento-texto); }
   .menu-cuenta__boton { padding-right: var(--e-2); }
   .panel-app { grid-template-columns: minmax(0, 1fr); gap: var(--e-4); padding-top: var(--e-4); padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 
-  /* Menú fijo abajo: ícono sobre el nombre, como una app. */
   .panel-nav {
     position: fixed;
     left: 0;
@@ -602,7 +570,6 @@ a.fila-cita__nombre:hover { color: var(--acento-texto); }
   .nota-hc::before { left: calc(-1 * var(--e-4) - 7px); }
 }
 
-/* Motivo de consulta en la ficha del paciente */
 .ficha__motivo {
   margin-block: var(--e-3) var(--e-4);
   padding: var(--e-3) var(--e-4);
@@ -614,9 +581,6 @@ a.fila-cita__nombre:hover { color: var(--acento-texto); }
 }
 .ficha__motivo-titulo { font-size: var(--txt-xs); font-weight: var(--peso-semi); color: var(--ink-600); margin-bottom: var(--e-1); }
 
-/* ============================================================
-   Dueño (superadmin): menú con dos secciones más, Solicitudes y Equipo
-   ============================================================ */
 .panel-nav a[hidden], .panel-nav__contador[hidden] { display: none; }
 .panel-nav__contador {
   margin-left: auto;
@@ -663,17 +627,12 @@ a.fila-cita__nombre:hover { color: var(--acento-texto); }
 .fila-equipo__datos { min-width: 0; }
 .fila-equipo__datos .fila-cita__detalle { overflow-wrap: anywhere; }
 
-/* Historia: corrección esperando al dueño o rechazada */
 .nota-hc--pendiente { border-style: dashed; border-color: var(--ambar-700); background: var(--ambar-50); }
 .nota-hc--pendiente::before { background: var(--ambar-700); }
 .nota-hc--rechazada { background: var(--lienzo); }
 .nota-hc--rechazada::before { background: var(--rosa-700); }
 .nota-hc--rechazada .nota-hc__procedimiento { text-decoration: line-through; color: var(--ink-600); }
 
-/* ============================================================
-   Odontograma (ficha del paciente)
-   Rojo = por hacer (--rosa-700) · Azul = realizado (--azul-700)
-   ============================================================ */
 .odontograma__barra { display: flex; flex-wrap: wrap; align-items: center; gap: var(--e-3); margin-bottom: var(--e-3); }
 .segmentado { display: inline-flex; padding: 3px; border-radius: var(--radio-pill); background: var(--violeta-50); border: 1px solid var(--borde); }
 .segmentado__opcion {
@@ -756,7 +715,6 @@ a.fila-cita__nombre:hover { color: var(--acento-texto); }
 .odontograma__lista { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--e-1); }
 .enlace-boton { border: 0; background: none; padding: 0; font: inherit; font-size: var(--txt-sm); color: var(--acento-texto); text-decoration: underline; cursor: pointer; text-align: left; }
 
-/* Detalle de un diente (diálogo) */
 .diente-detalle { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--e-5); align-items: start; }
 .diente-detalle__vista { padding: var(--e-3); border-radius: var(--radio-md); background: var(--lienzo); border: 1px solid var(--borde); }
 .caras-opciones, .estado-opciones { display: flex; flex-wrap: wrap; gap: var(--e-2); }
@@ -792,15 +750,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
   .diente { width: 40px; }
 }
 
-/* ============================================================
-   Capa visual del panel — profundidad y ritmo
-   Solo presentación: superficies con relieve, estados al pasar el
-   cursor y un menú más cuidado. No altera estructura ni
-   comportamiento. Todos los colores salen de tokens.css.
-   ============================================================ */
-
-/* Velo de color fijo detrás de todo el panel: da profundidad al
-   fondo sin competir con el contenido. */
 .pagina-panel::before {
   content: '';
   position: fixed;
@@ -810,7 +759,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
   pointer-events: none;
 }
 
-/* ---------- Superficie principal ---------- */
 .panel-contenido {
   padding: var(--e-6);
   border-radius: var(--radio-xl);
@@ -824,7 +772,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 .bloque-panel { margin-top: var(--e-7); }
 .bloque-panel__titulo { font-size: var(--txt-lg); margin-bottom: var(--e-4); letter-spacing: -.01em; }
 
-/* ---------- Menú lateral ---------- */
 .panel-nav { gap: var(--e-2); }
 .panel-nav a {
   border-radius: var(--radio-md);
@@ -838,7 +785,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 }
 .panel-nav a[aria-current="page"]:hover { background: var(--degradado-marca); }
 
-/* ---------- Menú de la cuenta ---------- */
 .menu-cuenta__boton {
   box-shadow: var(--sombra-sutil);
   transition: border-color var(--transicion), box-shadow var(--transicion);
@@ -856,7 +802,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 }
 @keyframes aparecer-menu { from { opacity: 0; transform: translateY(-4px) scale(.98); } to { opacity: 1; transform: none; } }
 
-/* ---------- Datos de Inicio ---------- */
 .datos-panel { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: var(--e-4); margin-bottom: var(--e-6); }
 .dato-panel {
   position: relative;
@@ -867,7 +812,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
   box-shadow: var(--sombra-sutil);
   transition: transform var(--transicion), box-shadow var(--transicion), border-color var(--transicion);
 }
-/* Filete de color en el borde izquierdo: marca cada dato sin ruido. */
 .dato-panel::before {
   content: '';
   position: absolute;
@@ -880,7 +824,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 .dato-panel--alerta { background: var(--rosa-100); border-color: var(--rosa-100); }
 .dato-panel--alerta::before { background: var(--rosa-700); }
 
-/* ---------- Filas de citas ---------- */
 .lista-filas {
   border-radius: var(--radio-lg);
   background: var(--papel);
@@ -892,7 +835,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 .fila-cita--cerrada:hover { background: var(--lienzo); }
 .fila-cita--pendiente:hover { background: var(--ambar-50); }
 
-/* Estado con un punto de color: refuerza el texto, no lo sustituye. */
 .estado, .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px var(--e-3); }
 .estado::before, .chip::before {
   content: '';
@@ -903,7 +845,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
   flex-shrink: 0;
 }
 
-/* ---------- Agenda ---------- */
 .agenda__barra {
   padding: var(--e-4);
   border: 1px solid var(--borde);
@@ -913,7 +854,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 }
 .agenda__titulo-lista h2 { font-size: var(--txt-lg); }
 
-/* ---------- Pacientes y ficha ---------- */
 .lista-pacientes {
   border: 1px solid var(--borde);
   border-radius: var(--radio-lg);
@@ -928,7 +868,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 .nota-hc:hover { box-shadow: var(--sombra-media); }
 .ficha__motivo { border-radius: 0 var(--radio-md) var(--radio-md) 0; }
 
-/* ---------- Horarios ---------- */
 .semana__dia { border-radius: var(--radio-lg); box-shadow: var(--sombra-sutil); transition: box-shadow var(--transicion), border-color var(--transicion); }
 .semana__dia:hover { box-shadow: var(--sombra-media); border-color: var(--violeta-300); }
 .semana__dia--hoy { box-shadow: var(--anillo-foco); }
@@ -937,14 +876,12 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 .casilla-opcion { border-radius: var(--radio-md); transition: background var(--transicion), border-color var(--transicion); }
 .casilla-opcion:hover { border-color: var(--violeta-300); }
 
-/* ---------- Pestañas y selector segmentado ---------- */
 .pestanas__item { transition: color var(--transicion), border-color var(--transicion); }
 .pestanas__item:hover { color: var(--acento-texto); }
 .segmentado { box-shadow: var(--sombra-sutil); }
 .segmentado__opcion { transition: background var(--transicion), color var(--transicion), box-shadow var(--transicion); }
 .segmentado__opcion[aria-pressed="true"] { background: var(--degradado-marca); box-shadow: var(--brillo-interior), var(--sombra-sutil); }
 
-/* ---------- Solicitudes y equipo ---------- */
 .solicitud { border-radius: var(--radio-lg); box-shadow: var(--sombra-sutil); transition: box-shadow var(--transicion); }
 .solicitud:hover { box-shadow: var(--sombra-media); }
 .solicitud__lado { border-radius: var(--radio-md); }
@@ -952,7 +889,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 .fila-equipo { transition: background var(--transicion); }
 .fila-equipo:hover { background: var(--violeta-50); }
 
-/* ---------- Mensajes, vacíos y odontograma ---------- */
 .mensaje { border-radius: var(--radio-lg); box-shadow: var(--sombra-sutil); }
 .vacio { border-radius: var(--radio-lg); background: var(--degradado-tarjeta); }
 .odontograma { border-radius: var(--radio-xl); box-shadow: var(--sombra-sutil); }
@@ -960,7 +896,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 .diente:hover { transform: translateY(-2px); }
 .diente-detalle__vista { border-radius: var(--radio-lg); }
 
-/* ---------- Celular ---------- */
 @media (max-width: 760px) {
   .panel-contenido { padding: var(--e-4); border-radius: var(--radio-lg); }
   .panel-nav {
@@ -980,14 +915,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
   .fila-paciente-panel { padding: var(--e-3) var(--e-4); }
 }
 
-/* ============================================================
-   Identidad del panel: lavanda y arco
-   El mismo lenguaje de la página pública, en dosis menores:
-   una franja lavanda al inicio de cada sección, el sello de arco
-   en el título y los datos de Inicio en lavanda.
-   ============================================================ */
-
-/* Menú lateral dentro de una tarjeta propia */
 @media (min-width: 761px) {
   .panel-nav {
     padding: var(--e-3);
@@ -999,7 +926,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
   .panel-nav a:hover { transform: none; background: var(--lavanda-100); box-shadow: none; }
 }
 
-/* Franja lavanda arriba del contenido */
 .panel-contenido {
   position: relative;
   isolation: isolate;
@@ -1007,7 +933,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
     linear-gradient(180deg, var(--lavanda-100) 0, var(--papel) 240px);
 }
 
-/* Sello de arco en el título de cada sección */
 .seccion-panel__titulo {
   position: relative;
   padding-left: 1.45em;
@@ -1026,7 +951,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 }
 .seccion-panel__subtitulo { padding-left: calc(1.45 * clamp(1.75rem, 4vw, 2.25rem)); }
 
-/* Datos de Inicio en lavanda, con un arco blanco en la esquina */
 .dato-panel {
   background: var(--degradado-lavanda);
   border-color: transparent;
@@ -1053,24 +977,17 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 .dato-panel--alerta .dato-panel__numero { color: var(--rosa-700); }
 .dato-panel--alerta::after { background: var(--rosa-700); opacity: .1; }
 
-/* Iniciales de pacientes con forma de arco */
 .fila-paciente-panel__inicial { border-radius: 50%; }
 
-/* Agenda y bloques: barra de filtros en lavanda clara */
 .agenda__barra { background: var(--lavanda-100); border-color: var(--lavanda-300); }
 
-/* Horarios: el día de hoy con cabecera lavanda */
 .semana__dia--hoy { background: linear-gradient(180deg, var(--lavanda-100) 0, var(--papel) 90px); }
 
-/* Odontograma sobre fondo lavanda muy claro */
 .odontograma { background: linear-gradient(180deg, var(--lavanda-100), var(--papel)); }
 
 @media (max-width: 760px) {
 }
 
-/* ============================================================
-   Especialistas (solo la dueña): tarjetas con foto y su formulario
-   ============================================================ */
 .especialistas {
   list-style: none;
   margin: 0;
@@ -1098,8 +1015,7 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 .especialista__nombre { font-weight: var(--peso-semi); font-size: var(--txt-md); color: var(--ink-900); overflow-wrap: anywhere; }
 .especialista__titulo { font-size: var(--txt-sm); color: var(--ink-600); }
 .especialista__especialidades { list-style: none; margin: var(--e-2) 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--e-1); }
-.especialista__nombre { padding-right: 84px; }   /* deja libre la esquina de "Opciones" */
-.especialista__menu { position: absolute; top: var(--e-3); right: var(--e-3); }
+.especialista__nombre { padding-right: 84px; }.especialista__menu { position: absolute; top: var(--e-3); right: var(--e-3); }
 .especialista__menu .menu-acciones__lista { min-width: 160px; }
 .chip-especialidad {
   padding: 2px var(--e-3);
@@ -1113,7 +1029,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 }
 .chip-especialidad--vacia { background: var(--rosa-100); border-color: var(--rosa-100); color: var(--rosa-700); }
 
-/* Retrato: foto redonda o la inicial sobre lavanda */
 .retrato {
   width: 64px;
   height: 64px;
@@ -1136,7 +1051,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
 .retrato--inicial svg { width: 55%; height: 55%; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; opacity: .7; }
 .foto-editor [hidden] { display: none; }
 
-/* Formulario: la foto arriba, con sus botones al lado */
 .foto-editor {
   display: flex;
   align-items: center;
@@ -1161,8 +1075,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
   .foto-editor__acciones { justify-content: center; }
 }
 
-/* Celular: con Especialistas el menú de la dueña tiene 7 opciones; la
-   barra se desliza de lado (mostrarSeccion deja visible la activa). */
 @media (max-width: 760px) {
   .pagina-panel--dueno .panel-nav {
     grid-template-columns: none;
@@ -1176,9 +1088,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
   .pagina-panel--dueno .panel-nav a { scroll-snap-align: start; padding-inline: var(--e-1); }
 }
 
-/* Las listas no recortan su contenido (overflow) para que los menús
-   «Más» y «Opciones» de la última fila se vean completos; en su lugar,
-   la primera y la última fila siguen la curva de la tarjeta. */
 .lista-filas > :first-child, .lista-pacientes > li:first-child, .lista-pacientes > li:first-child > a,
 .equipo > :first-child { border-top-left-radius: var(--radio-lg); border-top-right-radius: var(--radio-lg); }
 .lista-filas > :last-child, .lista-pacientes > li:last-child, .lista-pacientes > li:last-child > a,

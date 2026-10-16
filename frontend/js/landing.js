@@ -1,5 +1,3 @@
-/* Lógica de la página pública. */
-
 document.addEventListener('DOMContentLoaded', () => {
   configurarWhatsApp();
   prepararFormularios();
@@ -7,11 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
   configurarCarruseles();
 });
 
-/* Carrusel de fotos: se desliza solo, lento y continuo.
-   Se duplica el contenido para que el bucle no tenga saltos; las
-   copias se ocultan a lectores de pantalla. Con "reducir
-   movimiento" activado no se anima: queda como tira que se
-   desplaza a mano. */
 const VELOCIDAD_CARRUSEL_PX_S = 35;
 
 function configurarCarruseles() {
@@ -28,8 +21,7 @@ function configurarCarruseles() {
       carril.appendChild(copia);
     });
 
-    // La duración depende del ancho real, para que la velocidad
-    // sea la misma en celular y en escritorio.
+    // La duración depende del ancho para que la velocidad sea igual en celular y escritorio.
     function ajustarVelocidad() {
       const mitad = carril.scrollWidth / 2;
       carrusel.style.setProperty('--duracion-carrusel', `${Math.round(mitad / VELOCIDAD_CARRUSEL_PX_S)}s`);
@@ -41,10 +33,6 @@ function configurarCarruseles() {
   });
 }
 
-/* El encabezado se separa del contenido solo cuando la página
-   ya se desplazó. Se usa IntersectionObserver en lugar de
-   escuchar 'scroll': el navegador lo resuelve sin ejecutar
-   código en cada píxel de desplazamiento. */
 function vigilarDesplazamiento() {
   const encabezado = document.querySelector('.encabezado');
   if (!encabezado) return;
@@ -66,21 +54,16 @@ function configurarWhatsApp() {
   }
 }
 
-/* Formulario de "Acceso del consultorio": solo la secretaria inicia
-   sesión; los pacientes no tienen cuenta (contrato API v2, sección 3).
-   La validación real vive en el backend. */
 function prepararFormularios() {
   const ingreso = document.getElementById('form-ingreso');
   if (!ingreso) return;
   const error = ingreso.querySelector('[data-error]');
   const boton = ingreso.querySelector('button[type="submit"]');
 
-  // Con sesión abierta, "Ingresar" lleva directo al panel.
   const sesion = obtenerSesion();
   if (sesion) {
     document.querySelectorAll('[data-abrir="modal-ingreso"]').forEach((enlace) => {
       enlace.removeAttribute('data-abrir');
-      // El candado del encabezado conserva su icono; solo cambia lo que anuncia.
       if (enlace.hasAttribute('data-acceso-icono')) {
         enlace.setAttribute('aria-label', 'Ir a mi panel');
         enlace.title = 'Ir a mi panel';
@@ -92,8 +75,6 @@ function prepararFormularios() {
     });
   }
 
-  // index.html?ingresar=1 abre el formulario (lo usan los paneles al
-  // pedir sesión); &vencida=1 explica por qué.
   const parametros = new URLSearchParams(location.search);
   if (parametros.has('ingresar') && !sesion) {
     abrirModal('modal-ingreso');

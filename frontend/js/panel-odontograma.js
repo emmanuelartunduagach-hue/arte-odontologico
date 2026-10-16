@@ -1,23 +1,3 @@
-/* Ficha del paciente · Odontograma.
-
-   Dibuja la boca como una dentadura (numeración FDI): arriba la arcada
-   superior y abajo la inferior, con el lado derecho del paciente a la
-   izquierda de la pantalla, como se ve al paciente de frente. Cada
-   diente tiene su silueta y el cuadro de 5 caras (oclusal, mesial,
-   distal, vestibular y lingual o palatina). Al tocar un diente se abre
-   su detalle para registrar hallazgos, marcarlos como realizados o
-   pedir su anulación.
-
-   Colores (convención clínica): rojo = por hacer, azul = realizado.
-
-   Contrato:
-     GET  /pacientes/:id/odontograma        { catalogo: { hallazgos, caras }, hallazgos }
-     POST /pacientes/:id/odontograma        { diente, caras, hallazgo, estado, notas? }
-     POST /admin/odontograma/:id/realizado
-     POST /admin/odontograma/:id/anular     { motivo }
-   Anular: si lo pide un administrador espera la aprobación del dueño. */
-
-/* Catálogo por defecto (el servidor manda el oficial en cada GET). */
 let CATALOGO_HALLAZGOS = {
   caries: { nombre: 'Caries', alcance: 'cara' },
   resina: { nombre: 'Resina', alcance: 'cara' },
@@ -33,7 +13,6 @@ let CATALOGO_HALLAZGOS = {
   otro: { nombre: 'Otro', alcance: 'ambos' },
 };
 
-/* Abreviatura que se ve bajo el diente para hallazgos del diente completo. */
 const SIGLA_HALLAZGO = {
   corona: 'CO', endodoncia: 'EN', extraccion: 'EX', ausente: 'AU', implante: 'IM',
   protesis: 'PR', fractura: 'FR', otro: 'OT',
@@ -47,7 +26,6 @@ const NOMBRE_CARA = {
 const nombreHallazgo = (codigo) => CATALOGO_HALLAZGOS[codigo]?.nombre || codigo;
 const nombreCara = (cara) => NOMBRE_CARA[cara] || cara;
 
-/* Arcadas en el orden en que se ven de frente. */
 const DENTICION = {
   permanente: {
     superior: [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28],
@@ -66,8 +44,6 @@ const odonto = {
   nodo: null,
 };
 
-/* ---------- Geometría ---------- */
-
 function tipoDiente(n) {
   const pieza = n % 10;
   const temporal = Math.floor(n / 10) >= 5;
@@ -77,8 +53,6 @@ function tipoDiente(n) {
   return 'premolar';
 }
 
-/* Siluetas en un cuadro de 24 × 34, con la corona abajo (arcada superior).
-   La arcada inferior usa la misma figura volteada. */
 const SILUETA = {
   incisivo: 'M9 2.5Q12 1 15 2.5L16.5 17Q19.5 22 18.5 29Q12 33 5.5 29Q4.5 22 7.5 17Z',
   canino: 'M9.5 1Q12 0 14.5 1L16.5 16.5Q20 21 18.5 27.5L12 33L5.5 27.5Q4 21 7.5 16.5Z',
@@ -94,13 +68,10 @@ function svg(nombre, atributos = {}, ...hijos) {
   return nodo;
 }
 
-/* Cuadro de 5 caras en 40 × 40. Arriba va la cara que mira hacia afuera
-   de la boca en la arcada superior (vestibular) y hacia adentro en la
-   inferior (lingual). Mesial es el lado que mira al centro de la boca. */
 function posicionesCaras(diente) {
-  const cuadrante = Math.floor(diente / 10) % 4 || 4; // 1..4 (5→1, 6→2, 7→3, 8→4)
+  const cuadrante = Math.floor(diente / 10) % 4 || 4;
   const superior = cuadrante === 1 || cuadrante === 2;
-  const derechaPaciente = cuadrante === 1 || cuadrante === 4; // se ve a la izquierda
+  const derechaPaciente = cuadrante === 1 || cuadrante === 4;
   return {
     arriba: superior ? 'vestibular' : 'lingual',
     abajo: superior ? 'lingual' : 'vestibular',
@@ -116,12 +87,9 @@ const POLIGONO = {
   derecha: '39,1 39,39 28,28 28,12',
 };
 
-/* ---------- Estado de cada diente ---------- */
-
 const vigentes = () => odonto.hallazgos.filter((h) => h.anulacion !== 'aprobada');
 const delDiente = (n) => odonto.hallazgos.filter((h) => h.diente === n);
 
-/* 'por_hacer' si hay algo pendiente en esa cara; si no, 'realizado'; o null. */
 function estadoDe(lista) {
   if (!lista.length) return null;
   return lista.some((h) => h.estado === 'por_hacer') ? 'por_hacer' : 'realizado';
@@ -143,8 +111,6 @@ function resumenDiente(n) {
     extraccionPendiente: completos.some((h) => h.hallazgo === 'extraccion' && h.estado === 'por_hacer'),
   };
 }
-
-/* ---------- Dibujo ---------- */
 
 function dibujoCaras(n, r, { grande = false, alTocarCara = null, marcadas = null } = {}) {
   const pos = posicionesCaras(n);
@@ -249,8 +215,6 @@ function pintarOdontograma() {
         : el('p', { class: 'fila-cita__detalle', texto: 'No hay tratamientos pendientes en esta dentición.' })));
 }
 
-/* ---------- Montaje en la ficha ---------- */
-
 async function montarOdontograma(nodo, paciente) {
   odonto.nodo = nodo;
   odonto.paciente = paciente;
@@ -260,7 +224,6 @@ async function montarOdontograma(nodo, paciente) {
     if (odonto.paciente !== paciente) return;
     if (datos.catalogo?.hallazgos) CATALOGO_HALLAZGOS = datos.catalogo.hallazgos;
     odonto.hallazgos = datos.hallazgos;
-    // Si solo tiene hallazgos en dientes de niño, se abre en esa dentición.
     const temporales = datos.hallazgos.some((h) => h.diente >= 51);
     const permanentes = datos.hallazgos.some((h) => h.diente < 51);
     odonto.denticion = temporales && !permanentes ? 'temporal' : 'permanente';
@@ -269,8 +232,6 @@ async function montarOdontograma(nodo, paciente) {
     pintarEn(nodo, errorConReintento(err, () => montarOdontograma(nodo, paciente)));
   }
 }
-
-/* ---------- Detalle de un diente ---------- */
 
 function abrirDiente(n, aviso = null) {
   const nodo = dialogo.abrir(`Diente ${n}`);
@@ -360,7 +321,6 @@ function abrirDiente(n, aviso = null) {
       abrirDiente(n, 'Hallazgo guardado.');
     } catch (err) {
       boton.disabled = false;
-      // El error de caras no tiene control propio: se muestra bajo las casillas.
       if (err.campos?.caras) {
         const p = form.querySelector('#pac-caras-error');
         p.textContent = err.campos.caras;

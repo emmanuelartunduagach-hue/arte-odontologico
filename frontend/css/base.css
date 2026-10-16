@@ -1,8 +1,3 @@
-/* ============================================================
-   Base — reset, tipografía y componentes compartidos por
-   todas las pantallas (header, botones, formularios, chips).
-   ============================================================ */
-
 *, *::before, *::after { box-sizing: border-box; }
 
 body, h1, h2, h3, h4, p, ul, ol, figure, blockquote, dl, dd {
@@ -40,14 +35,11 @@ a { color: var(--acento-texto); text-decoration: none; }
 a { transition: color var(--transicion); }
 a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
-/* Foco visible y consistente: requisito de accesibilidad. */
 :focus-visible {
   outline: 2px solid var(--violeta-600);
   outline-offset: 3px;
   border-radius: var(--radio-sm);
 }
-
-/* ---------- Tipografía ---------- */
 
 h1, h2, h3 {
   font-family: var(--fuente-titular);
@@ -77,8 +69,6 @@ p { max-width: var(--ancho-texto); text-wrap: pretty; }
   line-height: var(--alto-suelto);
 }
 
-/* ---------- Contenedor ---------- */
-
 .contenedor {
   width: 100%;
   max-width: var(--ancho-max);
@@ -93,7 +83,6 @@ p { max-width: var(--ancho-texto); text-wrap: pretty; }
 .seccion__intro { margin-bottom: var(--e-7); max-width: 54ch; }
 .seccion__intro p { margin-top: var(--e-3); color: var(--ink-600); font-size: var(--txt-md); line-height: var(--alto-suelto); }
 
-/* Salto al contenido, para navegación por teclado. */
 .saltar-a-contenido {
   position: absolute;
   left: -9999px;
@@ -105,12 +94,6 @@ p { max-width: var(--ancho-texto); text-wrap: pretty; }
   z-index: 100;
 }
 .saltar-a-contenido:focus { left: var(--e-3); }
-
-/* ---------- Botones ----------
-   Primario con degradado del mismo matiz y un destello interior
-   de 1px arriba: se lee como un objeto con volumen, no como un
-   rectángulo plano. Hover: sube 1px y gana sombra. Al pulsar,
-   vuelve a su sitio (respuesta física).                        */
 
 .btn {
   display: inline-flex;
@@ -169,10 +152,6 @@ p { max-width: var(--ancho-texto); text-wrap: pretty; }
 
 .btn--bloque { width: 100%; }
 .btn--grande { min-height: 52px; padding: var(--e-4) var(--e-6); font-size: var(--txt-base); border-radius: var(--radio-md); }
-
-/* ---------- Header ----------
-   Cristal esmerilado: deja entrever el contenido al desplazar
-   y se separa con un filete y una sombra suave.                */
 
 .encabezado {
   background: var(--fondo-encabezado);
@@ -238,14 +217,9 @@ p { max-width: var(--ancho-texto); text-wrap: pretty; }
 
 .encabezado__acciones { display: flex; align-items: center; gap: var(--e-3); }
 
-/* Candado de "Acceso del consultorio", junto a "Agendar cita". */
 .btn--candado,
 .encabezado__acciones .btn.btn--candado { width: 44px; height: 44px; padding: 0; justify-content: center; flex-shrink: 0; border-radius: var(--radio-pill); }
 .btn--candado svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-
-/* ---------- Formularios ----------
-   Controles de 46px (cómodos para el pulgar), borde que se
-   suaviza al pasar el cursor y un halo de color al enfocar.   */
 
 .campo { display: block; margin-bottom: var(--e-4); }
 
@@ -289,8 +263,6 @@ select.campo__control {
 .campo__ayuda { margin-top: var(--e-2); font-size: var(--txt-xs); color: var(--ink-600); }
 .campo__error { margin-top: var(--e-2); font-size: var(--txt-xs); color: var(--rosa-700); }
 
-/* ---------- Chips de estado ---------- */
-
 .chip {
   display: inline-flex;
   align-items: center;
@@ -303,9 +275,6 @@ select.campo__control {
 .chip--confirmada { background: var(--menta-100); color: var(--menta-600); }
 .chip--pendiente  { background: var(--ambar-100); color: var(--ambar-700); }
 .chip--cancelada  { background: var(--rosa-100);  color: var(--rosa-700); }
-
-/* ---------- Pie ----------
-   Degradado vertical del mismo morado y un filete de luz arriba. */
 
 .pie {
   position: relative;

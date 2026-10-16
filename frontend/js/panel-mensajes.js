@@ -1,13 +1,3 @@
-/* Panel de la secretaria · WhatsApp sin enviar.
-
-   Los mensajes se envían solos (WHATSAPP_MODO=api o twilio), así que el
-   panel ya no tiene sección de Mensajes. Si un envío falla (por ejemplo,
-   venció el token de Meta) o el servidor está en modo manual, el aviso
-   aparece en Inicio con la tarjeta de este archivo, para enviarlo a mano
-   desde WhatsApp y marcarlo como enviado:
-     GET   /admin/notificaciones?estado=pendiente|fallida
-     PATCH /admin/notificaciones/:id   { estado: 'enviada' } */
-
 const TIPO_MENSAJE = {
   confirmacion: 'Confirmación de cita',
   reprogramacion: 'Cita reprogramada',
@@ -47,7 +37,6 @@ function tarjetaMensaje(n) {
   return tarjeta;
 }
 
-/** '2026-10-08 14:05:00' → '8 oct., 2:05 p. m.' */
 function fechaHoraCorta(fechaHora) {
   if (!fechaHora) return '';
   const [fecha, hora] = fechaHora.split(' ');

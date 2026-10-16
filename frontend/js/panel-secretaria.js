@@ -1,23 +1,3 @@
-/* Panel de la secretaria (panel-secretaria.html): rol administrador y
-   dueño (superadmin). El dueño ve además Solicitudes (correcciones de
-   la historia y anulaciones del odontograma por aprobar), Especialistas
-   (perfil con foto y especialidades) y Equipo (administradores), en
-   js/panel-superadmin.js.
-
-   Una sola página con secciones; el menú cambia la sección por el
-   fragmento de la URL (#inicio, #agenda, #pacientes, #pacientes/12,
-   #disponibilidad) para que Atrás funcione y cada sección se pueda
-   enlazar. Cada sección vive en su archivo (panel-agenda.js,
-   panel-pacientes.js, panel-disponibilidad.js) y expone
-   `montar(cuerpo, parametro)`. Los WhatsApp se envían solos; si alguno
-   falla, aparece en Inicio (tarjeta de panel-mensajes.js).
-
-   Inicio (contrato API v2, sección 4):
-     GET /admin/citas/novedades?horas=48                      lo que pasó en la web
-     GET /admin/citas?fecha=hoy                               agenda de hoy
-     GET /admin/citas?estado=pendiente&desde=hoy&hasta=+180   citas antiguas sin confirmar
-     GET /admin/notificaciones?estado=pendiente y ?estado=fallida   WhatsApp sin enviar */
-
 const sesion = exigirSesion('administrador', 'superadmin');
 const cuerpo = document.getElementById('panel-cuerpo');
 const DUENO = esDueno(sesion?.usuario);
@@ -35,7 +15,6 @@ const SECCIONES = {
   }),
 };
 
-/** '#pacientes/12' → { nombre: 'pacientes', parametro: '12' }. */
 function rutaActual() {
   const [nombre, parametro = null] = location.hash.slice(1).split('/');
   return SECCIONES[nombre] ? { nombre, parametro } : { nombre: 'inicio', parametro: null };
@@ -51,7 +30,6 @@ function mostrarSeccion({ enfocar = false } = {}) {
   document.querySelectorAll('[data-seccion]').forEach((enlace) => {
     if (enlace.dataset.seccion === nombre) {
       enlace.setAttribute('aria-current', 'page');
-      // En celular el menú es una barra que se desplaza: deja visible la sección activa.
       enlace.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     }
     else enlace.removeAttribute('aria-current');
@@ -66,8 +44,6 @@ function mostrarSeccion({ enfocar = false } = {}) {
 
 panel.refrescar = () => mostrarSeccion();
 
-/* ---------- Inicio ---------- */
-
 const HORAS_NOVEDADES = 48;
 
 function saludo() {
@@ -75,7 +51,6 @@ function saludo() {
   return hora < 12 ? 'Buenos días' : hora < 19 ? 'Buenas tardes' : 'Buenas noches';
 }
 
-/** `enlace` es otra sección (#agenda) o un bloque de esta página (id sin #). */
 function tarjetaDato(cantidad, etiqueta, enlace, destacada) {
   const enPagina = !enlace.startsWith('#');
   return el('a', {
@@ -116,8 +91,6 @@ async function montarInicio(destino) {
   const porAtender = ordenadas.filter((c) => c.estado === 'confirmada');
   const siguiente = porAtender.find((c) => `${c.fecha}T${c.hora}` > ahora);
   const sinMarcar = porAtender.filter((c) => `${c.fecha}T${c.hora}` <= ahora);
-  // Citas que quedaron pendientes de antes de que las de la web se
-  // confirmaran solas (decisión 27). Solo se muestran si existen.
   const porConfirmar = ordenarPorHora(solicitudes);
   const nuevas = novedades.filter((c) => c.novedad === 'nueva').length;
   const totalPorAprobar = porAprobar ? porAprobar.correcciones.length + porAprobar.anulaciones.length : 0;
@@ -132,8 +105,6 @@ async function montarInicio(destino) {
       tarjetaDato(nuevas, nuevas === 1 ? 'cita nueva por la web (48 h)' : 'citas nuevas por la web (48 h)', 'titulo-novedades'),
       DUENO && tarjetaDato(totalPorAprobar, totalPorAprobar === 1 ? 'solicitud por aprobar' : 'solicitudes por aprobar', '#solicitudes', totalPorAprobar > 0)),
 
-    // Solo aparece si el WhatsApp automático falló (o el servidor está en
-    // modo manual): son avisos que el paciente aún no recibió.
     sinEnviar.length > 0 && el('section', { class: 'bloque-panel', 'aria-labelledby': 'titulo-sin-enviar' },
       el('h2', { id: 'titulo-sin-enviar', class: 'bloque-panel__titulo',
         texto: sinEnviar.length === 1 ? '1 WhatsApp sin enviar' : `${sinEnviar.length} WhatsApp sin enviar` }),
@@ -161,8 +132,6 @@ async function montarInicio(destino) {
         ? listaCitas(ordenadas)
         : el('div', { class: 'vacio' }, el('p', { texto: 'No hay citas para hoy.' }))),
 
-    // Lo que pasó en la web sin que la secretaria tuviera que hacer nada:
-    // citas nuevas (ya confirmadas) y cambios o cancelaciones del paciente.
     el('section', { class: 'bloque-panel', 'aria-labelledby': 'titulo-novedades' },
       el('h2', { id: 'titulo-novedades', class: 'bloque-panel__titulo', texto: 'Novedades de la web' }),
       el('p', { class: 'bloque-panel__ayuda', texto: 'Últimas 48 horas. Las citas pedidas por la web quedan confirmadas solas y al paciente le llega el WhatsApp.' }),

@@ -1,28 +1,3 @@
-/* Panel del dueño (rol superadmin) · Solicitudes, Especialistas y Equipo.
-
-   Solo se montan si la sesión es del dueño (panel-secretaria.js). El
-   servidor exige el rol en cada ruta /superadmin: esto es solo la vista.
-
-   Contrato:
-     GET  /superadmin/solicitudes                         { correcciones, anulaciones }
-     POST /superadmin/solicitudes/historia/:id/aprobar
-     POST /superadmin/solicitudes/historia/:id/rechazar     { motivo }
-     POST /superadmin/solicitudes/odontograma/:id/aprobar
-     POST /superadmin/solicitudes/odontograma/:id/rechazar  { motivo }
-     GET    /superadmin/administradores
-     POST   /superadmin/administradores                   { nombreCompleto, documento, correo, telefono }
-     PATCH  /superadmin/administradores/:id               { ...campos, activo? }
-     POST   /superadmin/administradores/:id/restablecer
-     DELETE /superadmin/administradores/:id
-     GET    /superadmin/especialistas                     [{ id, nombre, titulo, foto, activo, especialidades }]
-     POST   /superadmin/especialistas                     { nombre, titulo, especialidadIds }
-     PATCH  /superadmin/especialistas/:id                 { nombre?, titulo?, activo?, especialidadIds? }
-     PUT    /superadmin/especialistas/:id/foto            { imagen: data URL JPG/PNG/WEBP }
-     DELETE /superadmin/especialistas/:id/foto
-   Crear y restablecer responden `contrasenaTemporal` una sola vez.
-   La foto de un especialista se recorta y reduce en el navegador antes
-   de subirla (400×400 px, JPG): pesa poco y se ve igual en todos lados. */
-
 function actualizarContadorSolicitudes(total) {
   document.querySelectorAll('[data-contador-solicitudes]').forEach((nodo) => {
     nodo.textContent = String(total);
@@ -34,8 +9,6 @@ function actualizarContadorSolicitudes(total) {
 function fechaHoraCorta(texto) {
   return texto ? `${fechaLarga(texto.slice(0, 10))}, ${horaLarga(texto.slice(11, 16))}` : '';
 }
-
-/* ---------- Solicitudes ---------- */
 
 async function montarSolicitudes(destino) {
   const encabezado = encabezadoSeccion('Solicitudes',
@@ -160,8 +133,6 @@ function rechazarSolicitud(ruta, titulo, explicacion, mensajeExito) {
   form.motivo.focus();
 }
 
-/* ---------- Equipo (administradores) ---------- */
-
 async function montarEquipo(destino) {
   const encabezado = encabezadoSeccion('Equipo',
     'Las personas que administran el consultorio. Tú decides quién entra al panel.',
@@ -247,7 +218,6 @@ function formularioAdministrador(admin = null) {
   form.nombreCompleto.focus();
 }
 
-/* Muestra la clave temporal en el diálogo (es la única vez que se ve). */
 function mostrarClaveTemporal(titulo, correo, clave) {
   const nodo = dialogo.abrir(titulo);
   const copiar = el('button', { type: 'button', class: 'btn btn--secundario', texto: 'Copiar clave' });
@@ -277,7 +247,6 @@ function restablecerClave(admin) {
     si: 'Dar clave nueva',
     accion: async () => {
       const r = await api(`/superadmin/administradores/${admin.id}/restablecer`, { metodo: 'POST' });
-      // confirmarAccion cierra el diálogo al terminar: la clave se muestra después.
       setTimeout(() => mostrarClaveTemporal(`Clave nueva para ${admin.nombreCompleto}`, admin.correo, r.contrasenaTemporal), 0);
     },
   });
@@ -311,11 +280,8 @@ function eliminarAdministrador(admin) {
   });
 }
 
-
-/* ---------- Especialistas ---------- */
-
-const FOTO_LADO = 400;                       // px del cuadrado que se guarda
-const FOTO_MAX_ARCHIVO = 5 * 1024 * 1024;    // lo que se acepta del equipo antes de reducir
+const FOTO_LADO = 400;
+const FOTO_MAX_ARCHIVO = 5 * 1024 * 1024;
 const FOTO_TIPOS = ['image/jpeg', 'image/png', 'image/webp'];
 
 async function montarEspecialistas(destino) {
@@ -347,7 +313,6 @@ async function montarEspecialistas(destino) {
     lista.length > 0 && el('p', { class: 'alerta alerta--info bloque-panel', texto: 'Para que un especialista aparezca al agendar, publica sus horas en Horarios.' }));
 }
 
-/** Foto del especialista o, si no tiene, la inicial de su nombre. */
 function retratoEspecialista(e, clase = 'retrato') {
   if (e.foto) return el('img', { class: clase, src: e.foto, alt: `Foto de ${e.nombre}`, width: '96', height: '96' });
   const inicial = (e.nombre || '').replace(/^(dra?\.?\s+)/i, '').charAt(0).toUpperCase();
@@ -372,8 +337,6 @@ function tarjetaEspecialista(e) {
         el('button', { type: 'button', onclick: () => cambiarActivoEspecialista(e), texto: e.activo ? 'Desactivar' : 'Activar' }))));
 }
 
-/** Recorta al centro en cuadrado (un poco hacia arriba si es vertical,
-    donde suele estar la cara) y reduce a FOTO_LADO px. Devuelve un data URL JPG. */
 async function prepararFoto(archivo) {
   if (!FOTO_TIPOS.includes(archivo.type)) throw new Error('Elige una imagen JPG, PNG o WEBP.');
   if (archivo.size > FOTO_MAX_ARCHIVO) throw new Error('La imagen pesa más de 5 MB. Elige una más liviana.');
@@ -394,7 +357,7 @@ async function prepararFoto(archivo) {
     lienzo.width = FOTO_LADO;
     lienzo.height = FOTO_LADO;
     const ctx = lienzo.getContext('2d');
-    ctx.fillStyle = '#ffffff';   // fondo para PNG con transparencia
+    ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, FOTO_LADO, FOTO_LADO);
     ctx.drawImage(imagen, x, y, lado, lado, 0, 0, FOTO_LADO, FOTO_LADO);
     return lienzo.toDataURL('image/jpeg', 0.85);
@@ -415,7 +378,6 @@ async function formularioEspecialista(esp = null) {
   }
   const elegidas = new Set((esp?.especialidades || []).map((s) => s.id));
 
-  // Foto: null = sin cambios; string = nueva (data URL); false = quitarla.
   let fotoNueva = null;
   const vista = el('div', { class: 'foto-editor__vista' });
   const ayudaFoto = el('p', { class: 'campo__ayuda', texto: 'JPG, PNG o WEBP de hasta 5 MB. Se recorta en cuadrado y se reduce sola.' });
@@ -503,7 +465,6 @@ async function formularioEspecialista(esp = null) {
     } catch (err) {
       boton.disabled = false;
       if (guardado && !esp) {
-        // Se creó pero la foto falló: ya existe, así que lo que sigue es editarlo.
         esp = guardado;
         boton.textContent = 'Guardar cambios';
       }
