@@ -1,7 +1,8 @@
 /* Panel de la secretaria (panel-secretaria.html): rol administrador y
    dueño (superadmin). El dueño ve además Solicitudes (correcciones de
-   la historia y anulaciones del odontograma por aprobar) y Equipo
-   (administradores), en js/panel-superadmin.js.
+   la historia y anulaciones del odontograma por aprobar), Especialistas
+   (perfil con foto y especialidades) y Equipo (administradores), en
+   js/panel-superadmin.js.
 
    Una sola página con secciones; el menú cambia la sección por el
    fragmento de la URL (#inicio, #agenda, #pacientes, #pacientes/12,
@@ -29,6 +30,7 @@ const SECCIONES = {
   disponibilidad: { titulo: 'Horarios', montar: montarDisponibilidad },
   ...(DUENO && {
     solicitudes: { titulo: 'Solicitudes', montar: montarSolicitudes },
+    especialistas: { titulo: 'Especialistas', montar: montarEspecialistas },
     equipo: { titulo: 'Equipo', montar: montarEquipo },
   }),
 };

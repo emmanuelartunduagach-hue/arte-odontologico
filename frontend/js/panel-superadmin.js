@@ -1,4 +1,4 @@
-/* Panel del dueño (rol superadmin) · Solicitudes y Equipo.
+/* Panel del dueño (rol superadmin) · Solicitudes, Especialistas y Equipo.
 
    Solo se montan si la sesión es del dueño (panel-secretaria.js). El
    servidor exige el rol en cada ruta /superadmin: esto es solo la vista.
@@ -14,7 +14,14 @@
      PATCH  /superadmin/administradores/:id               { ...campos, activo? }
      POST   /superadmin/administradores/:id/restablecer
      DELETE /superadmin/administradores/:id
-   Crear y restablecer responden `contrasenaTemporal` una sola vez. */
+     GET    /superadmin/especialistas                     [{ id, nombre, titulo, foto, activo, especialidades }]
+     POST   /superadmin/especialistas                     { nombre, titulo, especialidadIds }
+     PATCH  /superadmin/especialistas/:id                 { nombre?, titulo?, activo?, especialidadIds? }
+     PUT    /superadmin/especialistas/:id/foto            { imagen: data URL JPG/PNG/WEBP }
+     DELETE /superadmin/especialistas/:id/foto
+   Crear y restablecer responden `contrasenaTemporal` una sola vez.
+   La foto de un especialista se recorta y reduce en el navegador antes
+   de subirla (400×400 px, JPG): pesa poco y se ve igual en todos lados. */
 
 function actualizarContadorSolicitudes(total) {
   document.querySelectorAll('[data-contador-solicitudes]').forEach((nodo) => {
@@ -299,6 +306,233 @@ function eliminarAdministrador(admin) {
     accion: async () => {
       await api(`/superadmin/administradores/${admin.id}`, { metodo: 'DELETE' });
       panel.aviso = el('p', { class: 'alerta alerta--exito', role: 'status', texto: 'Administrador eliminado.' });
+      panel.refrescar();
+    },
+  });
+}
+
+
+/* ---------- Especialistas ---------- */
+
+const FOTO_LADO = 400;                       // px del cuadrado que se guarda
+const FOTO_MAX_ARCHIVO = 5 * 1024 * 1024;    // lo que se acepta del equipo antes de reducir
+const FOTO_TIPOS = ['image/jpeg', 'image/png', 'image/webp'];
+
+async function montarEspecialistas(destino) {
+  const encabezado = encabezadoSeccion('Especialistas',
+    'Quiénes atienden en el consultorio y qué especialidades cubre cada uno. Solo los ves tú.',
+    el('button', { type: 'button', class: 'btn btn--primario btn--compacto', onclick: () => formularioEspecialista(), texto: 'Agregar especialista' }));
+  const aviso = tomarAviso();
+  pintarEn(destino, avisoDemo(), encabezado, aviso, estadoCarga('Cargando especialistas…'));
+
+  let lista;
+  try {
+    lista = await api('/superadmin/especialistas');
+  } catch (err) {
+    pintarEn(destino, avisoDemo(), encabezado, aviso, errorConReintento(err, panel.refrescar));
+    return;
+  }
+  if (seccionActual() !== 'especialistas') return;
+
+  const activos = lista.filter((e) => e.activo);
+  const inactivos = lista.filter((e) => !e.activo);
+  pintarEn(destino, avisoDemo(), encabezado, aviso,
+    lista.length === 0 && el('div', { class: 'vacio' },
+      el('p', { texto: 'Aún no hay especialistas. Agrega el primero para poder publicar sus horarios.' })),
+    activos.length > 0 && el('ul', { class: 'especialistas' }, activos.map(tarjetaEspecialista)),
+    inactivos.length > 0 && el('section', { class: 'bloque-panel', 'aria-labelledby': 'titulo-inactivos' },
+      el('h2', { id: 'titulo-inactivos', class: 'bloque-panel__titulo', texto: `Desactivados (${inactivos.length})` }),
+      el('p', { class: 'bloque-panel__ayuda', texto: 'No aparecen para agendar. Sus citas anteriores se conservan.' }),
+      el('ul', { class: 'especialistas' }, inactivos.map(tarjetaEspecialista))),
+    lista.length > 0 && el('p', { class: 'alerta alerta--info bloque-panel', texto: 'Para que un especialista aparezca al agendar, publica sus horas en Horarios.' }));
+}
+
+/** Foto del especialista o, si no tiene, la inicial de su nombre. */
+function retratoEspecialista(e, clase = 'retrato') {
+  if (e.foto) return el('img', { class: clase, src: e.foto, alt: `Foto de ${e.nombre}`, width: '96', height: '96' });
+  const inicial = (e.nombre || '').replace(/^(dra?\.?\s+)/i, '').charAt(0).toUpperCase();
+  return el('span', { class: `retrato retrato--inicial ${clase}`, 'aria-hidden': 'true' },
+    inicial || icono('<circle cx="12" cy="8" r="4"/><path d="M5 20a7 7 0 0 1 14 0"/>'));
+}
+
+function tarjetaEspecialista(e) {
+  return el('li', { class: 'especialista' + (e.activo ? '' : ' especialista--inactivo') },
+    retratoEspecialista(e),
+    el('div', { class: 'especialista__datos' },
+      el('p', { class: 'especialista__nombre', texto: e.nombre }),
+      e.titulo && el('p', { class: 'especialista__titulo', texto: e.titulo }),
+      el('ul', { class: 'especialista__especialidades', 'aria-label': 'Especialidades' },
+        e.especialidades.length
+          ? e.especialidades.map((s) => el('li', { class: 'chip-especialidad', texto: s.nombre }))
+          : el('li', { class: 'chip-especialidad chip-especialidad--vacia', texto: 'Sin especialidades' }))),
+    el('details', { class: 'menu-acciones especialista__menu' },
+      el('summary', { class: 'btn btn--fantasma btn--compacto', 'aria-label': `Acciones para ${e.nombre}`, texto: 'Opciones' }),
+      el('div', { class: 'menu-acciones__lista' },
+        el('button', { type: 'button', onclick: () => formularioEspecialista(e), texto: 'Editar perfil' }),
+        el('button', { type: 'button', onclick: () => cambiarActivoEspecialista(e), texto: e.activo ? 'Desactivar' : 'Activar' }))));
+}
+
+/** Recorta al centro en cuadrado (un poco hacia arriba si es vertical,
+    donde suele estar la cara) y reduce a FOTO_LADO px. Devuelve un data URL JPG. */
+async function prepararFoto(archivo) {
+  if (!FOTO_TIPOS.includes(archivo.type)) throw new Error('Elige una imagen JPG, PNG o WEBP.');
+  if (archivo.size > FOTO_MAX_ARCHIVO) throw new Error('La imagen pesa más de 5 MB. Elige una más liviana.');
+  const url = URL.createObjectURL(archivo);
+  try {
+    const imagen = await new Promise((resolver, rechazar) => {
+      const img = new Image();
+      img.onload = () => resolver(img);
+      img.onerror = () => rechazar(new Error('No pudimos leer esa imagen. Prueba con otra.'));
+      img.src = url;
+    });
+    const ancho = imagen.naturalWidth;
+    const alto = imagen.naturalHeight;
+    const lado = Math.min(ancho, alto);
+    const x = (ancho - lado) / 2;
+    const y = alto > ancho ? (alto - lado) * 0.25 : (alto - lado) / 2;
+    const lienzo = document.createElement('canvas');
+    lienzo.width = FOTO_LADO;
+    lienzo.height = FOTO_LADO;
+    const ctx = lienzo.getContext('2d');
+    ctx.fillStyle = '#ffffff';   // fondo para PNG con transparencia
+    ctx.fillRect(0, 0, FOTO_LADO, FOTO_LADO);
+    ctx.drawImage(imagen, x, y, lado, lado, 0, 0, FOTO_LADO, FOTO_LADO);
+    return lienzo.toDataURL('image/jpeg', 0.85);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function formularioEspecialista(esp = null) {
+  const nodo = dialogo.abrir(esp ? 'Editar especialista' : 'Agregar especialista');
+  pintarEn(nodo, estadoCarga('Cargando especialidades…'));
+  let especialidades;
+  try {
+    especialidades = await api('/admin/especialidades');
+  } catch (err) {
+    pintarEn(nodo, el('p', { class: 'alerta', role: 'alert', texto: err.message }));
+    return;
+  }
+  const elegidas = new Set((esp?.especialidades || []).map((s) => s.id));
+
+  // Foto: null = sin cambios; string = nueva (data URL); false = quitarla.
+  let fotoNueva = null;
+  const vista = el('div', { class: 'foto-editor__vista' });
+  const ayudaFoto = el('p', { class: 'campo__ayuda', texto: 'JPG, PNG o WEBP de hasta 5 MB. Se recorta en cuadrado y se reduce sola.' });
+  const errorFoto = el('p', { class: 'campo__error', role: 'alert', hidden: true });
+  const entrada = el('input', { type: 'file', id: 'esp-foto', class: 'sr-only', accept: FOTO_TIPOS.join(',') });
+  const quitar = el('button', { type: 'button', class: 'btn btn--fantasma btn--compacto', texto: 'Quitar foto' });
+  const elegir = el('label', { for: 'esp-foto', class: 'btn btn--secundario btn--compacto', tabindex: '0',
+    onkeydown: (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); entrada.click(); } } });
+
+  function pintarFoto() {
+    const actual = fotoNueva === false ? null : (fotoNueva || esp?.foto || null);
+    pintarEn(vista, retratoEspecialista({ nombre: nombreActual(), foto: actual }, 'retrato retrato--grande'));
+    quitar.hidden = !actual;
+    elegir.textContent = actual ? 'Cambiar foto' : 'Elegir foto';
+  }
+  entrada.addEventListener('change', async () => {
+    const archivo = entrada.files[0];
+    entrada.value = '';
+    if (!archivo) return;
+    errorFoto.hidden = true;
+    try {
+      fotoNueva = await prepararFoto(archivo);
+      pintarFoto();
+    } catch (err) {
+      errorFoto.textContent = err.message;
+      errorFoto.hidden = false;
+    }
+  });
+  quitar.addEventListener('click', () => { fotoNueva = false; pintarFoto(); });
+
+  const errorEspecialidades = el('p', { class: 'campo__error', id: 'esp-especialidades-error', hidden: true });
+  const alerta = el('p', { class: 'alerta', role: 'alert', hidden: true });
+  const form = el('form', { novalidate: true, class: 'form-especialista' },
+    el('div', { class: 'foto-editor' },
+      vista,
+      el('div', { class: 'foto-editor__acciones' },
+        elegir,
+        quitar,
+        entrada,
+        ayudaFoto,
+        errorFoto)),
+    campoForm('nombre', 'Nombre completo', 'text', { value: esp?.nombre || '', autocomplete: 'off', maxlength: '120', placeholder: 'Ej.: Dra. Ximena Acosta Oliveros' }),
+    campoForm('titulo', 'Título o cargo (opcional)', 'text', { value: esp?.titulo || '', autocomplete: 'off', maxlength: '120', placeholder: 'Ej.: Odontóloga · Ortodoncista' }),
+    el('fieldset', { class: 'campo', 'aria-describedby': 'esp-especialidades-error' },
+      el('legend', { class: 'campo__etiqueta', texto: 'Especialidades que atiende' }),
+      el('div', { class: 'publicar__opciones' },
+        especialidades.map((s) => el('label', { class: 'casilla-opcion' + (s.activo === false ? ' casilla-opcion--inactiva' : '') },
+          el('input', { type: 'checkbox', name: 'especialidad', value: String(s.id), checked: elegidas.has(s.id) }),
+          el('span', { texto: s.activo === false ? `${s.nombre} (inactiva)` : s.nombre })))),
+      errorEspecialidades),
+    alerta,
+    el('div', { class: 'acciones' },
+      el('button', { type: 'submit', class: 'btn btn--primario', texto: esp ? 'Guardar cambios' : 'Agregar especialista' }),
+      el('button', { type: 'button', class: 'btn btn--secundario', 'data-cerrar': true, texto: 'Cancelar' })));
+
+  function nombreActual() { return form.nombre?.value.trim(); }
+  form.nombre.addEventListener('input', () => { if (!fotoNueva && !esp?.foto) pintarFoto(); });
+
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const boton = form.querySelector('[type="submit"]');
+    limpiarErroresForm(form);
+    errorEspecialidades.hidden = true;
+    alerta.hidden = true;
+    boton.disabled = true;
+    const cuerpo = {
+      nombre: form.nombre.value,
+      titulo: form.titulo.value,
+      especialidadIds: [...form.querySelectorAll('input[name="especialidad"]:checked')].map((c) => Number(c.value)),
+    };
+    let guardado = esp;
+    try {
+      guardado = esp
+        ? await api(`/superadmin/especialistas/${esp.id}`, { metodo: 'PATCH', cuerpo })
+        : await api('/superadmin/especialistas', { metodo: 'POST', cuerpo });
+      if (typeof fotoNueva === 'string') {
+        await api(`/superadmin/especialistas/${guardado.id}/foto`, { metodo: 'PUT', cuerpo: { imagen: fotoNueva } });
+      } else if (fotoNueva === false && esp?.foto) {
+        await api(`/superadmin/especialistas/${guardado.id}/foto`, { metodo: 'DELETE' });
+      }
+      panel.aviso = el('p', { class: 'alerta alerta--exito', role: 'status',
+        texto: esp ? 'Perfil actualizado.' : `Especialista agregado: ${guardado.nombre}. Publica sus horas en Horarios.` });
+      dialogo.cerrar();
+      panel.refrescar();
+    } catch (err) {
+      boton.disabled = false;
+      if (guardado && !esp) {
+        // Se creó pero la foto falló: ya existe, así que lo que sigue es editarlo.
+        esp = guardado;
+        boton.textContent = 'Guardar cambios';
+      }
+      const campos = { ...(err.campos || {}) };
+      if (campos.especialidadIds) {
+        errorEspecialidades.textContent = campos.especialidadIds;
+        errorEspecialidades.hidden = false;
+        delete campos.especialidadIds;
+      }
+      const sueltos = mostrarErroresForm(form, campos);
+      if (!err.campos || sueltos.length) { alerta.textContent = sueltos.join(' ') || err.message; alerta.hidden = false; }
+    }
+  });
+
+  pintarEn(nodo, form);
+  pintarFoto();
+  form.nombre.focus();
+}
+
+function cambiarActivoEspecialista(e) {
+  confirmarAccion({
+    titulo: e.activo ? '¿Desactivar al especialista?' : '¿Activar al especialista?',
+    texto: e.activo
+      ? `${e.nombre} deja de aparecer para agendar. Sus citas ya agendadas y su historial se conservan.`
+      : `${e.nombre} vuelve a aparecer para agendar en las horas que tenga publicadas.`,
+    si: e.activo ? 'Desactivar' : 'Activar',
+    accion: async () => {
+      await api(`/superadmin/especialistas/${e.id}`, { metodo: 'PATCH', cuerpo: { activo: !e.activo } });
+      panel.aviso = el('p', { class: 'alerta alerta--exito', role: 'status', texto: e.activo ? 'Especialista desactivado.' : 'Especialista activado.' });
       panel.refrescar();
     },
   });
