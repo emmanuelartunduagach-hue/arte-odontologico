@@ -17,7 +17,12 @@ const PUERTO = process.env.PORT || 3000;
     });
     iniciarProgramacion(); // recordatorios del día anterior
   } catch (error) {
-    console.error('No fue posible conectar con MySQL:', error.message);
+    // Algunos errores de red (varias direcciones intentadas) llegan con el
+    // mensaje vacío: se muestran también el código y el destino.
+    const detalle = [error.code, error.message, error.errors?.map((e) => e.message).join(' | ')]
+      .filter(Boolean).join(' — ');
+    console.error('No fue posible conectar con MySQL:', detalle || String(error));
+    console.error(`Destino: ${process.env.DB_HOST || '(DB_HOST vacío)'}:${process.env.DB_PORT || '(DB_PORT vacío)'}, base ${process.env.DB_NAME || '(DB_NAME vacío)'}`);
     process.exit(1);
   }
 })();
