@@ -1,6 +1,10 @@
 ARTE ODONTOLOGICO - PRUEBAS: ESPECIALISTAS, CALENDARIO Y CITAS SIN CUENTA
 =========================================================================
 Version del 6 de octubre de 2026 (ya fusionado en main).
+NOTA (22 de octubre): esta guia es del modelo del 6 de octubre. Hoy la cita queda
+confirmada al pedirla, el nombre se manda en "nombres" y "apellidos", el tipo de
+documento y el correo son obligatorios, y la respuesta de POST /citas ya no trae el
+enlace (llega por WhatsApp). Para el flujo vigente, usar pruebas-alta-pacientes.txt.
 
 Tambien cubierto por la prueba de integracion automatizada contra MySQL 8
 (ver pruebas.md). Esta guia es para repetirlo a mano en el equipo de desarrollo.

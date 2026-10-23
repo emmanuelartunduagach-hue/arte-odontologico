@@ -3,15 +3,15 @@
 **Proyecto:** plataforma web de agendamiento de citas para el consultorio Arte Odontológico\
 **Programa:** Ingeniería de Software — Fundación Escuela Tecnológica de Neiva Jesús Oviedo Pérez\
 **Autores:** Emmanuel Artunduaga Charry · Jawer Leonardo Manrique Yosa\
-**Versión del documento:** 0.9 (borrador) · 6 de octubre de 2026
+**Versión del documento:** 1.0 (borrador) · 22 de octubre de 2026
 
-> Pendiente: sección del frontend (pantallas y módulos JavaScript) cuando termine la integración; despliegue; paso a la plantilla oficial de la FET.
+> Pendiente: paso a la plantilla oficial de la FET. El despliegue está en el *Manual de instalación* (sección 8).
 
 ## 1. Propósito y alcance
 
 Describe cómo está construido el sistema: arquitectura, organización del código, modelo de datos, API, reglas de negocio, seguridad y pruebas. Está dirigido a quien mantenga o amplíe el sistema. Para instalarlo, ver el *Manual de instalación*.
 
-El sistema permite que cualquier persona pida una cita odontológica desde la web sin crear cuenta, eligiendo especialidad, especialista, día y hora. La cita queda pendiente hasta que la secretaria la acepta; entonces el paciente recibe la confirmación por WhatsApp con un enlace para reprogramar una vez o cancelar, y unas 24 horas antes, un recordatorio. La secretaria, única persona que inicia sesión, gestiona solicitudes, agenda, horarios, pacientes e historia clínica. Los pacientes no tienen cuenta: son una ficha que se crea al aceptar su primera cita o que la secretaria registra si llegan al consultorio.
+El sistema permite que cualquier persona pida una cita odontológica desde la web sin crear cuenta, eligiendo especialidad, especialista, día y hora. La cita queda **confirmada de una vez** (decisión 27) y el paciente recibe por WhatsApp la confirmación con un enlace para reprogramar una vez o cancelar, y unas 24 horas antes, un recordatorio. Inician sesión dos perfiles: la secretaria (rol `administrador`), que gestiona agenda, horarios, pacientes, historia clínica y odontograma, y la propietaria (rol `superadmin`), que además aprueba las correcciones de la historia y las anulaciones del odontograma y administra al equipo y a los especialistas. Los pacientes no tienen cuenta: son una ficha que se crea o se enlaza al pedir su primera cita, o que la secretaria registra si llegan al consultorio.
 
 ## 2. Arquitectura
 
@@ -28,7 +28,7 @@ Arquitectura cliente-servidor en tres capas:
 
 | Capa | Tecnología | Versión | Uso |
 |---|---|---|---|
-| Servidor | Node.js | 18 o superior | Entorno de ejecución |
+| Servidor | Node.js | 20 o superior | Entorno de ejecución |
 | | Express | 4.x | Servidor HTTP y enrutamiento |
 | | mysql2 | 3.x | Conexión a MySQL con pool y consultas preparadas |
 | | bcrypt | 6.x | Cifrado de contraseñas (10 rondas) |
@@ -36,7 +36,8 @@ Arquitectura cliente-servidor en tres capas:
 | | dotenv, cors | — | Configuración y política de origen |
 | Datos | MySQL | 8.0+ | Base de datos relacional |
 | Cliente | HTML5, CSS3, JavaScript (ES2020) | — | Interfaz sin frameworks |
-| Mensajería | WhatsApp Cloud API (opcional) | Graph API v21 | Envío automático de mensajes |
+| Mensajería | WhatsApp Cloud API de Meta o Twilio (opcionales) | Graph API v21 | Envío automático de mensajes |
+| Publicación | Railway (plan Hobby) | — | App y MySQL en un mismo proyecto, con HTTPS |
 | Control de versiones | Git + GitHub | — | Ramas por tarea y Pull Requests |
 
 No hay más dependencias de producción: las funciones de fecha, aleatoriedad y hash usan los módulos nativos de Node (`Intl`, `crypto`).
@@ -56,10 +57,10 @@ No hay más dependencias de producción: las funciones de fecha, aleatoriedad y 
 | `backend/src/middleware/` | Sesión, rol y límite de peticiones |
 | `backend/src/services/notificaciones/` | Textos y envío de WhatsApp |
 | `backend/src/utils/` | Validaciones, fechas, códigos, errores, contraseñas |
-| `backend/src/scripts/` | Consola: `crearAdmin.js` (crear la secretaria), `restablecerAdmin.js` (restablecer su clave) y `enviarRecordatorios.js` |
+| `backend/src/scripts/` | Consola: `crearAdmin.js` (crear la secretaria), `restablecerAdmin.js` (restablecer su clave), `superadmin.js` (crear o editar a la propietaria, con `SUPERADMIN_CLAVE`), `enviarRecordatorios.js` y `datosDemo.js` (solo desarrollo; se bloquea en producción) |
 | `backend/src/services/recordatorios.js` | Recordatorio 24 horas antes y su ejecución automática |
 | `backend/.env.example` | Plantilla de configuración |
-| `frontend/` | Páginas públicas (`index.html`, `gestionar-cita.html`, `politica-datos.html`) y con sesión, solo para la secretaria (`cambiar-contrasena.html`, `panel-secretaria.html`); `css/` (tokens → base → pantalla); `js/` (config, `api.js`, `sesion.js` y un módulo por pantalla; el panel de la secretaria es una sola página con secciones por fragmento de URL, `#inicio`, `#agenda`, `#pacientes/12`…: `panel-secretaria.js` las monta y tiene Inicio (solicitudes por confirmar y agenda de hoy), `panel-comun.js` tiene los diálogos, avisos y el contador de mensajes, y cada sección vive en su archivo: `panel-agenda.js` (agenda por día, búsqueda, aceptar o rechazar solicitudes y demás acciones), `panel-pacientes.js` (lista, registro en el consultorio, ficha con citas e historia clínica y agendar desde la ficha), `panel-disponibilidad.js` (semana por especialista; «Editar» abre el horario de un día, guarda solo las diferencias con `POST` y `DELETE` de franjas y puede aplicar el mismo horario a otros días y semanas) y `panel-mensajes.js` (tarjeta de un WhatsApp sin enviar: el panel no tiene sección de mensajes porque se envían solos; los que fallan aparecen en Inicio)) |
+| `frontend/` | Páginas públicas (`index.html`, `gestionar-cita.html`, `politica-datos.html`) y con sesión (`cambiar-contrasena.html`, `panel-secretaria.html`); `css/` (`tokens.css` → `base.css` → `landing.css` y `panel.css`); `js/` (`config.js`, `api.js`, `sesion.js`, `tema.js`, módulos comunes `comun.js` y `modales.js`, y un módulo por pantalla). El panel es una sola página con secciones por fragmento de URL (`#inicio`, `#agenda`, `#pacientes/12`…): `panel-secretaria.js` las monta y arma Inicio (novedades de la web, WhatsApp sin enviar y agenda de hoy); `panel-comun.js` tiene los diálogos y avisos; y cada sección vive en su archivo: `panel-agenda.js`, `panel-pacientes.js` (lista, registro, ficha con citas e historia clínica), `panel-odontograma.js`, `panel-disponibilidad.js` (editor de horario por día), `panel-mensajes.js` (tarjeta de un WhatsApp sin enviar) y `panel-superadmin.js` (Solicitudes, Equipo y Especialistas, solo para la propietaria). `api-demo.js` es una API simulada que solo se activa en localhost con `?demo=1` |
 | `docs/` | Documentación del proyecto |
 
 **Flujo de una petición:** `routes` aplica los middlewares (sesión, rol, límite) → el `controller` valida el cuerpo con `utils/validaciones`, aplica las reglas y llama a los `models` → si algo falla lanza un `ErrorHttp(status, mensaje, campos)` → el manejador central de `app.js` responde `{ error, campos? }` sin exponer detalles internos (la traza completa queda solo en la consola del servidor).
@@ -70,16 +71,17 @@ El detalle de cada tabla y el diagrama entidad-relación están en `docs/03-dise
 
 | Tabla | Propósito |
 |---|---|
-| `usuarios` | Quienes inician sesión: la secretaria (rol `administrador`) |
+| `usuarios` | Quienes inician sesión: la secretaria (`administrador`) y la propietaria (`superadmin`) |
 | `pacientes` | Ficha de cada paciente (sin usuario ni contraseña), con su origen (web o consultorio), tipo de documento, teléfono fijo y motivo de consulta |
 | `servicios` | Especialidades del consultorio |
-| `especialistas` | Odontólogos; no inician sesión |
+| `especialistas` | Odontólogos; no inician sesión. Perfil interno con título y foto (solo lo ve la propietaria) |
 | `especialista_especialidad` | Qué especialidades atiende cada especialista (muchos a muchos) |
 | `sedes` | Sede de atención (hoy solo Rivera) |
 | `franjas_horarias` | Horas publicadas a mano por la secretaria, por especialista y fecha |
 | `citas` | Citas, con los datos de quien la pidió y su origen (web o consultorio); nacen confirmadas |
 | `notificaciones` | Bitácora de mensajes de WhatsApp |
-| `historia_clinica` | Entradas por paciente; no se modifican ni se borran |
+| `historia_clinica` | Entradas por paciente; no se modifican ni se borran; las correcciones tienen estado (vigente, pendiente o rechazada) |
+| `odontograma` | Hallazgos por diente y cara (numeración FDI), con aprobación de anulaciones |
 | `v_agenda` (vista) | Agenda con paciente, especialidad, especialista y sede |
 
 ## 6. API REST
@@ -96,13 +98,17 @@ Todas las rutas cuelgan de `/api` y responden JSON. El contrato completo con eje
 | Sesión | `POST /auth/ingreso` · `POST /auth/cambiar-contrasena` · `GET /auth/perfil` | Público / sesión |
 | Novedades y agenda | `GET /admin/citas` · `GET /admin/citas/novedades` · `POST /admin/citas` · `POST /admin/citas/:id/aceptar` · `POST /admin/citas/:id/rechazar` · `PATCH /admin/citas/:id/estado` · `POST /admin/citas/:id/reprogramar` | Rol administrador |
 | Pacientes | `POST /pacientes` · `GET /pacientes?q=` · `GET /pacientes/:id` | Rol administrador |
-| Historia clínica | `GET/POST /pacientes/:id/historia` · `POST /admin/historia/:id/correccion` | Rol administrador |
+| Historia clínica | `GET/POST /pacientes/:id/historia` · `POST /admin/historia/:id/correccion` | Rol administrador (la corrección queda pendiente hasta que la apruebe la propietaria) |
+| Odontograma | `GET/POST /pacientes/:id/odontograma` · `POST /admin/odontograma/:id/realizado` · `POST /admin/odontograma/:id/anular` | Rol administrador |
+| Solicitudes y equipo | `GET /superadmin/solicitudes` · `POST /superadmin/solicitudes/historia\|odontograma/:id/aprobar\|rechazar` · `GET/POST/PATCH/DELETE /superadmin/administradores` · `POST /superadmin/administradores/:id/restablecer` | Solo la propietaria (superadmin) |
 | Especialidades | `GET/POST /admin/especialidades` · `PATCH /admin/especialidades/:id` | Rol administrador |
 | Especialistas | `GET /admin/especialistas` (lista) | Rol administrador |
 | Especialistas: crear, editar y foto | `GET/POST /superadmin/especialistas` · `PATCH /superadmin/especialistas/:id` · `PUT/DELETE /superadmin/especialistas/:id/foto` | Solo la dueña (superadmin) |
 | Disponibilidad | `GET/POST /admin/especialistas/:id/franjas` · `DELETE /admin/franjas/:id` | Rol administrador |
 | Agenda | `GET /admin/citas` · `PATCH /admin/citas/:id/estado` · `POST /admin/citas/:id/reprogramar` | Rol administrador |
 | Mensajes | `GET /admin/notificaciones` · `PATCH /admin/notificaciones/:id` · `POST /admin/recordatorios` | Rol administrador |
+
+En total son 54 rutas bajo `/api`. «Rol administrador» incluye a la propietaria: `requiereRol` deja pasar al `superadmin` en cualquier control.
 
 **Códigos de respuesta:**
 - 200 / 201: correcto.
@@ -135,9 +141,13 @@ Todas las rutas cuelgan de `/api` y responden JSON. El contrato completo con eje
 | Límite de intentos de ingreso | `limitePeticiones` en `POST /auth/ingreso`: 10 por IP cada 15 minutos, configurable con `LIMITE_INGRESOS_POR_IP` |
 | Clave temporal obligatoria de cambiar | El ingreso devuelve `debeCambiarContrasena`; `exigirSesion()` en `frontend/js/sesion.js` lleva a `cambiar-contrasena.html` antes de cualquier panel |
 | Historia clínica inalterable | Solo hay `INSERT`; la corrección es una entrada nueva con `corrige_a` |
-| Solo la secretaria inicia sesión | El ingreso rechaza cualquier usuario que no sea `administrador`; los pacientes están en otra tabla, sin contraseña |
+| Solo el personal inicia sesión | El ingreso rechaza cualquier usuario que no esté activo ni tenga rol `administrador` o `superadmin`; los pacientes están en otra tabla, sin contraseña |
+| Sesión cortada al instante | `middleware/autenticacion.js` consulta en la base el rol y si el usuario sigue activo en cada petición; si cambió, responde 401 aunque el token no haya vencido |
+| La propietaria solo se crea desde el servidor | `npm run superadmin` exige `SUPERADMIN_CLAVE` (mínimo 16 caracteres, comparada con `timingSafeEqual`); no existe ruta web |
+| Correcciones y anulaciones con aprobación | Una corrección o anulación pedida por un administrador queda `pendiente`; la propietaria la aprueba o la rechaza con motivo. Lo que ella pide queda vigente de una vez |
+| Hallazgos del odontograma válidos | `odontograma.controller.js` define el catálogo de hallazgos y valida el diente con numeración FDI (`esDienteFdi`) |
 | Recordatorio 24 horas antes, una sola vez | `services/recordatorios.js`: cada 30 min dentro de `RECORDATORIO_DESDE`–`RECORDATORIO_HASTA`; citas confirmadas que empiezan en las próximas 24 h, aceptadas hace más de 12 h y sin recordatorio posterior a su última confirmación o reprogramación |
-| "Olvidé mi contraseña" (secretaria) | Se restablece por consola con `npm run restablecer-admin` |
+| "Olvidé mi contraseña" | La secretaria: por consola con `npm run restablecer-admin`. Un administrador: la propietaria genera una clave temporal desde Equipo. La propietaria: `npm run superadmin` |
 
 **Zona horaria.** Las franjas guardan fecha y hora locales del consultorio. `utils/tiempo.js` calcula la hora actual de Bogotá (UTC-5) con `Intl` y la pasa a las consultas como texto, de modo que el resultado no depende de la zona horaria del servidor donde se publique.
 
@@ -149,12 +159,20 @@ Todas las rutas cuelgan de `/api` y responden JSON. El contrato completo con eje
 | Suplantación de rol | El rol viaja dentro del JWT firmado por el servidor y se verifica en cada ruta con `requiereRol`; el cliente nunca lo envía |
 | Adivinar correos registrados | El ingreso responde el mismo mensaje y tarda lo mismo si el correo no existe (comparación contra un hash de relleno) |
 | Inyección SQL | Todas las consultas usan parámetros; las búsquedas escapan los comodines de `LIKE` |
-| Enlaces de gestión adivinables | Código aleatorio de 32 bytes; en `citas` solo se guarda su hash SHA-256. El enlace se genera al aceptar la cita; cuando se acepta un cambio o la secretaria reprograma, se genera uno nuevo y el anterior deja de servir. Al marcar un mensaje como enviado, el código se borra del texto guardado |
+| Enlaces de gestión adivinables | Código aleatorio de 32 bytes; en `citas` solo se guarda su hash SHA-256. El enlace se genera al pedir la cita y sigue sirviendo cuando el paciente reprograma; si la secretaria reprograma, se genera uno nuevo y el anterior deja de servir. Al marcar un mensaje como enviado, el código se borra del texto guardado |
 | Bots que llenan la agenda | Límite de peticiones por IP, campo trampa oculto en el formulario y máximo de citas activas por documento |
 | Fuga de datos en mensajes | El WhatsApp solo lleva fecha, hora, especialista y dirección; nada clínico |
 | Errores que revelan detalles internos | Manejador central: mensaje genérico al cliente, traza solo en el servidor |
 | Peticiones enormes | Cuerpo JSON limitado a 100 KB; listas de fechas y horas con tope |
-| Secretos en el repositorio | `.env` en `.gitignore`; solo se publica `.env.example` |
+| Secretos en el repositorio | `.env` y `.env.*` en `.gitignore` (también los `.sql` de respaldo); solo se publica `.env.example` |
+| Sesión olvidada en un equipo compartido | El token se guarda en `sessionStorage` (se borra al cerrar la pestaña) y el texto de la API se pinta siempre con `textContent` |
+
+**Limitaciones conocidas:**
+- Si `ORIGEN_PERMITIDO` no está definido, CORS acepta cualquier origen; en la publicación app y API comparten dominio, así que se puede restringir sin cambiar código.
+- El límite de peticiones por IP vive en la memoria del proceso: se reinicia con el servidor y no se comparte entre instancias.
+- No se usan cabeceras de seguridad adicionales (por ejemplo, `helmet`).
+- El acceso público a MySQL en Railway está pendiente de cerrar.
+- No hay autenticación de dos factores.
 
 ## 9. Notificaciones
 
@@ -162,17 +180,18 @@ Todas las rutas cuelgan de `/api` y responden JSON. El contrato completo con eje
 
 - **manual:** queda pendiente. El panel muestra un enlace `https://wa.me/<número>?text=<mensaje>` que abre el WhatsApp Business de la clínica con el texto listo.
 - **consola:** se imprime en la terminal del backend.
-- **api:** se envía con una plantilla aprobada por la API de WhatsApp Cloud.
+- **twilio:** se envía el texto completo con el WhatsApp Sandbox de Twilio; es solo para pruebas.
+- **api:** se envía con una plantilla aprobada por la API de WhatsApp Cloud (Meta).
 
-El servicio nunca lanza errores hacia el controlador: si el envío falla, la cita sigue confirmada y el mensaje queda como `fallida` para enviarlo a mano. Tipos: `confirmacion` (al aceptar), `reprogramacion`, `cancelacion`, `rechazo` y `recordatorio`. Solo los dos primeros llevan el enlace de gestión: el recordatorio sale cuando ya pasó el plazo de 24 horas, y la cancelación y el rechazo llevan la dirección de la página para pedir otra cita.
+El servicio nunca lanza errores hacia el controlador: si el envío falla, la cita sigue confirmada y el mensaje queda como `fallida` para enviarlo a mano. Tipos: `confirmacion` (al pedir la cita), `reprogramacion`, `cancelacion`, `rechazo` y `recordatorio`. Solo los dos primeros llevan el enlace de gestión: el recordatorio sale cuando ya pasó el plazo de 24 horas, y la cancelación y el rechazo llevan la dirección de la página para pedir otra cita.
 
 El recordatorio lo genera `services/recordatorios.js`, programado desde `server.js` cada 30 minutos (se desactiva con `RECORDATORIOS_AUTOMATICOS=false`). También se puede lanzar con `POST /api/admin/recordatorios` o `npm run recordatorios`.
 
 ## 10. Pruebas
 
-- **Integración contra MySQL 8 real:** 117 comprobaciones automatizadas sobre una base limpia. Cubren el catálogo, el calendario, agendar, la carrera por la misma hora, la gestión con código, la regla de 24 horas, el panel de la secretaria, los mensajes, los permisos, el alta de pacientes, la historia clínica, el recordatorio y el restablecimiento de claves. Todas correctas al 7 de octubre de 2026.
+- **Integración contra MySQL 8 real:** `docs/06-pruebas/pruebas.md` documenta 140 comprobaciones sobre una base limpia (117 al 7 de octubre y 23 más al 9 de octubre). Cubren el catálogo, el calendario, agendar, la carrera por la misma hora, la gestión con código, la regla de 24 horas, el panel de la secretaria, los mensajes, los permisos, el alta de pacientes, la historia clínica, el recordatorio y la migración. El informe suma a esas 140 las 53 comprobaciones del rol de la propietaria (13 de octubre), para un total de 193; el detalle de esas 53 y el script que las ejecuta están pendientes de incorporar al repositorio.
 - **Pruebas manuales:** guías paso a paso en PowerShell (`docs/06-pruebas/`).
-- **Flujo de aprobación (9 de octubre):** prueba de punta a punta contra la API sobre una base nueva y sobre una migrada con la 003: pedir cita sin correo (400), pendiente que aparta la hora, límite por documento, aceptar (crea la ficha y envía el enlace), reprogramar desde el enlace (vuelve a pendiente), rechazar (libera la hora), registrar en el consultorio, agendar desde la ficha, historia clínica y recordatorio de 24 horas. Además, recorrido en el navegador en modo demostración y con la API real, en escritorio y a 390 px.
+- **Flujo de confirmación automática (9 de octubre):** prueba de punta a punta contra la API sobre una base nueva y una migrada: pedir cita (queda confirmada), enlace de gestión, reprogramar y cancelar desde el enlace, novedades en el panel, registro en el consultorio y recordatorio de 24 horas. Además, recorrido en el navegador en modo demostración y con la API real, en escritorio y a 390 px.
 - **Revisión de código independiente:** encontró tres fallas, corregidas antes de fusionar: suplantación del documento de un paciente registrado, código del enlace guardado en texto y error 500 con fechas inválidas.
 
 Detalle en `docs/06-pruebas/pruebas.md`.
