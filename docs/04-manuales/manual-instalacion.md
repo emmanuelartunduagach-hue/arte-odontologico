@@ -3,9 +3,9 @@
 **Proyecto:** plataforma web de agendamiento de citas para el consultorio Arte Odontológico\
 **Programa:** Ingeniería de Software — Fundación Escuela Tecnológica de Neiva Jesús Oviedo Pérez\
 **Autores:** Emmanuel Artunduaga Charry · Jawer Leonardo Manrique Yosa\
-**Versión del documento:** 0.95 (borrador) · 10 de octubre de 2026
+**Versión del documento:** 0.96 (borrador) · 22 de octubre de 2026
 
-> Pendiente: confirmar el proveedor (la sección 8.2 describe Railway, la opción recomendada) y pasar el documento a la plantilla oficial de la FET.
+> La publicación descrita en la sección 8.2 (Railway) es la que está en uso. Pendiente: pasar el documento a la plantilla oficial de la FET.
 
 ## 1. Propósito
 
@@ -16,14 +16,14 @@ Este manual explica cómo instalar y poner en marcha el sistema en un equipo de 
 | Componente | Tecnología | Carpeta |
 |---|---|---|
 | Base de datos | MySQL 8.0 o superior | `backend/database/` |
-| API REST | Node.js 18+ con Express 4 | `backend/` |
+| API REST | Node.js 20+ con Express 4 | `backend/` |
 | Cliente web | HTML, CSS y JavaScript sin frameworks | `frontend/` |
 | Notificaciones | WhatsApp (modos manual, consola o API de Meta) | configuración en `backend/.env` |
 
 ## 3. Requisitos
 
 **Software**
-- Node.js 18 o superior (las pruebas automáticas se corrieron con Node 22). Incluye `npm`.
+- Node.js 20 o superior (es el mínimo que declara el `package.json` de la raíz; las pruebas automáticas se corrieron con Node 22). Incluye `npm`.
 - MySQL Server 8.0 o superior, y MySQL Workbench (recomendado en Windows).
 - Git.
 - Un navegador actualizado (Chrome, Edge o Firefox).
@@ -40,7 +40,7 @@ git clone https://github.com/emmanuelartunduagach-hue/arte-odontologico.git
 cd arte-odontologico
 ```
 
-El repositorio es privado: la cuenta de GitHub debe tener acceso.
+El repositorio es público en GitHub; no contiene archivos `.env` ni copias de la base de datos (el `.gitignore` los excluye).
 
 ## 5. Base de datos
 
@@ -50,7 +50,7 @@ El repositorio es privado: la cuenta de GitHub debe tener acceso.
 2. **File → Open SQL Script…** y abrir `backend/database/schema.sql`.
 3. Ejecutar todo el script (botón del rayo).
 
-El script crea la base `arte_odontologico`, las 10 tablas, la vista `v_agenda` y los datos iniciales: la sede de Rivera y 9 especialidades. No crea usuarios ni especialistas.
+El script crea la base `arte_odontologico`, las 11 tablas, la vista `v_agenda` y los datos iniciales: la sede de Rivera y 9 especialidades. Ya incluye todos los cambios de las migraciones 001 a 007. No crea usuarios ni especialistas.
 
 Desde la línea de comandos (Linux o macOS):
 

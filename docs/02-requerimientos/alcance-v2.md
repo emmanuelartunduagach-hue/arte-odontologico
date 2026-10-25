@@ -1,6 +1,6 @@
 # Arte Odontológico — Alcance v2
 
-Versión del 6 de octubre de 2026, ajustada el 9 de octubre · Emmanuel Artunduaga Charry · Jawer Leonardo Manrique Yosa
+Versión del 6 de octubre de 2026, ajustada el 9 y el 22 de octubre · Emmanuel Artunduaga Charry · Jawer Leonardo Manrique Yosa
 
 El sistema pasa a ser una página donde cualquier paciente pide su cita sin crear cuenta, la secretaria la acepta desde su panel y al paciente le llega la confirmación por WhatsApp. La entrega es en unas 2 semanas, con la página publicada en un servidor. Este documento reemplaza al alcance del anteproyecto en todo lo que lo contradiga.
 
@@ -19,7 +19,9 @@ Los cambios salen de la reunión con el docente asesor del 5 de octubre de 2026,
 | Historia clínica | Por definir | Obligatoria: la secretaria la ve y la actualiza |
 | Especialistas | No existían | Se registran por nombre; no inician sesión |
 | Duración de citas | Por servicio | No se maneja |
-| Entrega | 11 de noviembre | En unas 2 semanas, publicada en servidor |
+| Entrega | 11 de noviembre | En unas 2 semanas, publicada en servidor (Railway) |
+| Dueña del consultorio | No existía | Rol `superadmin`: ve y cambia todo, aprueba las correcciones de la historia y las anulaciones del odontograma, y administra al equipo y a los especialistas (decisiones 30 y 32) |
+| Odontograma | No existía | Hallazgos por diente y cara con numeración FDI, dentro de la ficha del paciente (decisión 30) |
 | Documentación | Por definir | Manual de usuario, manual técnico y manual de instalación |
 
 ## 2. Flujo del paciente
@@ -48,17 +50,18 @@ Los cambios salen de la reunión con el docente asesor del 5 de octubre de 2026,
 
 ## 3. Funciones de la secretaria
 
-Hay un solo usuario administrador: la secretaria. Los especialistas no inician sesión.
+Inician sesión dos perfiles: la secretaria (rol `administrador`) y la propietaria (rol `superadmin`, creada solo con `npm run superadmin`). Los especialistas no inician sesión. Lo que la secretaria pide corregir en la historia clínica o anular en el odontograma queda pendiente hasta que la propietaria lo apruebe; lo que hace la propietaria queda vigente de una vez.
 
 | Área | Qué puede hacer |
 |---|---|
 | Especialidades | Crear, editar, activar o desactivar |
-| Especialistas | Registrar por nombre, asignar una o varias especialidades, activar o desactivar |
+| Especialistas | Ver la lista. Registrarlos, asignarles especialidades, título y foto, y activarlos o desactivarlos es solo de la propietaria (decisión 32) |
 | Disponibilidad | Por especialista y fecha, marcar a mano las horas de atención; editar el horario de cada día (marcar o desmarcar horas) y usarlo en otros días y semanas. No deja quitar una hora que ya tiene cita |
 | Novedades de la web | Ver en Inicio las citas pedidas por la web en las últimas 48 horas (ya confirmadas) y los cambios de hora y cancelaciones que hizo el paciente |
 | Agenda | Ver citas por día, especialista o estado; buscar; marcar atendida o no asistió; reprogramar o cancelar sin límite |
 | Pacientes | Registrar a quien llega al consultorio, buscar por nombre, documento, celular o correo, ver la ficha con citas e historia y agendarle una cita |
-| Historia clínica | Ver y agregar entradas; corregir con anotación, sin borrar |
+| Historia clínica | Ver y agregar entradas; pedir correcciones con anotación, sin borrar (las aprueba la propietaria) |
+| Odontograma | Registrar hallazgos por diente y cara (por hacer o realizado), marcarlos como realizados y pedir su anulación con motivo |
 | Mensajes de WhatsApp | Se envían solos; si alguno falla, aparece en Inicio para enviarlo a mano |
 | Ingreso | "Acceso del consultorio" en el pie de la página principal; solo para la secretaria |
 
@@ -102,8 +105,8 @@ Los mensajes llevan solo fecha, hora, especialista y dirección, nada clínico, 
 
 - **Autorización de datos (Ley 1581 de 2012):** casilla sin marcar por defecto, con enlace a la política. Cada cita guarda la autorización, la fecha y la versión de la política. La ficha del paciente guarda la misma información y qué secretaria la creó.
 - **Política de datos:** reescrita (versión 1.1, decisión 26). Falta que el consultorio confirme el nombre legal y NIT o cédula del responsable, el correo para solicitudes, quién las atiende, el proveedor de alojamiento y la fecha de vigencia.
-- **Historia clínica:** cada entrada tiene fecha, especialidad, especialista, procedimiento, notas y autor. "Editar" significa agregar entradas o anotar correcciones; nunca borrar ni sobrescribir (Resolución 1995 de 1999). Solo la secretaria tiene acceso.
-- **Contraseñas:** solo la secretaria tiene; cifradas con bcrypt.
+- **Historia clínica:** cada entrada tiene fecha, especialidad, especialista, procedimiento, notas y autor. "Editar" significa agregar entradas o anotar correcciones; nunca borrar ni sobrescribir (Resolución 1995 de 1999). Solo el personal con sesión (secretaria y propietaria) tiene acceso.
+- **Contraseñas:** solo las tienen la secretaria, la propietaria y los administradores que ella cree; cifradas con bcrypt.
 
 Nada de esto es asesoría legal: debe confirmarse con el docente y la clínica.
 

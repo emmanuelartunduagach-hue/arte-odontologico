@@ -40,7 +40,7 @@ No hay nada que descargar ni instalar.
 
 # 3. Instalación y acceso al software
 
-**Acceso web.** Se entra desde el navegador a la dirección del consultorio: **[dirección del sistema publicado — se completa al publicar]**. La página principal es la misma para todos.
+**Acceso web.** Se entra desde el navegador a la dirección del consultorio: **https://arte-odontologico-production.up.railway.app**. La página principal es la misma para todos.
 
 ![Página principal. Arriba a la derecha está el botón «Agendar cita» y, a su lado, el candado de acceso del consultorio.](../capturas/manual/u01-inicio.png){width=90%}
 

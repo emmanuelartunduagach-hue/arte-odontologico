@@ -1,6 +1,6 @@
 # Modelo de datos — Arte Odontológico
 
-Versión del 9 de octubre de 2026 · MySQL 8.0 · motor InnoDB · codificación `utf8mb4`.\
+Versión del 22 de octubre de 2026 · MySQL 8.0 · motor InnoDB · codificación `utf8mb4`.\
 Fuente de verdad: `backend/database/schema.sql`. Cambios para bases existentes: `backend/database/migraciones/`.
 
 ## Diagrama entidad-relación
@@ -12,12 +12,13 @@ El diagrama se genera desde `diagrama-er.mmd` (Mermaid).
 **Cómo leerlo:**
 - Una cita pertenece a una hora publicada (franja), y cada franja es de un especialista en la sede.
 - La cita guarda los datos que la persona escribió al pedirla. Cuando la secretaria la acepta, queda ligada al paciente del mismo documento (que se crea si no existía).
-- Cada paciente tiene su historia clínica. Los pacientes no inician sesión: en `usuarios` solo está la secretaria.
+- Cada paciente tiene su historia clínica y su odontograma. Los pacientes no inician sesión: en `usuarios` solo están la secretaria (`administrador`) y la propietaria (`superadmin`).
+- Las correcciones de la historia y las anulaciones del odontograma las pide un administrador y las aprueba la propietaria (columnas `estado`, `revisado_por` y `anulacion*`).
 
 ## Tablas
 
 ### `usuarios`
-Quienes inician sesión: la secretaria (rol `administrador`). El valor `paciente` del rol solo se conserva por compatibilidad con bases anteriores; esas cuentas no pueden ingresar.
+Quienes inician sesión: la secretaria (rol `administrador`) y la propietaria (rol `superadmin`, que solo se crea con `npm run superadmin`). El valor `paciente` del rol solo se conserva por compatibilidad con bases anteriores; esas cuentas no pueden ingresar.
 
 | Columna | Tipo | Notas |
 |---|---|---|
@@ -27,7 +28,7 @@ Quienes inician sesión: la secretaria (rol `administrador`). El valor `paciente
 | `correo` | VARCHAR(160) UNIQUE | Usuario de ingreso |
 | `telefono` | VARCHAR(20) | Con indicativo (57…) |
 | `contrasena_hash` | VARCHAR(255) | bcrypt |
-| `rol` | ENUM('paciente','administrador') | Por defecto `administrador` |
+| `rol` | ENUM('paciente','administrador','superadmin') | Por defecto `administrador`. `paciente` es un valor heredado que ninguna cuenta usa |
 | `activo` | BOOLEAN | Cuenta desactivada = no puede ingresar |
 | `debe_cambiar_contrasena` | BOOLEAN | TRUE mientras use una clave temporal |
 
@@ -97,7 +98,7 @@ Una franja está **libre** si está activa, todavía no pasó y no tiene una cit
 | `franja_ocupada` | **Columna generada**: `franja_id` si la cita no está cancelada ni rechazada, NULL si lo está. Su índice único garantiza que una hora tenga una sola cita viva, aun con peticiones simultáneas. Una cita pendiente ya aparta la hora |
 
 ### `notificaciones`
-Bitácora de mensajes de WhatsApp: `tipo` (`confirmacion`, `reprogramacion`, `cancelacion`, `rechazo`, `recordatorio`), `estado` (`pendiente`, `enviada`, `fallida`), `destino`, `mensaje` (texto enviado o por enviar) y `detalle` (id del proveedor o error).
+Bitácora de mensajes de WhatsApp: `canal` (`whatsapp`; el valor `correo` quedó del diseño inicial y no se usa), `tipo` (`confirmacion`, `reprogramacion`, `cancelacion`, `rechazo`, `recordatorio`), `estado` (`pendiente`, `enviada`, `fallida`), `destino`, `mensaje` (texto enviado o por enviar) y `detalle` (id del proveedor o error).
 
 ### `historia_clinica`
 | Columna | Notas |
@@ -107,9 +108,29 @@ Bitácora de mensajes de WhatsApp: `tipo` (`confirmacion`, `reprogramacion`, `ca
 | `servicio_id`, `especialista_id`, `cita_id` | Opcionales |
 | `procedimiento`, `notas` | |
 | `corrige_a` | FK → historia_clinica: la entrada que esta corrige |
+| `estado` | `vigente` (por defecto), `pendiente` (corrección pedida por un administrador, a la espera de la propietaria) o `rechazada` |
+| `revisado_por`, `revisado_en`, `motivo_rechazo` | Quién la aprobó o rechazó, cuándo y por qué |
 | `creado_por`, `creado_en` | Autor y momento |
 
-No se actualiza ni se borra (Resolución 1995 de 1999). Las llaves foráneas usan `ON DELETE RESTRICT` hacia el paciente y la entrada corregida.
+No se actualiza ni se borra el contenido (Resolución 1995 de 1999): una corrección es una fila nueva. Las llaves foráneas usan `ON DELETE RESTRICT` hacia el paciente, el autor y la entrada corregida.
+
+### `odontograma`
+Hallazgos clínicos por diente y por cara (migración 006).
+
+| Columna | Notas |
+|---|---|
+| `paciente_id` | FK → pacientes (`RESTRICT`) |
+| `diente` | Numeración FDI: 11–48 permanentes y 51–85 temporales |
+| `cara` | `completo`, `oclusal`, `mesial`, `distal`, `vestibular` o `lingual` |
+| `hallazgo` | Código del catálogo definido en `odontograma.controller.js` (caries, resina, corona, endodoncia…) |
+| `estado` | `por_hacer` o `realizado` |
+| `realizado_por`, `realizado_en` | Quién y cuándo se marcó como realizado |
+| `anulacion` | `NULL`, `pendiente`, `aprobada` o `rechazada`; los `aprobada` no se dibujan pero se conservan |
+| `anulacion_motivo`, `anulacion_pedida_por`, `anulacion_pedida_en` | Quién pidió anular y por qué |
+| `anulacion_revisada_por`, `anulacion_revisada_en`, `anulacion_rechazo` | Decisión de la propietaria |
+| `creado_por`, `creado_en` | Autor y momento |
+
+Nada se borra: un hallazgo registrado por error se anula con aprobación de la propietaria.
 
 ### Vista `v_agenda`
 Une citas, especialidad, especialista y sede para consultas de la agenda.
@@ -118,5 +139,6 @@ Une citas, especialidad, especialista y sede para consultas de la agenda.
 - **Datos de quien pide la cita dentro de la cita**: permite pedirla sin cuenta. La ficha en `pacientes` se crea al pedir la primera cita; los datos de la cita se conservan tal como se escribieron aunque la ficha cambie, así no se llena de registros de solicitudes falsas o rechazadas.
 - **Pacientes separados de `usuarios`**: los pacientes no inician sesión, y separar las tablas evita que una ficha se pueda usar para ingresar.
 - **Columna generada para la doble reserva**: la regla queda en el motor y no depende de que el código la recuerde.
+- **Aprobación en dos pasos** para lo clínico: el administrador pide la corrección o la anulación y la propietaria decide; el estado y el revisor quedan en la propia fila.
 - **Desactivar en vez de borrar** franjas, especialistas y especialidades: conserva la integridad de las citas antiguas.
 - **Normalización:** tercera forma normal. La excepción deliberada son los datos de contacto copiados en la cita, que son la "foto" de lo que la persona escribió al agendar.

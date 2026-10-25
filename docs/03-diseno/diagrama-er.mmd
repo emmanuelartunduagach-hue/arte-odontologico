@@ -12,6 +12,9 @@ erDiagram
     citas ||--o{ notificaciones : "genera"
     citas |o--o{ historia_clinica : "origina"
     historia_clinica |o--o{ historia_clinica : "corrige a"
+    pacientes ||--o{ odontograma : "hallazgos de"
+    usuarios ||--o{ historia_clinica : "autor y revisor"
+    usuarios ||--o{ odontograma : "autor, realiza y revisa"
 
     usuarios {
         int id PK
@@ -20,7 +23,7 @@ erDiagram
         varchar correo UK
         varchar telefono
         varchar contrasena_hash
-        enum rol "administrador"
+        enum rol "administrador | superadmin (paciente: heredado, sin uso)"
         bool activo
         bool debe_cambiar_contrasena
     }
@@ -50,6 +53,9 @@ erDiagram
     especialistas {
         int id PK
         varchar nombre
+        varchar titulo "perfil interno"
+        blob foto "perfil interno"
+        varchar foto_tipo
         bool activo
     }
     especialista_especialidad {
@@ -110,5 +116,24 @@ erDiagram
         varchar procedimiento
         text notas
         int corrige_a FK
+        enum estado "vigente | pendiente | rechazada"
+        int revisado_por FK
+        datetime revisado_en
+        varchar motivo_rechazo
         int creado_por FK
+    }
+    odontograma {
+        int id PK
+        int paciente_id FK
+        tinyint diente "FDI 11-48 y 51-85"
+        enum cara "completo | oclusal | mesial | distal | vestibular | lingual"
+        varchar hallazgo "codigo del catalogo"
+        enum estado "por_hacer | realizado"
+        int creado_por FK
+        int realizado_por FK
+        datetime realizado_en
+        enum anulacion "pendiente | aprobada | rechazada"
+        varchar anulacion_motivo
+        int anulacion_pedida_por FK
+        int anulacion_revisada_por FK
     }

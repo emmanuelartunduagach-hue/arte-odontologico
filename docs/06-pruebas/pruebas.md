@@ -1,17 +1,18 @@
 # Pruebas — Arte Odontológico
 
-Versión del 7 de octubre de 2026.
+Versión del 22 de octubre de 2026 (resultados hasta el 9 de octubre).
 
 ## 1. Estrategia
 
 | Tipo | Qué cubre | Cómo se ejecuta | Estado |
 |---|---|---|---|
-| Integración automatizada | API completa contra MySQL 8 real, sobre una base creada desde `schema.sql` | Script `integracion.js` (Node) que levanta la API, llama cada endpoint y revisa la base | 117 de 117 correctas |
+| Integración automatizada | API completa contra MySQL 8 real, sobre una base creada desde `schema.sql` | Script de Node que levanta la API, llama cada endpoint y revisa la base. **El script no está en el repositorio** (pendiente de subir) | 140 de 140 documentadas aquí (117 al 7 de octubre y 23 al 9 de octubre) |
+| Integración del rol de la propietaria | Aprobaciones, equipo, odontograma y permisos del `superadmin` | Misma técnica, 13 de octubre | 53 comprobaciones que suma el informe (193 en total); su detalle aún no está en este documento |
 | Equivalencia de migraciones | Que crear la base desde cero y actualizar una base antigua con las migraciones 001 y 002 den el mismo esquema | Comparación de `SHOW CREATE TABLE` en ambos caminos | Idénticos |
 | Unitarias puntuales | Límite de peticiones por IP, textos de WhatsApp, modos del proveedor | Scripts de Node | Correctas |
-| Manuales guiadas | Lo mismo, en el equipo de desarrollo y con la base local | Guías en PowerShell de esta carpeta | Pendientes de ejecutar |
+| Manuales guiadas | Lo mismo, en el equipo de desarrollo y con la base local | Guías en PowerShell de esta carpeta (la de agenda y citas es del modelo del 6 de octubre) | Sin registro de ejecución |
 | Revisión de código independiente | Seguridad, condiciones de carrera, zona horaria, validaciones | Revisión por un agente distinto del que escribió el código | 3 hallazgos, corregidos |
-| Interfaz (frontend) de punta a punta | Agendar y gestionar la cita (reprogramar, cancelar, enlace inválido) en el navegador, contra la API real | Navegador automatizado (Playwright) | Correctas el 6 y 7 de octubre |
+| Interfaz (frontend) de punta a punta | Agendar y gestionar la cita (reprogramar, cancelar, enlace inválido) en el navegador, contra la API real | Navegador automatizado (Playwright) | Correctas el 6 y 7 de octubre; recorridos del 9 de octubre en 1366, 1000 y 390 px (ver abajo) |
 | Interfaz en celular y panel de la secretaria | Flujos en 360, 768 y 1280 px | Por definir | Pendiente |
 
 **Entorno de las pruebas automatizadas:** Linux, Node.js 22, MySQL 8.0.46. La base se borra y se recrea en cada corrida.
@@ -26,7 +27,9 @@ Versión del 7 de octubre de 2026.
 
 ## 3. Resultados de la prueba de integración
 
-Corrida del 7 de octubre de 2026: **117 de 117 comprobaciones correctas.**
+Corrida del 7 de octubre de 2026: **117 de 117 comprobaciones correctas.** El 9 de octubre se agregaron las comprobaciones 118 a 140 (más abajo).
+
+> **Nota sobre el modelo vigente.** Las comprobaciones 76 a 86 (usuario del paciente, «mis citas»), 105 a 109 (restablecer claves de pacientes) y 110 y 112 (rol paciente) se hicieron con el modelo del 6 y 7 de octubre. Desde la decisión 24 (9 de octubre) los pacientes no tienen usuario ni contraseña y esas rutas se retiraron. Se conservan como registro de lo que se probó entonces; no describen el sistema actual.
 
 **Preparación**
 
@@ -272,6 +275,7 @@ Hechas contra la API real con MySQL 8.0.46 (base nueva con `schema.sql` y base m
 - `pruebas-agenda-citas.txt`: especialistas, disponibilidad, calendario, agendar sin cuenta, gestionar la cita, panel de la secretaria.
 
 ## 5. Pendiente
-- Ejecutar las guías manuales en el equipo de desarrollo y registrar el resultado aquí (fecha, quién, resultado).
+- Subir al repositorio el script de integración (por ejemplo a `backend/tests/`) y documentar aquí las 53 comprobaciones del rol de la propietaria.
+- Ejecutar las guías manuales y registrar el resultado aquí (fecha, quién, resultado). La guía de agenda y citas (`pruebas-agenda-citas.txt`) corresponde al modelo del 6 de octubre.
 - Pruebas del frontend en computador y celular (360, 768 y 1280 px).
-- Prueba en el servidor publicado.
+- Registrar los resultados de las pruebas en el servidor publicado.

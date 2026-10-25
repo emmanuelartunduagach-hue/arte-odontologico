@@ -11,14 +11,14 @@ Fuente de la documentación del proyecto. Los archivos `.md` son la versión edi
 | Anteproyecto | *(el documento aprobado que ya tienen)* | — | — |
 | Requerimientos | `Alcance v2.docx` | `02-requerimientos/alcance-v2.md` | Listo |
 | Requerimientos | *Requerimientos, backlog e historias de usuario* | — | Debe actualizarse al alcance v2 |
-| Diseño | `Modelo de datos.docx`, `Diagrama entidad-relación.png` y `Diagrama de arquitectura.png` | `03-diseno/` | Listo |
+| Diseño | `Modelo de datos.docx`, `Diagrama entidad-relación.png` y `Diagrama de arquitectura.png` | `03-diseno/` | Al día con 11 tablas (22 de octubre) |
 | Diseño | `Contrato de la API.docx` | `03-diseno/contrato-api.md` | Listo |
 | Diseño | `Decisiones técnicas.docx` | `decisiones-tecnicas.md` | Listo |
-| Manuales | `Manual de instalación.docx` | `04-manuales/manual-instalacion.md` | Borrador (falta la publicación en servidor) |
-| Manuales | `Manual técnico.docx` | `04-manuales/manual-tecnico.md` | Borrador (falta la parte del frontend) |
+| Manuales | `Manual de instalación.docx` | `04-manuales/manual-instalacion.md` | Borrador (incluye la publicación en Railway; falta la plantilla FET) |
+| Manuales | `Manual técnico.docx` | `04-manuales/manual-tecnico.md` | Borrador al día con el sistema (22 de octubre); falta la plantilla FET |
 | Manuales | `Manual de usuario.docx` | `04-manuales/manual-usuario.md` | Listo para revisión (formato FET de 10 secciones; capturas en modo demostración, se cambian por las del sistema publicado) |
 | Avances y actas | `Informe de avance (septiembre).docx` | `informe-avance.md` | Histórico (alcance anterior) |
-| Pruebas | `Pruebas.docx` y las dos guías `.txt` | `06-pruebas/` | Listo; faltan pruebas manuales y del frontend |
+| Pruebas | `Pruebas.docx` y las dos guías `.txt` | `06-pruebas/` | 140 comprobaciones documentadas; falta subir el script y documentar las 53 del rol de la propietaria |
 
 ## Regenerar los Word
 
