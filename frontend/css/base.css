@@ -215,6 +215,26 @@ p { max-width: var(--ancho-texto); text-wrap: pretty; }
   .marca__lugar { display: none; }
 }
 
+/* Celulares angostos (360 px es el ancho más común en Android): el encabezado no debe salirse de la pantalla. */
+@media (max-width: 400px) {
+  .encabezado__fila,
+  .encabezado__acciones { gap: var(--e-2); }
+  .marca { gap: var(--e-2); min-width: 0; }
+  .marca__icono { width: 40px; height: 40px; }
+  .marca__nombre { font-size: var(--txt-base); }
+  .encabezado__acciones .btn:not(.btn--candado) { padding-inline: var(--e-3); }
+}
+@media (max-width: 360px) {
+  .marca__icono { width: 36px; height: 36px; }
+  .marca__nombre { font-size: .9375rem; }
+  .encabezado__acciones .btn:not(.btn--candado) { padding-inline: var(--e-2); }
+}
+@media (max-width: 340px) {
+  .contenedor { padding-inline: var(--e-4); }
+  .marca__icono { width: 32px; height: 32px; }
+  .marca__nombre { font-size: .8125rem; }
+}
+
 .encabezado__acciones { display: flex; align-items: center; gap: var(--e-3); }
 
 .btn--candado,
@@ -301,16 +321,24 @@ select.campo__control {
 .pie h4 { color: var(--sobre-marca); margin-bottom: var(--e-3); font-size: var(--txt-base); font-weight: var(--peso-semi); }
 .pie li { margin-bottom: var(--e-2); }
 .pie__legal {
-  margin-top: var(--e-6);
+  margin: var(--e-6) auto 0;
   padding-top: var(--e-5);
   border-top: 1px solid var(--pie-filete);
   font-size: var(--txt-xs);
   color: var(--pie-texto-suave);
   max-width: 78ch;
+  text-align: center;
+  text-wrap: balance;
 }
 
 @media (max-width: 760px) {
   .pie__rejilla { grid-template-columns: 1fr; gap: var(--e-5); }
   h1 { font-size: var(--txt-xl); }
   .seccion { padding-block: var(--e-7); }
+}
+
+/* Celular: el pie se centra para que no quede pegado a un solo borde. */
+@media (max-width: 620px) {
+  .pie { text-align: center; }
+  .pie p { margin-inline: auto; }
 }

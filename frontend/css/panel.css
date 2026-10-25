@@ -737,9 +737,6 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
   .odontograma__deslizar { display: block; }
 }
 @media (max-width: 760px) {
-  .pagina-panel--dueno .panel-nav { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-  .pagina-panel--dueno .panel-nav a { font-size: 0.625rem; }
-  .panel-nav .panel-nav__contador { position: absolute; top: 2px; right: 6px; min-width: 18px; line-height: 18px; padding: 0 4px; font-size: 0.625rem; }
   .solicitud { padding: var(--e-3) var(--e-4); }
   .solicitud__comparacion { grid-template-columns: minmax(0, 1fr); }
   .fila-equipo { grid-template-columns: auto minmax(0, 1fr); padding: var(--e-3); }
@@ -1076,20 +1073,124 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
   .foto-editor__acciones { justify-content: center; }
 }
 
-@media (max-width: 760px) {
-  .pagina-panel--dueno .panel-nav {
-    grid-template-columns: none;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(64px, 1fr);
-    overflow-x: auto;
-    scrollbar-width: none;
-    scroll-snap-type: x proximity;
-  }
-  .pagina-panel--dueno .panel-nav::-webkit-scrollbar { display: none; }
-  .pagina-panel--dueno .panel-nav a { scroll-snap-align: start; padding-inline: var(--e-1); }
-}
-
 .lista-filas > :first-child, .lista-pacientes > li:first-child, .lista-pacientes > li:first-child > a,
 .equipo > :first-child { border-top-left-radius: var(--radio-lg); border-top-right-radius: var(--radio-lg); }
 .lista-filas > :last-child, .lista-pacientes > li:last-child, .lista-pacientes > li:last-child > a,
 .equipo > :last-child { border-bottom-left-radius: var(--radio-lg); border-bottom-right-radius: var(--radio-lg); }
+
+/* Menú lateral desplegable del dueño en celular.
+   El dueño tiene 7 secciones: no caben en la barra inferior, así que en celular pasan a un panel
+   que se abre desde el botón de hamburguesa. La secretaria (4 secciones) conserva la barra inferior. */
+.menu-lateral-boton,
+.panel-nav__cabecera,
+.menu-lateral__velo { display: none; }
+
+@media (max-width: 760px) {
+  .pagina-panel--dueno .menu-lateral-boton,
+  .pagina-panel--dueno .menu-lateral-cerrar {
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    color: var(--ink-900);
+    background: var(--papel);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio-pill);
+    box-shadow: var(--sombra-sutil);
+    cursor: pointer;
+    transition: background var(--transicion), color var(--transicion);
+  }
+  .pagina-panel--dueno .menu-lateral-boton:hover,
+  .pagina-panel--dueno .menu-lateral-cerrar:hover { background: var(--violeta-100); color: var(--acento-texto); }
+  .pagina-panel--dueno .menu-lateral-boton svg,
+  .pagina-panel--dueno .menu-lateral-cerrar svg {
+    width: 22px; height: 22px;
+    fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round;
+  }
+  .pagina-panel--dueno .encabezado__fila { gap: var(--e-3); }
+  .pagina-panel--dueno .encabezado__fila .marca { margin-right: auto; }
+
+  /* Ya no hay barra inferior: se quita el espacio que se le reservaba. */
+  .pagina-panel--dueno .panel-app { padding-bottom: var(--e-7); }
+
+  .pagina-panel--dueno .panel-nav {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: auto;
+    z-index: 46;
+    width: min(86vw, 320px);
+    display: flex;
+    flex-direction: column;
+    gap: var(--e-1);
+    padding: 0 var(--e-3) calc(var(--e-4) + env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--papel);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border: 0;
+    border-right: 1px solid var(--borde);
+    border-radius: 0 var(--radio-xl) var(--radio-xl) 0;
+    box-shadow: var(--sombra-flotante);
+    transform: translateX(-104%);
+    visibility: hidden;
+    transition: transform var(--transicion), visibility 0s linear 200ms;
+  }
+  body.menu-lateral-abierto .panel-nav {
+    transform: none;
+    visibility: visible;
+    transition: transform var(--transicion), visibility 0s;
+  }
+
+  .pagina-panel--dueno .panel-nav__cabecera {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 76px;
+    margin: 0 calc(-1 * var(--e-3)) var(--e-2);
+    padding: 0 var(--e-3) 0 var(--e-5);
+    background: var(--papel);
+    border-bottom: 1px solid var(--borde);
+  }
+  .pagina-panel--dueno .panel-nav__titulo {
+    font-family: var(--fuente-titular);
+    font-size: var(--txt-md);
+    font-weight: var(--peso-titular);
+    color: var(--ink-900);
+  }
+
+  .pagina-panel--dueno .panel-nav a {
+    flex-direction: row;
+    gap: var(--e-3);
+    min-height: 52px;
+    padding: var(--e-3) var(--e-4);
+    font-size: var(--txt-base);
+    text-align: left;
+  }
+  .pagina-panel--dueno .panel-nav svg { width: 22px; height: 22px; }
+  .pagina-panel--dueno .panel-nav .panel-nav__contador { position: static; margin-left: auto; }
+
+  .pagina-panel--dueno .menu-lateral__velo {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 44;
+    background: var(--velo-modal);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transicion), visibility 0s linear 200ms;
+  }
+  body.menu-lateral-abierto .menu-lateral__velo {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity var(--transicion), visibility 0s;
+  }
+  body.menu-lateral-abierto { overflow: hidden; }
+}
