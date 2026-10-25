@@ -188,6 +188,7 @@
 .carrusel__pista {
   height: clamp(220px, calc(100svh - 400px), 440px);
   overflow-x: auto;
+  overscroll-behavior-x: contain;
   scrollbar-width: none;
   border-radius: var(--radio-lg);
   padding-bottom: 14px;  margin-bottom: -14px;
@@ -205,17 +206,49 @@
   border-radius: var(--radio-lg);
   background: var(--violeta-100);
   box-shadow: var(--sombra-foto);
+  -webkit-user-drag: none;
+  user-select: none;
 }
 
-.carrusel--auto .carrusel__pista { overflow: hidden; }
-.carrusel--auto .carrusel__carril {
-  animation: carrusel-deslizar var(--duracion-carrusel, 120s) linear infinite;
-}
-.carrusel--auto:hover .carrusel__carril { animation-play-state: paused; }
+/* Con JS la pista se puede arrastrar con el mouse, deslizar con el dedo y avanza sola mientras nadie la toque. */
+.carrusel--js .carrusel__pista { cursor: grab; }
+.carrusel--arrastrando .carrusel__pista { cursor: grabbing; }
 
-@keyframes carrusel-deslizar {
-  to { transform: translateX(-50%); }
+.carrusel__controles {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--e-3);
+  margin-top: var(--e-5);
 }
+.carrusel__boton {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: var(--ink-900);
+  background: var(--papel);
+  border: 1px solid transparent;
+  border-radius: var(--radio-pill);
+  box-shadow: var(--sombra-media);
+  cursor: pointer;
+  transition: background var(--transicion), color var(--transicion), transform var(--transicion);
+}
+.carrusel__boton:hover { background: var(--violeta-600); color: var(--sobre-marca); }
+.carrusel__boton:active { transform: scale(.94); }
+.carrusel__boton svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.carrusel__boton--pausa .icono-reanudar,
+.carrusel__boton--pausa[aria-pressed='true'] .icono-pausa { display: none; }
+.carrusel__boton--pausa[aria-pressed='true'] .icono-reanudar { display: block; }
 
 .contacto {
   display: grid;
@@ -693,4 +726,39 @@
 @media (max-width: 620px) {
   .portada__figura { padding-inline: var(--e-4); }
   .servicio { padding: var(--e-4); }
+}
+
+/* Celular: los textos de la página pública se centran. */
+@media (max-width: 620px) {
+  .portada__rejilla { text-align: center; }
+  .portada__entrada { margin-inline: auto; }
+  .portada__acciones { justify-content: center; }
+  .portada__datos { justify-items: stretch; text-align: center; }
+  .portada__datos li { text-align: center; }
+
+  /* El diente decorativo pasa encima del título para que el título pueda centrarse. */
+  .seccion__intro { text-align: center; margin-inline: auto; }
+  .seccion__intro p { margin-inline: auto; }
+  .seccion__intro h2,
+  .contacto h2 { padding-left: 0; text-align: center; }
+  .seccion__intro h2::before,
+  .contacto h2::before {
+    position: static;
+    display: block;
+    width: 1.3em;
+    height: 1.3em;
+    margin: 0 auto .35em;
+    transform: none;
+  }
+
+  .servicio { flex-direction: column; align-items: center; gap: var(--e-3); text-align: center; }
+
+  .contacto { text-align: center; }
+  .contacto__lista li { flex-direction: column; align-items: center; gap: var(--e-2); text-align: center; }
+
+  .modal__cabecera { align-items: center; }
+  .modal__cabecera > div { flex: 1; text-align: center; padding-left: 36px; }
+  .agendar__titulo,
+  .agendar__nota,
+  .exito { text-align: center; }
 }

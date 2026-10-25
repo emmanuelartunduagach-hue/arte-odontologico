@@ -28,10 +28,7 @@ function mostrarSeccion({ enfocar = false } = {}) {
   const { nombre, parametro } = rutaActual();
   dialogo.cerrar();
   document.querySelectorAll('[data-seccion]').forEach((enlace) => {
-    if (enlace.dataset.seccion === nombre) {
-      enlace.setAttribute('aria-current', 'page');
-      enlace.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-    }
+    if (enlace.dataset.seccion === nombre) enlace.setAttribute('aria-current', 'page');
     else enlace.removeAttribute('aria-current');
   });
   document.title = `${SECCIONES[nombre].titulo} · ${NOMBRE_PANEL} — Arte Odontológico`;
@@ -140,10 +137,54 @@ async function montarInicio(destino) {
         : el('div', { class: 'vacio' }, el('p', { texto: 'No hubo movimientos en la web en las últimas 48 horas.' }))));
 }
 
+// En celular el dueño (7 secciones) navega con un menú lateral que se abre desde el botón de hamburguesa.
+function prepararMenuLateral() {
+  const menu = document.getElementById('menu-panel');
+  const abrirBoton = document.querySelector('[data-abrir-menu-lateral]');
+  const cerrarBoton = menu.querySelector('.menu-lateral-cerrar');
+  const celular = window.matchMedia('(max-width: 760px)');
+  const aislar = ['.saltar-a-contenido', '.encabezado', '#contenido'].map((selector) => document.querySelector(selector)).filter(Boolean);
+
+  const abierto = () => document.body.classList.contains('menu-lateral-abierto');
+
+  function abrir() {
+    document.querySelectorAll('details[open]').forEach((detalle) => { detalle.open = false; });
+    document.body.classList.add('menu-lateral-abierto');
+    abrirBoton.setAttribute('aria-expanded', 'true');
+    aislar.forEach((zona) => { zona.inert = true; });
+    cerrarBoton.focus();
+  }
+
+  function cerrar({ devolverFoco = true } = {}) {
+    if (!abierto()) return;
+    document.body.classList.remove('menu-lateral-abierto');
+    abrirBoton.setAttribute('aria-expanded', 'false');
+    aislar.forEach((zona) => { zona.inert = false; });
+    if (devolverFoco) abrirBoton.focus();
+  }
+
+  abrirBoton.addEventListener('click', abrir);
+  document.querySelectorAll('[data-cerrar-menu-lateral]').forEach((nodo) => nodo.addEventListener('click', () => cerrar()));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && abierto()) cerrar(); });
+
+  // Al elegir una sección el menú se cierra y el foco pasa al título de la sección.
+  menu.querySelectorAll('a[data-seccion]').forEach((enlace) => {
+    enlace.addEventListener('click', () => {
+      cerrar({ devolverFoco: false });
+      if (enlace.getAttribute('aria-current') === 'page') cuerpo.querySelector('[data-foco-seccion]')?.focus();
+    });
+  });
+
+  // Atrás/adelante del navegador, o girar el celular hasta un ancho de escritorio.
+  window.addEventListener('hashchange', () => cerrar({ devolverFoco: false }));
+  celular.addEventListener('change', (e) => { if (!e.matches) cerrar({ devolverFoco: false }); });
+}
+
 if (sesion) {
   if (DUENO) {
     document.querySelectorAll('[data-solo-dueno]').forEach((nodo) => { nodo.hidden = false; });
     document.body.classList.add('pagina-panel--dueno');
+    prepararMenuLateral();
   }
   document.querySelectorAll('[data-nombre-usuario]').forEach((nodo) => { nodo.textContent = sesion.usuario.nombre; });
   document.querySelectorAll('[data-inicial-usuario]').forEach((nodo) => { nodo.textContent = sesion.usuario.nombre.charAt(0).toUpperCase(); });
