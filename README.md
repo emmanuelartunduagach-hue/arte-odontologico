@@ -1,5 +1,7 @@
 # Arte Odontológico — Sistema web de citas
 
+[![Verificación](https://github.com/emmanuelartunduagach-hue/arte-odontologico/actions/workflows/ci.yml/badge.svg)](https://github.com/emmanuelartunduagach-hue/arte-odontologico/actions/workflows/ci.yml)
+
 Proyecto de aplicación · Ingeniería de Software · Fundación Escuela Tecnológica de Neiva Jesús Oviedo Pérez (FET)
 Emmanuel Artunduaga Charry · Jawer Leonardo Manrique Yosa
 
@@ -36,6 +38,7 @@ Publicada en: <https://arte-odontologico-production.up.railway.app>
 ```
 arte-odontologico/
 ├── package.json              Instala el backend y lo arranca (publicación en Railway)
+├── .github/workflows/        Verificación automática en cada pull request (pruebas, auditoría, sintaxis)
 ├── backend/                  API REST (Node.js + Express + MySQL)
 │   ├── database/
 │   │   ├── schema.sql        Esquema completo (instalación nueva)
@@ -47,8 +50,9 @@ arte-odontologico/
 │       ├── models/           Consultas SQL
 │       ├── middleware/       Sesión, rol y límite de peticiones
 │       ├── services/         Notificaciones de WhatsApp y recordatorios
-│       ├── utils/            Validaciones, fechas, códigos y errores
+│       ├── utils/            Validaciones, fechas, códigos, paginación, configuración y errores
 │       └── scripts/          Administrador, propietaria, recordatorios y datos de demostración
+│   └── tests/                Pruebas unitarias sin base de datos (npm test)
 ├── frontend/                 Cliente en HTML, CSS y JavaScript (sin framework)
 │   ├── index.html            Página pública y flujo de agendar
 │   ├── gestionar-cita.html   Reprogramar o cancelar con el enlace

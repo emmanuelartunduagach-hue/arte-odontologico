@@ -4,6 +4,8 @@ Fuente de la documentación del proyecto. Los archivos `.md` son la versión edi
 
 > Cuando llegue la plantilla oficial de la FET, el contenido se pasa a ella; el texto no cambia.
 
+> **Versiones.** Los `.docx` de `para-drive/` y los documentos entregados corresponden al estado del 21 de octubre de 2026. Los `.md` de esta carpeta incluyen además los ajustes posteriores del 25 de octubre (decisión 33). Ante una diferencia, el informe entregado describe el sistema evaluado y el repositorio, el sistema vigente.
+
 ## Qué va en cada carpeta del Drive
 
 | Carpeta del Drive | Archivo para subir (`para-drive/`) | Fuente editable | Estado |
