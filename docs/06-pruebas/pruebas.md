@@ -10,6 +10,7 @@ Versión del 22 de octubre de 2026 (resultados hasta el 9 de octubre).
 | Integración del rol de la propietaria | Aprobaciones, equipo, odontograma y permisos del `superadmin` | Misma técnica, 13 de octubre | 53 comprobaciones que suma el informe (193 en total); su detalle aún no está en este documento |
 | Equivalencia de migraciones | Que crear la base desde cero y actualizar una base antigua con las migraciones 001 y 002 den el mismo esquema | Comparación de `SHOW CREATE TABLE` en ambos caminos | Idénticos |
 | Unitarias puntuales | Límite de peticiones por IP, textos de WhatsApp, modos del proveedor | Scripts de Node | Correctas |
+| Unitarias en el repositorio | Validaciones, hora de Colombia, códigos de gestión y límite de peticiones | `npm test` en `backend/` (`node --test`, sin base de datos) y GitHub Actions en cada PR | 10 pruebas |
 | Manuales guiadas | Lo mismo, en el equipo de desarrollo y con la base local | Guías en PowerShell de esta carpeta (la de agenda y citas es del modelo del 6 de octubre) | Sin registro de ejecución |
 | Revisión de código independiente | Seguridad, condiciones de carrera, zona horaria, validaciones | Revisión por un agente distinto del que escribió el código | 3 hallazgos, corregidos |
 | Interfaz (frontend) de punta a punta | Agendar y gestionar la cita (reprogramar, cancelar, enlace inválido) en el navegador, contra la API real | Navegador automatizado (Playwright) | Correctas el 6 y 7 de octubre; recorridos del 9 de octubre en 1366, 1000 y 390 px (ver abajo) |
