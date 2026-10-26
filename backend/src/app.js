@@ -1,6 +1,7 @@
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const rutas = require('./routes');
 
 const app = express();
@@ -8,7 +9,30 @@ const app = express();
 // Detrás del proxy de Railway, para que req.ip sea la IP real del visitante.
 if (process.env.PROXY_CONFIABLE) app.set('trust proxy', Number(process.env.PROXY_CONFIABLE) || 1);
 
-app.use(cors({ origin: process.env.ORIGEN_PERMITIDO || '*' }));
+// Cabeceras de seguridad. La política de contenido solo permite lo que el frontend usa:
+// sus propios scripts y las tipografías de Google Fonts (los atributos style de las páginas
+// obligan a admitir estilos en línea; los scripts en línea siguen bloqueados).
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'data:', 'blob:'],
+      connectSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      frameAncestors: ["'none'"],
+      upgradeInsecureRequests: null,
+    },
+  },
+}));
+
+// Publicado, la app y la API comparten dominio y no hace falta CORS. Solo se activa
+// cuando el frontend corre aparte (Live Server) y se declara su origen.
+if (process.env.ORIGEN_PERMITIDO) app.use(cors({ origin: process.env.ORIGEN_PERMITIDO }));
 // La foto de un especialista llega en base64: esta ruta acepta un cuerpo mayor.
 app.use('/api/superadmin/especialistas', express.json({ limit: '500kb' }));
 app.use(express.json({ limit: '100kb' }));

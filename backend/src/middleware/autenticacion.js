@@ -11,7 +11,7 @@ async function requiereSesion(req, res, next) {
 
   let carga;
   try {
-    carga = jwt.verify(token, process.env.JWT_SECRET);
+    carga = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
   } catch {
     return res.status(401).json({ error: 'Sesión inválida o expirada' });
   }
