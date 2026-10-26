@@ -48,15 +48,6 @@
     .indice ol { margin: 0; columns: 2; column-gap: var(--e-6); }
     .indice li { margin-bottom: var(--e-2); break-inside: avoid; }
     .vigencia { font-size: var(--txt-sm); color: var(--ink-600); margin-top: var(--e-3); }
-    .borrador {
-      padding: var(--e-4) var(--e-5);
-      background: var(--ambar-100);
-      color: var(--ambar-700);
-      border-radius: var(--radio-md);
-      font-size: var(--txt-sm);
-      margin-bottom: var(--e-6);
-    }
-    .pendiente { background: var(--ambar-100); color: var(--ambar-700); padding: 0 4px; border-radius: 4px; font-weight: var(--peso-semi); }
     @media (max-width: 760px) {
       .documento { padding: var(--e-5); border-radius: var(--radio-lg); }
       .indice { padding: var(--e-4); }
@@ -81,11 +72,6 @@
 
 <main class="seccion" id="contenido">
   <div class="contenedor documento">
-
-    <p class="borrador">
-      <strong>Borrador para revisión del consultorio.</strong> El dato resaltado
-      en ámbar (la región del servidor) se confirma al publicar la página.
-    </p>
 
     <h1>Política de tratamiento de datos personales</h1>
     <p class="vigencia">
@@ -229,8 +215,7 @@
       <li><strong>Meta Platforms (WhatsApp Business):</strong> recibe tu número de celular
         y el texto de los avisos de tu cita para entregártelos.</li>
       <li><strong>Proveedor de alojamiento:</strong> Railway Corporation, con servidores en
-        <span class="pendiente">[Estados Unidos: confirmar la región al publicar]</span>, donde
-        funciona la página y se guarda la base de datos del sistema, incluida la
+        Estados Unidos, donde funciona la página y se guarda la base de datos del sistema, incluida la
         historia clínica. Railway no consulta ni usa esa información; solo presta
         el servidor.</li>
       <li><strong>Google Fonts:</strong> la página carga sus tipos de letra desde los
