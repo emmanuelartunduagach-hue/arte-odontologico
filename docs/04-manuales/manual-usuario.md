@@ -174,6 +174,8 @@ En el celular las filas se apilan para que quepan en la pantalla.
 
 ![Lista de pacientes con buscador.](../capturas/manual/s06-pacientes.png){width=95%}
 
+La lista muestra 20 pacientes por página. Con muchos pacientes, use **Anterior** y **Siguiente** al pie de la lista; al buscar, vuelve a la primera página. La agenda del día (15 citas por página) y las listas del Inicio (8 por página) funcionan igual.
+
 **Registrar a un paciente que llegó al consultorio:**
 
 1. En **Pacientes** toque **Registrar paciente**.

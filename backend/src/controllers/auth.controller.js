@@ -38,7 +38,7 @@ async function ingresar(req, res, next) {
     const token = jwt.sign(
       { id: usuario.id, rol: usuario.rol, nombre: usuario.nombre_completo },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRA || '8h' }
+      { algorithm: 'HS256', expiresIn: process.env.JWT_EXPIRA || '8h' }
     );
 
     res.json({

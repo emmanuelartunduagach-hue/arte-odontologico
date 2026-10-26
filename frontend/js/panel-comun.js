@@ -57,6 +57,50 @@ function encabezadoSeccion(titulo, subtitulo, ...acciones) {
     acciones.length > 0 && el('div', { class: 'seccion-panel__acciones' }, acciones));
 }
 
+// Controles «Anterior / Siguiente» con el rango que se está viendo. alCambiar(nuevaPagina, cual).
+function controlPaginacion({ total, pagina, porPagina, alCambiar, nombre = 'elementos' }) {
+  const paginas = Math.max(1, Math.ceil(total / porPagina));
+  const desde = (pagina - 1) * porPagina + 1;
+  const hasta = Math.min(pagina * porPagina, total);
+  const boton = (texto, cual, destino, desactivado) => el('button', {
+    type: 'button', class: 'btn btn--secundario btn--compacto', 'data-pag': cual, disabled: desactivado,
+    onclick: () => alCambiar(destino, cual), texto,
+  });
+  return el('nav', { class: 'paginacion', 'aria-label': `Paginación de ${nombre}` },
+    el('p', { class: 'paginacion__estado', role: 'status', texto: `Mostrando ${desde}–${hasta} de ${total} · Página ${pagina} de ${paginas}` }),
+    el('div', { class: 'paginacion__botones' },
+      boton('Anterior', 'anterior', pagina - 1, pagina <= 1),
+      boton('Siguiente', 'siguiente', pagina + 1, pagina >= paginas)));
+}
+
+// Tras cambiar de página los botones se vuelven a crear: se devuelve el foco al que se usó.
+function enfocarPaginacion(raiz, cual) {
+  if (!cual) return;
+  const buscado = raiz.querySelector(`[data-pag="${cual}"]:not(:disabled)`)
+    || raiz.querySelector('[data-pag]:not(:disabled)');
+  buscado?.focus();
+}
+
+// Lista que se corta en páginas en el navegador (para listados que ya llegan completos).
+// «estado.pagina» conserva la página mientras la pantalla se vuelve a pintar.
+function listaPaginada(items, { porPagina, estado, nombre, contenedor, fila }) {
+  const raiz = el('div', { class: 'lista-paginada' });
+  const pintar = (cual) => {
+    const paginas = Math.max(1, Math.ceil(items.length / porPagina));
+    estado.pagina = Math.min(Math.max(estado.pagina || 1, 1), paginas);
+    const inicio = (estado.pagina - 1) * porPagina;
+    pintarEn(raiz,
+      contenedor(items.slice(inicio, inicio + porPagina).map(fila)),
+      items.length > porPagina && controlPaginacion({
+        total: items.length, pagina: estado.pagina, porPagina, nombre,
+        alCambiar: (destino, usado) => { estado.pagina = destino; pintar(usado); },
+      }));
+    enfocarPaginacion(raiz, cual);
+  };
+  pintar();
+  return raiz;
+}
+
 function estadoCarga(texto) {
   return el('p', { class: 'estado-carga', role: 'status', texto });
 }

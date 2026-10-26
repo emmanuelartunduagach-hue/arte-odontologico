@@ -1,5 +1,7 @@
 const pacientesPanel = {
   q: '',
+  pagina: 1,
+  porPagina: 20,
   turno: 0,
   especialidades: null,
 };
@@ -61,6 +63,7 @@ function montarLista(cuerpo) {
   busqueda.addEventListener('submit', (e) => {
     e.preventDefault();
     pacientesPanel.q = busqueda.q.value.trim();
+    pacientesPanel.pagina = 1;
     cargarLista(resultados);
   });
 
@@ -74,26 +77,34 @@ function montarLista(cuerpo) {
   cargarLista(resultados);
 }
 
-async function cargarLista(resultados) {
+async function cargarLista(resultados, enfocar = null) {
   const turno = ++pacientesPanel.turno;
   pintarEn(resultados, estadoCarga('Cargando pacientes…'));
-  let lista;
+  let respuesta;
   try {
-    lista = await api(`/pacientes?${new URLSearchParams({ q: pacientesPanel.q })}`);
+    respuesta = await api(`/pacientes?${new URLSearchParams({
+      q: pacientesPanel.q, pagina: pacientesPanel.pagina, porPagina: pacientesPanel.porPagina,
+    })}`);
   } catch (err) {
     if (turno === pacientesPanel.turno) pintarEn(resultados, errorConReintento(err, () => cargarLista(resultados)));
     return;
   }
   if (turno !== pacientesPanel.turno) return;
 
+  const { items: lista, total, pagina, porPagina } = respuesta;
+  pacientesPanel.pagina = pagina;
   if (!lista.length) {
     pintarEn(resultados, el('div', { class: 'vacio' },
       el('p', { texto: pacientesPanel.q ? `No encontramos pacientes con «${pacientesPanel.q}».` : 'Aún no hay pacientes registrados.' }),
       el('button', { type: 'button', class: 'btn btn--secundario btn--compacto', onclick: nuevoPaciente, texto: 'Registrar paciente' })));
     return;
   }
+  const paginacion = total > porPagina && controlPaginacion({
+    total, pagina, porPagina, nombre: 'pacientes',
+    alCambiar: (destino, cual) => { pacientesPanel.pagina = destino; cargarLista(resultados, cual); },
+  });
   pintarEn(resultados,
-    el('p', { class: 'agenda__conteo', role: 'status', texto: lista.length === 1 ? '1 paciente' : `${lista.length} pacientes` }),
+    el('p', { class: 'agenda__conteo', role: 'status', texto: total === 1 ? '1 paciente' : `${total} pacientes` }),
     el('ul', { class: 'lista-filas lista-pacientes' }, lista.map((p) =>
       el('li', {},
         el('a', { class: 'fila-paciente-panel', href: `#pacientes/${p.id}` },
@@ -101,7 +112,9 @@ async function cargarLista(resultados) {
           el('span', { class: 'fila-paciente-panel__datos' },
             el('span', { class: 'fila-cita__nombre', texto: p.nombreCompleto }),
             el('span', { class: 'fila-cita__detalle', texto: `Doc. ${p.documento} · Cel. ${telefonoLegible(p.telefono)}` })),
-          el('span', { class: 'fila-paciente-panel__origen', texto: p.origen === 'web' ? 'Web' : 'Consultorio' }))))));
+          el('span', { class: 'fila-paciente-panel__origen', texto: p.origen === 'web' ? 'Web' : 'Consultorio' }))))),
+    paginacion);
+  enfocarPaginacion(resultados, enfocar);
 }
 
 function nuevoPaciente() {

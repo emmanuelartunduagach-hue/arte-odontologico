@@ -467,8 +467,13 @@
       exigir('administrador');
       if (metodo === 'GET' && !partes[1]) {
         const q = (url.searchParams.get('q') || '').toLowerCase();
-        return PACIENTES.filter((x) => !q || [x.nombreCompleto, x.documento, x.telefono, x.correo].some((v) => v.toLowerCase().includes(q)))
+        const lista = PACIENTES.filter((x) => !q || [x.nombreCompleto, x.documento, x.telefono, x.correo].some((v) => v.toLowerCase().includes(q)))
           .sort((a, b) => a.nombreCompleto.localeCompare(b.nombreCompleto)).map((x) => ({ ...x }));
+        if (url.searchParams.get('pagina') === null) return lista;
+        const porPagina = Math.min(Number(url.searchParams.get('porPagina')) || 20, 50);
+        const paginas = Math.max(1, Math.ceil(lista.length / porPagina));
+        const pagina = Math.min(Math.max(Number(url.searchParams.get('pagina')) || 1, 1), paginas);
+        return { items: lista.slice((pagina - 1) * porPagina, pagina * porPagina), total: lista.length, pagina, porPagina, paginas };
       }
       if (metodo === 'POST' && !partes[1]) {
         const doc = String(cuerpo.documento || '').trim();

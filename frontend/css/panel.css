@@ -1194,3 +1194,19 @@ fieldset.campo { border: 0; padding: 0; margin-inline: 0; min-width: 0; }
   }
   body.menu-lateral-abierto { overflow: hidden; }
 }
+
+/* Paginación de listados */
+.paginacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--e-3);
+  margin-top: var(--e-4);
+}
+.paginacion__estado { margin: 0; font-size: var(--txt-sm); color: var(--ink-600); }
+.paginacion__botones { display: flex; gap: var(--e-2); }
+@media (max-width: 520px) {
+  .paginacion { flex-direction: column; align-items: stretch; text-align: center; }
+  .paginacion__botones .btn { flex: 1; }
+}

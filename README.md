@@ -92,6 +92,7 @@ Se ejecutan desde `backend/`, salvo el primero, que es el de la raíz.
 |---|---|
 | `npm start` (raíz) | Arranca el servidor como lo hace Railway (instala el backend en `postinstall`) |
 | `npm run dev` | Desarrollo: se reinicia solo al guardar |
+| `npm test` | Pruebas unitarias (no necesitan base de datos); también corren en GitHub Actions en cada PR |
 | `npm start` | Producción |
 | `npm run crear-admin` | Crea la cuenta de la secretaria |
 | `npm run restablecer-admin` | Restablece la contraseña de la secretaria |

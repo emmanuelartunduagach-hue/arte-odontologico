@@ -106,12 +106,15 @@ async function montarInicio(destino) {
       el('h2', { id: 'titulo-sin-enviar', class: 'bloque-panel__titulo',
         texto: sinEnviar.length === 1 ? '1 WhatsApp sin enviar' : `${sinEnviar.length} WhatsApp sin enviar` }),
       el('p', { class: 'alerta bloque-panel__ayuda', texto: 'El envío automático no pudo entregar estos avisos. Ábrelos en WhatsApp, envíalos y confírmalo aquí.' }),
-      el('div', { class: 'mensajes__lista' }, sinEnviar.map(tarjetaMensaje))),
+      listaPaginada(sinEnviar, {
+        porPagina: POR_PAGINA_INICIO, estado: paginasInicio.mensajes, nombre: 'mensajes',
+        contenedor: (filas) => el('div', { class: 'mensajes__lista' }, filas), fila: tarjetaMensaje,
+      })),
 
     porConfirmar.length > 0 && el('section', { class: 'bloque-panel', 'aria-labelledby': 'titulo-solicitudes' },
       el('h2', { id: 'titulo-solicitudes', class: 'bloque-panel__titulo', texto: 'Citas anteriores sin confirmar' }),
       el('p', { class: 'bloque-panel__ayuda', texto: 'Se pidieron cuando las citas de la web todavía se aprobaban a mano. Acéptalas o recházalas; las nuevas ya llegan confirmadas.' }),
-      listaCitas(porConfirmar, { conFecha: true })),
+      listaCitasPaginada(porConfirmar, 'sinConfirmar', { conFecha: true })),
 
     sinMarcar.length > 0 && el('p', { class: 'alerta alerta--info bloque-panel', texto: sinMarcar.length === 1
       ? 'Hay 1 cita de hoy que ya pasó y falta marcar si el paciente asistió.'
@@ -126,14 +129,14 @@ async function montarInicio(destino) {
         el('h2', { id: 'titulo-hoy', class: 'bloque-panel__titulo', texto: 'Agenda de hoy' }),
         el('a', { href: '#agenda', class: 'bloque-panel__enlace', onclick: () => { agenda.fecha = hoy; agenda.q = ''; }, texto: 'Ver agenda completa' })),
       ordenadas.length
-        ? listaCitas(ordenadas)
+        ? listaCitasPaginada(ordenadas, 'hoy')
         : el('div', { class: 'vacio' }, el('p', { texto: 'No hay citas para hoy.' }))),
 
     el('section', { class: 'bloque-panel', 'aria-labelledby': 'titulo-novedades' },
       el('h2', { id: 'titulo-novedades', class: 'bloque-panel__titulo', texto: 'Novedades de la web' }),
       el('p', { class: 'bloque-panel__ayuda', texto: 'Últimas 48 horas. Las citas pedidas por la web quedan confirmadas solas y al paciente le llega el WhatsApp.' }),
       novedades.length
-        ? listaCitas(novedades, { conFecha: true, conNovedad: true })
+        ? listaCitasPaginada(novedades, 'novedades', { conFecha: true, conNovedad: true })
         : el('div', { class: 'vacio' }, el('p', { texto: 'No hubo movimientos en la web en las últimas 48 horas.' }))));
 }
 

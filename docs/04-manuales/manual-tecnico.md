@@ -33,7 +33,8 @@ Arquitectura cliente-servidor en tres capas:
 | | mysql2 | 3.x | Conexión a MySQL con pool y consultas preparadas |
 | | bcrypt | 6.x | Cifrado de contraseñas (10 rondas) |
 | | jsonwebtoken | 9.x | Sesiones con token firmado (JWT) |
-| | dotenv, cors | — | Configuración y política de origen |
+| | helmet | 8.x | Cabeceras de seguridad y política de contenido (CSP) |
+| | dotenv, cors | — | Configuración y política de origen (CORS solo si se declara `ORIGEN_PERMITIDO`) |
 | Datos | MySQL | 8.0+ | Base de datos relacional |
 | Cliente | HTML5, CSS3, JavaScript (ES2020) | — | Interfaz sin frameworks |
 | Mensajería | WhatsApp Cloud API de Meta o Twilio (opcionales) | Graph API v21 | Envío automático de mensajes |
@@ -49,7 +50,7 @@ No hay más dependencias de producción: las funciones de fecha, aleatoriedad y 
 | `backend/database/schema.sql` | Esquema completo y datos iniciales (instalación nueva) |
 | `backend/database/migraciones/` | Cambios para bases existentes, en orden (001, 002…) |
 | `backend/src/server.js` | Arranque: prueba la conexión y abre el puerto |
-| `backend/src/app.js` | Express, CORS, JSON, rutas y manejador de errores |
+| `backend/src/app.js` | Express, cabeceras de seguridad, CORS (opcional), JSON, rutas y manejador de errores |
 | `backend/src/config/db.js` | Pool de conexiones MySQL |
 | `backend/src/routes/` | Qué URL va a qué controlador y con qué permisos |
 | `backend/src/controllers/` | Validación de entrada, reglas de negocio y respuesta |
@@ -163,14 +164,15 @@ En total son 54 rutas bajo `/api`. «Rol administrador» incluye a la propietari
 | Bots que llenan la agenda | Límite de peticiones por IP, campo trampa oculto en el formulario y máximo de citas activas por documento |
 | Fuga de datos en mensajes | El WhatsApp solo lleva fecha, hora, especialista y dirección; nada clínico |
 | Errores que revelan detalles internos | Manejador central: mensaje genérico al cliente, traza solo en el servidor |
+| Inyección de scripts y clickjacking | `helmet` envía una política de contenido que solo admite scripts propios (los scripts en línea quedan bloqueados), prohíbe incrustar el sitio en otros (`frame-ancestors 'none'`) y activa `nosniff` y HSTS |
+| Tokens con otro algoritmo de firma | El JWT se firma y se verifica solo con HS256; el servidor no arranca sin `JWT_SECRET` |
 | Peticiones enormes | Cuerpo JSON limitado a 100 KB; listas de fechas y horas con tope |
 | Secretos en el repositorio | `.env` y `.env.*` en `.gitignore` (también los `.sql` de respaldo); solo se publica `.env.example` |
 | Sesión olvidada en un equipo compartido | El token se guarda en `sessionStorage` (se borra al cerrar la pestaña) y el texto de la API se pinta siempre con `textContent` |
 
 **Limitaciones conocidas:**
-- Si `ORIGEN_PERMITIDO` no está definido, CORS acepta cualquier origen; en la publicación app y API comparten dominio, así que se puede restringir sin cambiar código.
 - El límite de peticiones por IP vive en la memoria del proceso: se reinicia con el servidor y no se comparte entre instancias.
-- No se usan cabeceras de seguridad adicionales (por ejemplo, `helmet`).
+- La política de contenido admite estilos en línea (`style-src 'unsafe-inline'`) porque algunas páginas usan el atributo `style`; los scripts en línea sí están bloqueados.
 - El acceso público a MySQL en Railway está pendiente de cerrar.
 - No hay autenticación de dos factores.
 

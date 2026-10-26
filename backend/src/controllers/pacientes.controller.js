@@ -2,6 +2,7 @@ const pacienteModelo = require('../models/paciente.model');
 const citaModelo = require('../models/cita.model');
 const { validarDatosPersona } = require('../utils/validaciones');
 const { ErrorHttp } = require('../utils/errores');
+const { calcularPagina } = require('../utils/paginacion');
 
 async function crear(req, res, next) {
   try {
@@ -50,10 +51,18 @@ async function crear(req, res, next) {
   }
 }
 
+// Sin «pagina» responde la lista simple (hasta 100); con «pagina» responde una página y los totales.
 async function listar(req, res, next) {
   try {
     const busqueda = typeof req.query.q === 'string' ? req.query.q.trim().slice(0, 100) : '';
-    res.json(await pacienteModelo.listar(busqueda));
+    if (req.query.pagina === undefined) {
+      res.json(await pacienteModelo.listar(busqueda));
+      return;
+    }
+    const total = await pacienteModelo.contar(busqueda);
+    const { pagina, porPagina, paginas, desde } = calcularPagina(total, req.query.pagina, req.query.porPagina);
+    const items = await pacienteModelo.listarPagina(busqueda, desde, porPagina);
+    res.json({ items, total, pagina, porPagina, paginas });
   } catch (error) {
     next(error);
   }
