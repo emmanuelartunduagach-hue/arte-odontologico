@@ -35,11 +35,17 @@ async function buscarPorDocumento(documento) {
   return filas[0] || null;
 }
 
+const FILTRO_BUSQUEDA = `(? = '' OR nombre_completo LIKE ? OR documento LIKE ? OR telefono LIKE ? OR correo LIKE ?)`;
+
+function patronDe(busqueda) {
+  return `%${busqueda.replace(/[\\%_]/g, '\\$&')}%`;
+}
+
 async function listar(busqueda = '') {
-  const patron = `%${busqueda.replace(/[\\%_]/g, '\\$&')}%`;
+  const patron = patronDe(busqueda);
   const [filas] = await pool.execute(
     `${SELECT_PACIENTE}
-      WHERE ? = '' OR nombre_completo LIKE ? OR documento LIKE ? OR telefono LIKE ? OR correo LIKE ?
+      WHERE ${FILTRO_BUSQUEDA}
       ORDER BY nombre_completo
       LIMIT 100`,
     [busqueda, patron, patron, patron, patron]
@@ -47,4 +53,26 @@ async function listar(busqueda = '') {
   return filas;
 }
 
-module.exports = { crear, buscarPorId, buscarPorDocumento, listar };
+async function contar(busqueda = '') {
+  const patron = patronDe(busqueda);
+  const [[fila]] = await pool.execute(
+    `SELECT COUNT(*) AS total FROM pacientes WHERE ${FILTRO_BUSQUEDA}`,
+    [busqueda, patron, patron, patron, patron]
+  );
+  return fila.total;
+}
+
+// desde y limite son enteros ya validados (utils/paginacion.js): LIMIT no admite parámetros con execute.
+async function listarPagina(busqueda, desde, limite) {
+  const patron = patronDe(busqueda);
+  const [filas] = await pool.execute(
+    `${SELECT_PACIENTE}
+      WHERE ${FILTRO_BUSQUEDA}
+      ORDER BY nombre_completo, id
+      LIMIT ${Number(limite)} OFFSET ${Number(desde)}`,
+    [busqueda, patron, patron, patron, patron]
+  );
+  return filas;
+}
+
+module.exports = { crear, buscarPorId, buscarPorDocumento, listar, contar, listarPagina };

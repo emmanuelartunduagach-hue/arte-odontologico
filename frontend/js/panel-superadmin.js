@@ -10,6 +10,10 @@ function fechaHoraCorta(texto) {
   return texto ? `${fechaLarga(texto.slice(0, 10))}, ${horaLarga(texto.slice(11, 16))}` : '';
 }
 
+const POR_PAGINA_SOLICITUDES = 8;
+const POR_PAGINA_EQUIPO = 15;
+const paginasSuperadmin = { correcciones: { pagina: 1 }, anulaciones: { pagina: 1 }, equipo: { pagina: 1 } };
+
 async function montarSolicitudes(destino) {
   const encabezado = encabezadoSeccion('Solicitudes',
     'Cambios a la historia clínica que pidieron los administradores. Solo quedan en la historia si los apruebas.');
@@ -32,14 +36,20 @@ async function montarSolicitudes(destino) {
       el('h2', { id: 'titulo-correcciones', class: 'bloque-panel__titulo',
         texto: `Correcciones de la historia clínica (${correcciones.length})` }),
       correcciones.length
-        ? el('ul', { class: 'solicitudes' }, correcciones.map(tarjetaCorreccion))
+        ? listaPaginada(correcciones, {
+          porPagina: POR_PAGINA_SOLICITUDES, estado: paginasSuperadmin.correcciones, nombre: 'correcciones',
+          contenedor: (filas) => el('ul', { class: 'solicitudes' }, filas), fila: tarjetaCorreccion,
+        })
         : el('div', { class: 'vacio' }, el('p', { texto: 'No hay correcciones por aprobar.' }))),
 
     el('section', { class: 'bloque-panel', 'aria-labelledby': 'titulo-anulaciones' },
       el('h2', { id: 'titulo-anulaciones', class: 'bloque-panel__titulo',
         texto: `Anulaciones del odontograma (${anulaciones.length})` }),
       anulaciones.length
-        ? el('ul', { class: 'solicitudes' }, anulaciones.map(tarjetaAnulacion))
+        ? listaPaginada(anulaciones, {
+          porPagina: POR_PAGINA_SOLICITUDES, estado: paginasSuperadmin.anulaciones, nombre: 'anulaciones',
+          contenedor: (filas) => el('ul', { class: 'solicitudes' }, filas), fila: tarjetaAnulacion,
+        })
         : el('div', { class: 'vacio' }, el('p', { texto: 'No hay anulaciones por aprobar.' }))));
 }
 
@@ -151,7 +161,10 @@ async function montarEquipo(destino) {
 
   pintarEn(destino, avisoDemo(), encabezado, aviso,
     lista.length
-      ? el('ul', { class: 'lista-filas equipo' }, lista.map(filaAdministrador))
+      ? listaPaginada(lista, {
+        porPagina: POR_PAGINA_EQUIPO, estado: paginasSuperadmin.equipo, nombre: 'el equipo',
+        contenedor: (filas) => el('ul', { class: 'lista-filas equipo' }, filas), fila: filaAdministrador,
+      })
       : el('div', { class: 'vacio' }, el('p', { texto: 'Aún no hay administradores.' })));
 }
 

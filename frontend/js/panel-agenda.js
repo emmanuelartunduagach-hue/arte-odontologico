@@ -3,6 +3,8 @@ const agenda = {
   especialistaId: '',
   estado: '',
   q: '',
+  pagina: 1,
+  porPagina: 15,
   especialistas: null,
   turno: 0,
 };
@@ -80,6 +82,18 @@ function listaCitas(citas, opciones) {
   return el('div', { class: 'lista-filas' }, citas.map((c) => filaCita(c, opciones)));
 }
 
+// El Inicio muestra varias listas de citas: cada una recuerda su página aunque la pantalla se repinte.
+const POR_PAGINA_INICIO = 8;
+const paginasInicio = { sinConfirmar: { pagina: 1 }, hoy: { pagina: 1 }, novedades: { pagina: 1 }, mensajes: { pagina: 1 } };
+
+function listaCitasPaginada(citas, clave, opciones) {
+  return listaPaginada(citas, {
+    porPagina: POR_PAGINA_INICIO, estado: paginasInicio[clave], nombre: 'citas',
+    contenedor: (filas) => el('div', { class: 'lista-filas' }, filas),
+    fila: (c) => filaCita(c, opciones),
+  });
+}
+
 function ordenarPorHora(citas) {
   return [...citas].sort((a, b) => `${a.fecha} ${a.hora}`.localeCompare(`${b.fecha} ${b.hora}`));
 }
@@ -107,7 +121,7 @@ async function montarAgenda(cuerpo) {
 
 function barraAgenda() {
   const hoy = hoyColombia();
-  const ir = (fecha) => { agenda.fecha = fecha; agenda.q = ''; panel.refrescar(); };
+  const ir = (fecha) => { agenda.fecha = fecha; agenda.q = ''; agenda.pagina = 1; panel.refrescar(); };
 
   const navegacion = el('div', { class: 'agenda__dia' },
     el('button', { type: 'button', class: 'btn btn--secundario btn--icono', 'aria-label': 'Día anterior', onclick: () => ir(sumarDiasA(agenda.fecha, -1)) },
@@ -122,13 +136,13 @@ function barraAgenda() {
   const especialista = el('select', { class: 'campo__control', name: 'especialistaId', 'aria-label': 'Especialista' },
     el('option', { value: '', texto: 'Todos los especialistas' }));
   if (agenda.especialistas) llenarEspecialistas(especialista);
-  especialista.addEventListener('change', () => { agenda.especialistaId = especialista.value; panel.refrescar(); });
+  especialista.addEventListener('change', () => { agenda.especialistaId = especialista.value; agenda.pagina = 1; panel.refrescar(); });
 
   const estado = el('select', { class: 'campo__control', name: 'estado', 'aria-label': 'Estado' },
     [['', 'Todos los estados'], ['confirmada', 'Confirmadas'], ['atendida', 'Atendidas'],
       ['no_asistio', 'No asistió'], ['cancelada', 'Canceladas'], ['rechazada', 'Rechazadas']]
       .map(([valor, texto]) => el('option', { value: valor, selected: valor === agenda.estado, texto })));
-  estado.addEventListener('change', () => { agenda.estado = estado.value; panel.refrescar(); });
+  estado.addEventListener('change', () => { agenda.estado = estado.value; agenda.pagina = 1; panel.refrescar(); });
 
   const busqueda = el('form', { class: 'agenda__busqueda', role: 'search' },
     el('input', { class: 'campo__control', type: 'search', name: 'q', value: agenda.q, 'aria-label': 'Buscar paciente',
@@ -137,6 +151,7 @@ function barraAgenda() {
   busqueda.addEventListener('submit', (e) => {
     e.preventDefault();
     agenda.q = busqueda.q.value.trim();
+    agenda.pagina = 1;
     panel.refrescar();
   });
 
@@ -184,13 +199,17 @@ async function cargarAgenda(resultados) {
     el('div', { class: 'agenda__titulo-lista' },
       el('h2', { texto: buscando ? `Resultados para «${agenda.q}»` : capitalizar(fechaLarga(agenda.fecha)) }),
       resumen && el('p', { class: 'agenda__conteo', role: 'status', texto: resumen }),
-      buscando && el('button', { type: 'button', class: 'btn btn--fantasma btn--compacto', onclick: () => { agenda.q = ''; panel.refrescar(); }, texto: 'Limpiar búsqueda' })),
+      buscando && el('button', { type: 'button', class: 'btn btn--fantasma btn--compacto', onclick: () => { agenda.q = ''; agenda.pagina = 1; panel.refrescar(); }, texto: 'Limpiar búsqueda' })),
     citas.length
-      ? listaCitas(ordenarPorHora(citas), { conFecha: buscando })
+      ? listaPaginada(ordenarPorHora(citas), {
+        porPagina: agenda.porPagina, estado: agenda, nombre: 'citas',
+        contenedor: (filas) => el('div', { class: 'lista-filas' }, filas),
+        fila: (c) => filaCita(c, { conFecha: buscando }),
+      })
       : el('div', { class: 'vacio' },
         el('p', { texto: buscando ? 'No encontramos citas de ese paciente en los últimos y próximos 3 meses.' : 'No hay citas este día.' }),
         !buscando && agenda.fecha !== hoyColombia()
-          && el('button', { type: 'button', class: 'btn btn--secundario btn--compacto', onclick: () => { agenda.fecha = hoyColombia(); panel.refrescar(); }, texto: 'Volver a hoy' })));
+          && el('button', { type: 'button', class: 'btn btn--secundario btn--compacto', onclick: () => { agenda.fecha = hoyColombia(); agenda.pagina = 1; panel.refrescar(); }, texto: 'Volver a hoy' })));
 }
 
 function nombreCita(cita) {
