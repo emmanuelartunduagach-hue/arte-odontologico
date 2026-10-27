@@ -1,7 +1,7 @@
 const pacientesPanel = {
   q: '',
   pagina: 1,
-  porPagina: 20,
+  porPagina: 6,
   turno: 0,
   especialidades: null,
 };
