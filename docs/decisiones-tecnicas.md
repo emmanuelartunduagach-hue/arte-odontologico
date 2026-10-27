@@ -629,3 +629,14 @@ la pantalla, y la decisión anterior dejaba esa tarea al equipo técnico.
   500 KB; el resto de la API sigue limitada a 100 KB.
 - Si no hay especialistas activos, Horarios lo explica y a la dueña le ofrece
   ir a Especialistas.
+
+## 33. Ajustes posteriores a la entrega (25 de octubre)
+
+Revisión final del repositorio y de la publicación, hecha después de enviar el informe. No cambia el alcance ni el modelo de datos; endurece lo existente y evita errores de configuración.
+
+- **Cabeceras de seguridad.** `helmet` con una política de contenido ajustada al frontend (scripts y estilos propios, tipografías de Google Fonts, sin incrustarse en otros sitios). CORS queda cerrado salvo que exista `ORIGEN_PERMITIDO`: la aplicación y la API comparten dominio.
+- **Sesión.** El token se firma y se verifica solo con HS256. El servidor no arranca sin `JWT_SECRET` y cierra de forma ordenada con SIGTERM, la señal de Railway al publicar.
+- **Configuración revisada al arrancar.** Se avisa si `URL_PUBLICA` no es una dirección válida (los enlaces «Gestionar mi cita» quedarían rotos), si `WHATSAPP_MODO` tiene un valor inválido (antes caía en silencio al modo manual; ahora se ignoran espacios y comillas y se avisa) o si faltan las credenciales del proveedor elegido. El modo activo queda en el registro.
+- **Pruebas y verificación automática.** Pruebas unitarias con `node --test` y un flujo de GitHub Actions (pruebas, `npm audit` y revisión de sintaxis) en cada pull request. Versión del backend 1.0.0.
+- **Paginación.** Las listas del panel no crecen sin límite: pacientes (en el servidor; el panel pide 6 por página y la API admite hasta 50), agenda del día y Inicio de la secretaria, y solicitudes y equipo de la propietaria (cliente). Sin los parámetros `pagina` y `porPagina`, la API responde como antes.
+- **Qué se descartó.** Un enlace «escondido» tras una palabra en el mensaje: WhatsApp envía texto plano y no admite hipervínculos; el botón con enlace requiere una plantilla aprobada de la API de Meta.

@@ -1,8 +1,10 @@
+const { MODOS_WHATSAPP, normalizarModoWhatsapp } = require('../../../utils/configuracion');
+
 const VERSION_API = () => process.env.WHATSAPP_API_VERSION || 'v21.0';
 
 function modo() {
-  const m = (process.env.WHATSAPP_MODO || 'manual').toLowerCase();
-  return ['manual', 'consola', 'twilio', 'api'].includes(m) ? m : 'manual';
+  const m = normalizarModoWhatsapp(process.env.WHATSAPP_MODO);
+  return MODOS_WHATSAPP.includes(m) ? m : 'manual';
 }
 
 async function enviar({ destino, texto, tipo, datos }) {

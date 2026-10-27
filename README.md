@@ -1,5 +1,7 @@
 # Arte Odontológico — Sistema web de citas
 
+[![Verificación](https://github.com/emmanuelartunduagach-hue/arte-odontologico/actions/workflows/ci.yml/badge.svg)](https://github.com/emmanuelartunduagach-hue/arte-odontologico/actions/workflows/ci.yml)
+
 Proyecto de aplicación · Ingeniería de Software · Fundación Escuela Tecnológica de Neiva Jesús Oviedo Pérez (FET)
 Emmanuel Artunduaga Charry · Jawer Leonardo Manrique Yosa
 
@@ -20,6 +22,14 @@ Publicada en: <https://arte-odontologico-production.up.railway.app>
 - **Propietaria (rol `superadmin`):** todo lo anterior, más aprobar las correcciones de la
   historia y las anulaciones del odontograma, administrar al equipo y a los especialistas.
 
+## Capturas
+
+Tomadas en el modo demostración (datos ficticios); más en `docs/capturas/`.
+
+| Página pública | Agendar una cita | Panel de la secretaria |
+|---|---|---|
+| ![Página pública](docs/capturas/01-pagina-principal.png) | ![Agendar una cita](docs/capturas/02-agendar-cita.png) | ![Panel de la secretaria](docs/capturas/06-panel-agenda.png) |
+
 ## Tecnologías
 
 | Capa | Tecnología |
@@ -36,6 +46,7 @@ Publicada en: <https://arte-odontologico-production.up.railway.app>
 ```
 arte-odontologico/
 ├── package.json              Instala el backend y lo arranca (publicación en Railway)
+├── .github/workflows/        Verificación automática en cada pull request (pruebas, auditoría, sintaxis)
 ├── backend/                  API REST (Node.js + Express + MySQL)
 │   ├── database/
 │   │   ├── schema.sql        Esquema completo (instalación nueva)
@@ -47,8 +58,9 @@ arte-odontologico/
 │       ├── models/           Consultas SQL
 │       ├── middleware/       Sesión, rol y límite de peticiones
 │       ├── services/         Notificaciones de WhatsApp y recordatorios
-│       ├── utils/            Validaciones, fechas, códigos y errores
+│       ├── utils/            Validaciones, fechas, códigos, paginación, configuración y errores
 │       └── scripts/          Administrador, propietaria, recordatorios y datos de demostración
+│   └── tests/                Pruebas unitarias sin base de datos (npm test)
 ├── frontend/                 Cliente en HTML, CSS y JavaScript (sin framework)
 │   ├── index.html            Página pública y flujo de agendar
 │   ├── gestionar-cita.html   Reprogramar o cancelar con el enlace
@@ -59,6 +71,25 @@ arte-odontologico/
 │   └── assets/img/
 └── docs/                     Documentación (ver docs/README.md)
 ```
+
+## Un solo repositorio
+
+El servidor (`backend/`), el cliente (`frontend/`) y la documentación (`docs/`) viven en el mismo
+repositorio. Es una decisión de diseño, no una carencia:
+
+- **Se publican juntos.** El servidor Express entrega también los archivos del cliente, así que
+  la aplicación es un solo servicio en Railway, con un solo dominio. No hay una segunda aplicación
+  que desplegar ni una dirección de API que configurar en el cliente (`frontend/js/config.js` usa
+  `/api` en el mismo dominio).
+- **Un cambio, un pull request.** Cuando una mejora toca la API y la pantalla que la usa (por
+  ejemplo, la paginación de pacientes), ambas partes se revisan y se verifican juntas y nunca
+  quedan en versiones distintas.
+- **Una sola versión, un solo historial.** La versión, la verificación automática de GitHub
+  Actions y la documentación son únicas para todo el sistema.
+- **La responsabilidad sigue separada.** Emmanuel mantiene `backend/` y Jawer `frontend/`; entre
+  ambas carpetas solo hay un contrato, el de la API (`docs/03-diseno/contrato-api.md`). Separarlos
+  más adelante en dos repositorios exigiría únicamente apuntar el cliente a la dirección de la
+  API y permitir ese origen en el servidor (`ORIGEN_PERMITIDO`).
 
 ## Instalación en desarrollo
 
@@ -147,6 +178,17 @@ creación de tablas, dominio, cuentas y respaldos) está en la sección 8.2 de
 `docs/04-manuales/manual-instalacion.md`. Para verificar una publicación:
 `https://DOMINIO/api/salud` debe responder `{"estado":"ok"}`.
 
+## Flujo de trabajo en Git
+
+- `main` es la rama publicada: cada fusión redespliega en Railway. No se trabaja directamente en ella.
+- Cada tarea tiene su propia rama, creada desde `main`, con prefijo según el tipo: `feature/` (funcionalidad nueva),
+  `fix/` (corrección) o `docs/` (documentación).
+- Los cambios entran por pull request (hay una plantilla en `.github/`). La verificación automática
+  debe pasar antes de fusionar.
+- Las tareas se llevan en un tablero Kanban de Trello (backlog, sprint, en progreso, en revisión, hecho).
+- Los commits describen el cambio en español y en pocas palabras; cada persona firma con su propio usuario.
+- Las decisiones técnicas se registran en `docs/decisiones-tecnicas.md`.
+
 ## Seguridad del repositorio
 
 - No se suben `.env`, `.env.*` (salvo `.env.example`) ni respaldos `*.sql`; el `.gitignore` los
@@ -170,6 +212,21 @@ Los estilos se cargan en cascada y en este orden:
 Todo está en `docs/` (índice en `docs/README.md`): alcance, modelo de datos y diagramas, contrato de
 la API, decisiones técnicas, manuales de instalación, técnico y de usuario, y pruebas. Los `.md` son
 la fuente editable; `docs/para-drive/` tiene las versiones en Word para el Drive del proyecto.
+
+## Alcance y pendientes
+
+Lo que queda fuera de la versión 1.0, declarado a propósito:
+
+- El envío automático por la API oficial de WhatsApp (Meta) espera la aprobación de las plantillas;
+  mientras tanto se usa el modo manual o el sandbox de Twilio, que solo sirve para pruebas.
+- No se hizo la evaluación formal de usabilidad (ISO 9241-11) ni la auditoría de accesibilidad (WCAG 2.2).
+- El efecto de los recordatorios sobre las inasistencias no se ha medido.
+- El script de las pruebas de integración contra MySQL (140 comprobaciones, más 53 del rol de la
+  propietaria) no está en el repositorio; los resultados están documentados en `docs/06-pruebas/pruebas.md`.
+
+## Versiones
+
+La versión actual es la **1.0.0** (entrega final). Los cambios están en [`CHANGELOG.md`](CHANGELOG.md) y las versiones publicadas, en la pestaña *Releases* de GitHub.
 
 ## Equipo
 

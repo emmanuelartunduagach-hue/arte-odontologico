@@ -2,6 +2,8 @@ require('dotenv').config();
 const app = require('./app');
 const { pool, probarConexion } = require('./config/db');
 const { iniciarProgramacion } = require('./services/recordatorios');
+const { avisosDeConfiguracion } = require('./utils/configuracion');
+const { modo: modoWhatsapp } = require('./services/notificaciones/proveedores/ProveedorWhatsApp');
 
 const PUERTO = process.env.PORT || 3000;
 
@@ -14,10 +16,13 @@ if (process.env.JWT_SECRET.length < 32) {
   console.warn('Aviso: JWT_SECRET tiene menos de 32 caracteres; genera una más larga (ver .env.example).');
 }
 
+avisosDeConfiguracion().forEach((aviso) => console.warn(`Aviso de configuración: ${aviso}`));
+
 (async () => {
   try {
     await probarConexion();
     console.log('Conexión a MySQL establecida.');
+    console.log(`WhatsApp: modo ${modoWhatsapp()}.`);
     const servidor = app.listen(PUERTO, () => {
       console.log(`API escuchando en http://localhost:${PUERTO}/api`);
     });
